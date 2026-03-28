@@ -26,11 +26,12 @@ Defines Pydantic models for surface appearance, shape, and complete surface conf
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class SurfaceConfig(ConfigBase):
@@ -42,7 +43,7 @@ class SurfaceConfig(ConfigBase):
     # Surface properties
     radius: Optional[float] = Field(None, description="Surface radius")
     oblateness: Optional[float] = Field(None, description="Surface oblateness/ellipticity")
-    scale: Optional[List[float]] = Field(None, description="Surface scale [x, y, z]")
+    scale: Optional[Vector3Field] = Field(None, description="Surface scale [x, y, z]")
 
     # Nested configurations - can be references (strings) or inline dicts
     appearance: Optional[Union[str, dict]] = Field(None, description="Appearance configuration or reference")

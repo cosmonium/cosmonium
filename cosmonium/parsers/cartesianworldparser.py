@@ -19,7 +19,6 @@
 
 
 from ..scene.sceneworld import CartesianWorld
-
 from .controllersparser import ControllerYamlParser
 from .entityparser import EntityYamlParser
 from .locallightparser import LocalLightYamlParser

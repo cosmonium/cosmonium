@@ -27,11 +27,12 @@ model, procedural, and deferred procedural appearances.
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import ColorField
 
 
 class TexturesAppearanceConfig(ConfigBase):
@@ -39,7 +40,7 @@ class TexturesAppearanceConfig(ConfigBase):
 
     type: Literal['textures'] = 'textures'
     texture: Optional[Any] = Field(None, description="Main texture configuration or path")
-    tint: Optional[List[float]] = Field(None, description="Tint color [r, g, b, a]")
+    tint: Optional[ColorField] = Field(None, description="Tint color [r, g, b] or [r, g, b, a]")
     transparency: bool = Field(False, description="Enable transparency")
     transparency_level: float = Field(0.0, description="Transparency level")
     transparency_blend: Optional[str] = Field(None, description="Transparency blend mode")
@@ -49,15 +50,15 @@ class TexturesAppearanceConfig(ConfigBase):
     nightscale: float = Field(0.02, description="Night texture scale factor")
 
     normalmap: Optional[Any] = Field(None, description="Normal map configuration")
-    specular_color: Optional[List[float]] = Field(None, description="Specular color [r, g, b]")
+    specular_color: Optional[ColorField] = Field(None, description="Specular color [r, g, b] or [r, g, b, a]")
     shininess: float = Field(1.0, description="Shininess factor")
     specularmap: Optional[Any] = Field(None, description="Specular map configuration")
 
     bumpmap: Optional[Any] = Field(None, description="Bump map configuration")
     bump_height: float = Field(0.0, description="Bump map height")
 
-    diffuse_color: Optional[List[float]] = Field(None, description="Diffuse color [r, g, b, a]")
-    emission_color: Optional[List[float]] = Field(None, description="Emission color [r, g, b, a]")
+    diffuse_color: Optional[ColorField] = Field(None, description="Diffuse color [r, g, b] or [r, g, b, a]")
+    emission_color: Optional[ColorField] = Field(None, description="Emission color [r, g, b] or [r, g, b, a]")
 
     roughness: float = Field(0.0, description="Surface roughness")
     backlit: Optional[float] = Field(None, description="Enable backlighting")

@@ -18,8 +18,6 @@
 #
 
 
-from panda3d.core import LColor, LPoint3, LVector3
-
 from ..locallights import LocalDirectionalLight, LocalPointLight, LocalSpotLight
 from .schemas.locallight import LocalDirectionalLightConfig, LocalPointLightConfig, LocalSpotLightConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
@@ -31,14 +29,7 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        position = LPoint3(*data.position)
-        color = data.color
-        if len(color) == 3:
-            color = LColor(*color, 1)
-        else:
-            color = LColor(*color)
-        direction = LVector3(*data.direction)
-        direction.normalize()
+        direction = data.direction.normalized()
         if data.shadows is not None:
             cast_shadows = True
             lens = data.shadows
@@ -46,7 +37,7 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
             cast_shadows = False
             lens = None
         light = LocalDirectionalLight(
-            data.name, position, color, data.power, direction, cast_shadows=cast_shadows, lens=lens
+            data.name, data.position, data.color, data.power, direction, cast_shadows=cast_shadows, lens=lens
         )
         return light
 
@@ -57,15 +48,8 @@ class LocalPointLightYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        position = LPoint3(*data.position)
-        color = data.color
-        if len(color) == 3:
-            color = LColor(*color, 1)
-        else:
-            color = LColor(*color)
-        attenuation = LVector3(*data.attenuation)
         light = LocalPointLight(
-            data.name, position, color, data.power, attenuation, data.max_distance, cast_shadows=False
+            data.name, data.position, data.color, data.power, data.attenuation, data.max_distance, cast_shadows=False
         )
         return light
 
@@ -76,15 +60,7 @@ class LocalSpotLightYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        position = LPoint3(*data.position)
-        color = data.color
-        if len(color) == 3:
-            color = LColor(*color, 1)
-        else:
-            color = LColor(*color)
-        attenuation = LVector3(*data.attenuation)
-        direction = LVector3(*data.direction)
-        direction.normalize()
+        direction = data.direction.normalized()
         if data.shadows is not None:
             cast_shadows = True
             lens = data.shadows
@@ -93,10 +69,10 @@ class LocalSpotLightYamlParser(YamlModuleParser):
             lens = None
         light = LocalSpotLight(
             data.name,
-            position,
-            color,
+            data.position,
+            data.color,
             data.power,
-            attenuation,
+            data.attenuation,
             data.max_distance,
             (data.inner_cone, data.outer_cone),
             data.exponent,

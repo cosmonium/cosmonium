@@ -26,7 +26,7 @@ Defines Pydantic models for texture sources and configurations.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field
 

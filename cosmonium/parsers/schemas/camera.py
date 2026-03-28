@@ -26,11 +26,12 @@ Defines Pydantic models for camera controller types.
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class SurfaceFollowCameraConfig(ConfigBase):
@@ -45,4 +46,4 @@ class FixedCameraConfig(ConfigBase):
     """Configuration for a fixed-position camera controller."""
 
     type: Literal['fixed'] = Field(default='fixed', description="Camera controller type")
-    position: Optional[List[float]] = Field(None, description="Fixed camera position [x, y, z]")
+    position: Optional[Vector3Field] = Field(None, description="Fixed camera position [x, y, z]")

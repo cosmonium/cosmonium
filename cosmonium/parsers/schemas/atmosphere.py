@@ -26,11 +26,12 @@ Defines Pydantic models for different atmosphere types.
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class CelestiaAtmosphereConfig(ConfigBase):
@@ -41,9 +42,9 @@ class CelestiaAtmosphereConfig(ConfigBase):
     mie: float = Field(0.0, description="Mie scattering coefficient")
     mie_scale_height: float = Field(0.0, description="Mie scale height")
     mie_asymmetry: float = Field(0.0, description="Mie phase asymmetry")
-    rayleigh: Optional[List[float]] = Field(None, description="Rayleigh scattering coefficient [r, g, b]")
+    rayleigh: Optional[Vector3Field] = Field(None, description="Rayleigh scattering coefficient [r, g, b]")
     rayleigh_scale_height: float = Field(0.0, description="Rayleigh scale height")
-    absorption: Optional[List[float]] = Field(None, description="Absorption coefficient [r, g, b]")
+    absorption: Optional[Vector3Field] = Field(None, description="Absorption coefficient [r, g, b]")
     shape: Optional[Any] = Field(None, description="Atmosphere shape configuration")
 
 
@@ -76,7 +77,7 @@ class ONeilAtmosphereConfig(ConfigBase):
     height: Optional[float] = Field(160, description="Atmosphere height")
     rayleigh: Optional[float] = Field(0.0025, description="Rayleigh scattering coefficient")
     rayleigh_scale_depth: Optional[float] = Field(None, description="Rayleigh scale depth")
-    rayleigh_absorption: Optional[List[float]] = Field([0, 0, 0], description="Rayleigh absorption [r, g, b]")
+    rayleigh_absorption: Optional[Vector3Field] = Field([0, 0, 0], description="Rayleigh absorption [r, g, b]")
     mie_scale_depth: Optional[float] = Field(None, description="Mie scale depth")
     mie_alpha_coef: Optional[float] = Field(0, description="Mie alpha coefficient")
     mie_beta_coef: Optional[float] = Field(0.0015, description="Mie beta coefficient")

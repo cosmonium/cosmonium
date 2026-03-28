@@ -20,6 +20,9 @@
 
 """Tests for configuration schemas."""
 
+import pytest
+from panda3d.core import LColor, LPoint3d, LVector3d
+
 from cosmonium.parsers.schemas.appearance import TexturesAppearanceConfig
 from cosmonium.parsers.schemas.orbit import EllipticOrbitConfig, FixedOrbitConfig
 from cosmonium.parsers.schemas.rotation import FixedRotationConfig, UniformRotationConfig
@@ -38,7 +41,7 @@ class TestOrbitSchemas:
         }
         config = FixedOrbitConfig.model_validate(data)
         assert config.type == "fixed"
-        assert config.position == [0, 0, 0]
+        assert config.position == LPoint3d(0, 0, 0)
 
     def test_elliptic_orbit_valid(self):
         """Test valid elliptic orbit configuration."""
@@ -88,7 +91,7 @@ class TestRotationSchemas:
         config = FixedRotationConfig.model_validate(data)
         assert config.type == "fixed"
         assert config.angle == 90.0
-        assert config.axis == [0, 1, 0]
+        assert config.axis == LVector3d(0, 1, 0)
 
     def test_uniform_rotation_synchronous(self):
         """Test synchronous rotation flag."""
@@ -202,7 +205,7 @@ class TestSurfaceSchemas:
         }
         config = TexturesAppearanceConfig.model_validate(data)
         assert config.texture == "earth.jpg"
-        assert config.tint == [1, 0.5, 0.5]
+        assert config.tint == LColor(1.0, 0.5, 0.5, 1.0)
         assert config.transparency is True
 
     def test_surface_config_minimal(self):
@@ -257,3 +260,87 @@ class TestConfigBaseFeatures:
 
         # Should use the alias
         assert "body-class" in result
+
+
+class TestPandaFieldTypes:
+    """Test custom Pydantic field types for Panda3D math objects."""
+
+    # ------------------------------------------------------------------
+    # Vector3Field
+    # ------------------------------------------------------------------
+
+    def test_lvector3d_from_list(self):
+        """3-element list is accepted and stores 3 floats."""
+        config = FixedRotationConfig.model_validate({"type": "fixed", "axis": [0.0, 1.0, 0.0]})
+        assert config.axis == LVector3d(0.0, 1.0, 0.0)
+
+    def test_lvector3d_from_int_list(self):
+        """Integer elements are coerced to float."""
+        config = FixedRotationConfig.model_validate({"type": "fixed", "axis": [1, 0, 0]})
+        assert config.axis == LVector3d(1.0, 0.0, 0.0)
+
+    def test_lvector3d_wrong_length_raises(self):
+        """A list with the wrong number of elements must raise a validation error."""
+        with pytest.raises(Exception):
+            FixedRotationConfig.model_validate({"type": "fixed", "axis": [0, 1]})
+
+    def test_lvector3d_non_numeric_raises(self):
+        """Non-numeric elements must raise a validation error."""
+        with pytest.raises(Exception):
+            FixedRotationConfig.model_validate({"type": "fixed", "axis": ["a", "b", "c"]})
+
+    def test_lvector3d_none_preserved(self):
+        """Optional field with None input stays None."""
+        config = FixedRotationConfig.model_validate({"type": "fixed"})
+        assert config.axis is None
+
+    def test_lvector3d_serializes_to_list(self):
+        """model_dump() must return a plain list so configs can be round-tripped."""
+        config = FixedRotationConfig.model_validate({"type": "fixed", "axis": [0, 0, 1]})
+        result = config.model_dump()
+        assert isinstance(result["axis"], list)
+        assert result["axis"] == [0.0, 0.0, 1.0]
+
+    # ------------------------------------------------------------------
+    # Point3Field (via FixedOrbitConfig)
+    # ------------------------------------------------------------------
+
+    def test_lpoint3d_from_list(self):
+        """3-element list is accepted for a point field."""
+        config = FixedOrbitConfig.model_validate({"type": "fixed", "position": [1, 2, 3]})
+        assert config.position == LPoint3d(1.0, 2.0, 3.0)
+
+    def test_lpoint3d_wrong_length_raises(self):
+        with pytest.raises(Exception):
+            FixedOrbitConfig.model_validate({"type": "fixed", "position": [1, 2]})
+
+    # ------------------------------------------------------------------
+    # ColorField (via TexturesAppearanceConfig)
+    # ------------------------------------------------------------------
+
+    def test_lcolor_3_components_gets_alpha(self):
+        """A 3-element RGB list gets alpha=1.0 appended."""
+        config = TexturesAppearanceConfig.model_validate({"tint": [0.5, 0.3, 0.1]})
+        assert config.tint == LColor(0.5, 0.3, 0.1, 1.0)
+
+    def test_lcolor_4_components_preserved(self):
+        """A 4-element RGBA list is stored as-is."""
+        config = TexturesAppearanceConfig.model_validate({"tint": [0.5, 0.3, 0.1, 0.8]})
+        assert config.tint == LColor(0.5, 0.3, 0.1, 0.8)
+
+    def test_lcolor_wrong_length_raises(self):
+        """1 or 2-element inputs are rejected."""
+        with pytest.raises(Exception):
+            TexturesAppearanceConfig.model_validate({"tint": [1.0, 0.5]})
+
+    def test_lcolor_5_components_raises(self):
+        """5-element input is rejected."""
+        with pytest.raises(Exception):
+            TexturesAppearanceConfig.model_validate({"tint": [1.0, 0.5, 0.2, 1.0, 0.5]})
+
+    def test_lcolor_serializes_to_list(self):
+        """model_dump() must return a plain 4-element list."""
+        config = TexturesAppearanceConfig.model_validate({"tint": [1, 0, 0]})
+        result = config.model_dump()
+        assert isinstance(result["tint"], list)
+        assert result["tint"] == [1.0, 0.0, 0.0, 1.0]

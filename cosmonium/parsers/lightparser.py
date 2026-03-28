@@ -18,7 +18,6 @@
 
 
 from ..lights import InfiniteSun
-
 from .yamlparser import YamlModuleParser
 
 

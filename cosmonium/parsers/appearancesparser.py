@@ -59,7 +59,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         source_parser = TextureSourceYamlParser()
         appearance = Appearance()
         if data.tint is not None:
-            tint = LColor(*data.tint)
+            tint = data.tint
         else:
             tint = None
         transparency = data.transparency
@@ -101,7 +101,7 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             # TODO: missing texture offset
             appearance.set_normal_map(normal_map, context=YamlModuleParser.context)
         if data.specular_color is not None:
-            appearance.specularColor = LColor(*data.specular_color)
+            appearance.specularColor = data.specular_color
             appearance.shininess = data.shininess
             if data.specularmap is not None:
                 texture_source, texture_offset = source_parser.decode(data.specularmap, patched_shape=patched_shape)
@@ -114,9 +114,9 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             # TODO: missing texture offset
             appearance.set_bump_map(bump_map, data.bump_height, context=YamlModuleParser.context)
         if data.diffuse_color is not None:
-            appearance.diffuseColor = LColor(*data.diffuse_color)
+            appearance.diffuseColor = data.diffuse_color
         if data.emission_color is not None:
-            appearance.emissionColor = LColor(*data.emission_color)
+            appearance.emissionColor = data.emission_color
         elif data.night_texture is not None or data.emission_texture is not None:
             appearance.emissionColor = LColor(1, 1, 1, 1)
         appearance.set_roughness(data.roughness)

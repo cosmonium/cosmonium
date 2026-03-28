@@ -20,21 +20,28 @@
 
 from math import sqrt
 
+from .. import settings
 from ..catalogs import objectsDB
-from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
-from ..components.elements.surfaces import FlatSurface, HeightmapFlatSurface, HeightmapSurface
-from ..components.elements.surface_categories import surfaceCategoryDB, SurfaceCategory
+from ..components.elements.surface_categories import SurfaceCategory, surfaceCategoryDB
+from ..components.elements.surfaces import (
+    EllipsoidFlatSurface,
+    FlatSurface,
+    HeightmapFlatSurface,
+    HeightmapSurface,
+    MeshSurface,
+)
 from ..heightmap import heightmapRegistry
 from ..opengl import OpenGLConfig
-from ..patchedshapes.lodcontrol import VertexSizeLodControl, VertexSizeMaxDistanceLodControl
-from ..patchedshapes.lodcontrol import TextureOrVertexSizeLodControl
-from ..patchedshapes.tiles import TileFactory, GpuPatchTerrainLayerFactory, MeshTerrainLayerFactory
+from ..patchedshapes.lodcontrol import (
+    TextureOrVertexSizeLodControl,
+    VertexSizeLodControl,
+    VertexSizeMaxDistanceLodControl,
+)
+from ..patchedshapes.tiles import GpuPatchTerrainLayerFactory, MeshTerrainLayerFactory, TileFactory
 from ..shaders.rendering import RenderingShader
 from ..shaders.tessellation import ConstantTessellationControl
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..shapes.mesh import MeshShape
-from .. import settings
-
 from .appearancesparser import AppearanceYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .objectparser import ObjectYamlParser

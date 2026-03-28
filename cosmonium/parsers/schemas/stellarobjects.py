@@ -31,6 +31,7 @@ from typing import Any, List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import ColorField, Point3Field, Vector3Field
 
 
 class StellarObjectConfig(ConfigBase):
@@ -39,7 +40,7 @@ class StellarObjectConfig(ConfigBase):
     name: Union[str, List[str]] = Field(..., description="Object name(s)")
     parent: Optional[str] = Field(None, description="Parent object name")
     body_class: Optional[str] = Field(None, description="Body classification")
-    point_color: Optional[List[float]] = Field(None, description="Point color [r, g, b]")
+    point_color: Optional[ColorField] = Field(None, description="Point color [r, g, b] or [r, g, b, a]")
 
     # Motion - can be references (strings) or inline dicts
     orbit: Optional[Union[str, dict, Any]] = Field(None, description="Orbit configuration or reference")
@@ -54,7 +55,7 @@ class StellarBodyConfig(StellarObjectConfig):
     radius: Optional[float] = Field(None, description="Body radius")
     diameter: Optional[float] = Field(None, description="Body diameter")
     ellipticity: Optional[float] = Field(None, description="Body oblateness/ellipticity")
-    axes: Optional[List[float]] = Field(None, description="Body axes [a, b, c]")
+    axes: Optional[Vector3Field] = Field(None, description="Body axes [a, b, c]")
 
     # Appearance
     surfaces: Optional[List[Union[str, dict, Any]]] = Field(None, description="Surface configurations")
@@ -142,10 +143,10 @@ class GalaxyConfig(StellarObjectConfig):
     appearance: dict = Field(default_factory=dict, description="Galaxy appearance configuration")
 
     # Position and scale
-    position: Optional[List[float]] = Field(None, description="Galaxy position")
+    position: Optional[Point3Field] = Field(None, description="Galaxy position")
     distance: Optional[float] = Field(None, description="Distance from observer")
     size: Optional[float] = Field(None, description="Galaxy size")
-    scale: Optional[List[float]] = Field(None, description="Galaxy scale")
+    scale: Optional[Vector3Field] = Field(None, description="Galaxy scale")
 
     # Hierarchical structure
     children: Optional[List[Any]] = Field(None, description="Child object configurations")

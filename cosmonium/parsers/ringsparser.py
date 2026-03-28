@@ -21,7 +21,6 @@
 from panda3d.core import LColor
 
 from ..objects.rings import StellarRings
-
 from .elementsparser import RingsYamlParser
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3d, LQuaterniond
+from panda3d.core import LQuaterniond, LVector3d
 
 from ..shapes.actor import ActorShape
 from .schemas.actor import ActorShapeConfig
@@ -34,7 +34,7 @@ class ActorShapeYamlParser(YamlModuleParser):
         config = ActorShapeConfig.model_validate(data)
         auto_scale_mesh = config.auto_scale
         scale = None if auto_scale_mesh else config.scale
-        offset = LVector3d(*config.offset) if config.offset is not None else LVector3d()
+        offset = config.offset if config.offset is not None else LVector3d()
         if isinstance(scale, (int, float)):
             scale = LVector3d(scale)
         elif isinstance(scale, list):

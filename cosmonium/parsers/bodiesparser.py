@@ -54,8 +54,7 @@ class ReflectiveYamlParser(YamlModuleParser):
         clouds = CloudsYamlParser.decode(data.clouds)
         point_color = data.point_color
         if point_color is None:
-            point_color = [1, 1, 1]
-        point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
+            point_color = LColor(1, 1, 1, 1)
         frame = FrameYamlParser.decode(data.frame, actual_parent)
         if data.controller is None:
             orbit = OrbitYamlParser.decode(data.orbit, frame, actual_parent)

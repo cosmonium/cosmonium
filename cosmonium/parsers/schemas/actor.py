@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class ActorShapeConfig(ConfigBase):
@@ -43,7 +44,7 @@ class ActorShapeConfig(ConfigBase):
     panda: bool = Field(True, description="Use Panda3D native model format")
     auto_scale: bool = Field(False, description="Automatically scale mesh to target radius")
     auto_center: bool = Field(False, description="Automatically center mesh at origin")
-    offset: Optional[List[float]] = Field(None, description="Mesh positional offset [x, y, z]")
+    offset: Optional[Vector3Field] = Field(None, description="Mesh positional offset [x, y, z]")
     rotation: Optional[List[float]] = Field(
         None, description="Mesh rotation as HPR (3 values) or quaternion (4 values)"
     )

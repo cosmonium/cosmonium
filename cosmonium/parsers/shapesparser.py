@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LPoint3d, LQuaterniond, LVector3d
+from panda3d.core import LQuaterniond, LVector3d
 
 from ..astro import units
 from ..patchedshapes.patchedshapes import (
@@ -100,10 +100,8 @@ class MeshYamlParser(YamlModuleParser):
         panda = data.panda
         auto_scale_mesh = data.auto_scale
         auto_center_mesh = data.auto_center
-        offset = data.offset
+        offset = data.offset if data.offset is not None else LVector3d()
         rotation_data = data.rotation
-        if offset is None:
-            offset = LPoint3d()
         scale = data.scale
         scale_units = DistanceUnitsYamlParser.decode(data.scale_units, units.m)
         if scale is not None:
@@ -117,8 +115,6 @@ class MeshYamlParser(YamlModuleParser):
                 scale = LVector3d(radius)
             else:
                 scale = LVector3d(scale_units)
-        if offset is not None:
-            offset = LVector3d(*offset)
         if rotation_data is not None:
             if len(rotation_data) == 3:
                 rotation = LQuaterniond()

@@ -21,13 +21,20 @@
 from panda3d.core import LColor
 
 from ..astro import units
-from ..procedural.texturecontrol import HeightTextureControl, HeightTextureControlEntry, SimpleTextureControl
-from ..procedural.texturecontrol import SlopeTextureControl, SlopeTextureControlEntry
-from ..procedural.texturecontrol import BiomeControl, BiomeTextureControlEntry, HeightColorMap, ColormapLayer
-from ..procedural.texturecontrol import MixTextureControl
-
+from ..procedural.texturecontrol import (
+    BiomeControl,
+    BiomeTextureControlEntry,
+    ColormapLayer,
+    HeightColorMap,
+    HeightTextureControl,
+    HeightTextureControlEntry,
+    MixTextureControl,
+    SimpleTextureControl,
+    SlopeTextureControl,
+    SlopeTextureControlEntry,
+)
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import YamlParser, YamlModuleParser
+from .yamlparser import YamlModuleParser, YamlParser
 
 
 class HeightColorControlYamlParser(YamlParser):

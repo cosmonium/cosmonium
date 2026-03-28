@@ -18,7 +18,6 @@
 
 
 from ..scene.sceneworld import FlatTerrainWorld
-
 from .populatorsparser import PopulatorYamlParser
 from .surfacesparser import FlatSurfaceParser
 from .yamlparser import YamlModuleParser

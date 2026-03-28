@@ -18,7 +18,6 @@
 
 
 from ..scattering.fog.fog import FogScattering
-
 from .scatteringparser import ScatteringYamlParser
 from .yamlparser import YamlParser
 

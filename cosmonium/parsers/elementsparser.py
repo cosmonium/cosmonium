@@ -21,7 +21,7 @@
 from .. import settings
 from ..components.elements.clouds import Clouds
 from ..components.elements.rings import Rings
-from ..patchedshapes.lodcontrol import VertexSizeLodControl, TextureOrVertexSizeLodControl
+from ..patchedshapes.lodcontrol import TextureOrVertexSizeLodControl, VertexSizeLodControl
 from ..shaders.rendering import RenderingShader
 from .appearancesparser import AppearanceYamlParser
 from .schemas.elements import CloudsConfig, RingsConfig

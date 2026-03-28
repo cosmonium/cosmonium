@@ -57,14 +57,10 @@ class FlatSurfaceControllerYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data, anchor):
-        position = data.position
+        # data.position is already an LPoint3f or list[float] from Point3Field.
+        # FlatSurfaceMovementController accepts any 3-component position.
+        position = LPoint3d(*data.position) if data.position is not None else LPoint3d(0, 0, 0)
         altitude = data.altitude
-        if position is not None and len(position) == 3:
-            position = LPoint3d(*position)
-        elif position is not None:
-            position = LPoint3d(*position, 0)
-        else:
-            position = LPoint3d(0, 0, 0)
         # Terrain is not known at this stage.
         return FlatSurfaceMovementController(anchor, None, position, altitude)
 

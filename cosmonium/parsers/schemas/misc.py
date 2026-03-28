@@ -32,6 +32,7 @@ from typing import Any, List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Point3Field
 
 
 class ScriptControllerConfig(ConfigBase):
@@ -57,7 +58,7 @@ class FlatSurfaceControllerConfig(ConfigBase):
     """Configuration for a flat terrain surface movement controller."""
 
     type: Literal['flat-surface'] = Field(default='flat-surface', description="Controller type")
-    position: Optional[List[float]] = Field([0, 0, 0], description="Initial position [x, y, z]")
+    position: Optional[Point3Field] = Field([0, 0, 0], description="Initial position [x, y, z]")
     altitude: float = Field(0.0, description="Initial altitude above terrain")
 
 

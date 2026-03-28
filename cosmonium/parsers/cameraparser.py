@@ -40,10 +40,7 @@ class FixedCameraControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
         camera_controller = FixedCameraController()
-        if data.position is not None:
-            position = LVector3d(*data.position)
-        else:
-            position = LVector3d(0)
+        position = data.position if data.position is not None else LVector3d(0)
         camera_controller.set_camera_hints(position=position)
         return camera_controller
 

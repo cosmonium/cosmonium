@@ -29,18 +29,19 @@ Defines Pydantic models for various orbit types including:
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Point3Field
 
 
 class FixedOrbitConfig(ConfigBase):
     """Configuration for a fixed position orbit."""
 
     type: Literal['fixed'] = Field(default='fixed', description="Orbit type identifier")
-    position: Optional[List[float]] = Field(None, description="Fixed position coordinates [x, y, z]")
+    position: Optional[Point3Field] = Field(None, description="Fixed position coordinates [x, y, z]")
     ra: Optional[float] = Field(None, description="Right ascension in degrees")
     ra_units: Optional[str] = Field('Deg', description="Units for right ascension")
     de: Optional[float] = Field(None, description="Declination in degrees")
@@ -57,7 +58,7 @@ class GlobalPositionConfig(ConfigBase):
     """Configuration for a global position orbit."""
 
     type: Literal['global'] = Field(default='global', description="Orbit type identifier")
-    position: Optional[List[float]] = Field(default_factory=lambda: [0, 0, 0], description="Global position [x, y, z]")
+    position: Optional[Point3Field] = Field(default_factory=lambda: [0, 0, 0], description="Global position [x, y, z]")
     position_units: Optional[str] = Field('pc', description="Units for position")
     frame: Optional[Union[str, dict]] = Field(None, description="Reference frame")
 

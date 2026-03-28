@@ -18,11 +18,14 @@
 #
 
 
-from ..procedural.raymarching import SDFRayMarchingAppearance, BulgeRayMarchingAppearance
-from ..procedural.raymarching import VolumetricDensityRayMarchingAppearance
-from ..procedural.raymarching import VolumetricDensityEmissiveRayMarchingAppearance
-from ..procedural.raymarching import SDFPointShape, SDFSphereShape
-
+from ..procedural.raymarching import (
+    BulgeRayMarchingAppearance,
+    SDFPointShape,
+    SDFRayMarchingAppearance,
+    SDFSphereShape,
+    VolumetricDensityEmissiveRayMarchingAppearance,
+    VolumetricDensityRayMarchingAppearance,
+)
 from .appearancesparser import AppearanceYamlParser
 from .noiseparser import NoiseYamlParser
 from .yamlparser import YamlModuleParser

@@ -29,11 +29,12 @@ Defines Pydantic models for various rotation types including:
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class UniformRotationConfig(ConfigBase):
@@ -75,7 +76,7 @@ class FixedRotationConfig(ConfigBase):
 
     # Rotation axis and angle
     angle: Optional[float] = Field(None, description="Rotation angle in degrees")
-    axis: Optional[List[float]] = Field(None, description="Rotation axis vector [x, y, z]")
+    axis: Optional[Vector3Field] = Field(None, description="Rotation axis vector [x, y, z]")
 
     # Alternative: orientation parameters
     ra: Optional[float] = Field(None, description="Right ascension of axis in degrees")

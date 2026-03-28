@@ -32,6 +32,7 @@ from typing import List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import Vector3Field
 
 
 class PatchedShapeConfig(ConfigBase):
@@ -64,7 +65,7 @@ class MeshShapeConfig(ConfigBase):
     panda: bool = Field(False, description="Use Panda3D mesh format")
     auto_scale: bool = Field(False, description="Auto-scale mesh to radius")
     auto_center: bool = Field(False, description="Auto-center mesh")
-    offset: Optional[List[float]] = Field(None, description="Mesh offset [x, y, z]")
+    offset: Optional[Vector3Field] = Field(None, description="Mesh offset [x, y, z]")
     rotation: Optional[List[float]] = Field(None, description="Mesh rotation (HPR or quaternion)")
     scale: Optional[Union[float, List[float]]] = Field(None, description="Mesh scale factor or [x, y, z]")
     scale_units: Optional[str] = Field(None, description="Units for scale")

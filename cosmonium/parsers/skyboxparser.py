@@ -20,7 +20,6 @@
 from ..components.elements.skybox import SkyBox
 from ..shaders.lighting.base import AtmosphereLightingModel
 from ..shaders.rendering import RenderingShader
-
 from .yamlparser import YamlModuleParser
 
 

@@ -116,7 +116,7 @@ class FixedPositionYamlParser(YamlModuleParser):
             position = orientation.xform(LPoint3d(0, 0, distance * distance_units))
             frame = AbsoluteReferenceFrame()  # TODO: This should be J2000BarycentricEclipticReferenceFrame
         else:
-            position = LPoint3d(*position)
+            position = data.position
             global_pos = data.global_
             if data.frame is not None or frame is None:
                 frame = FrameYamlParser.decode(data.frame if data.frame else 'j2000ecliptic', parent)
@@ -129,7 +129,7 @@ class FixedPositionYamlParser(YamlModuleParser):
 class GlobalPositionYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, frame=None, parent=None):
-        position = LPoint3d(*data.position)
+        position = data.position
         position_units = DistanceUnitsYamlParser.decode(data.position_units)
         if data.frame is not None or frame is None:
             frame = FrameYamlParser.decode(data.frame if data.frame else 'j2000ecliptic', parent)
