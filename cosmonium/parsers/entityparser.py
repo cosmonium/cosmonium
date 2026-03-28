@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 from ..entities.entity import Entity
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
-
 from .appearancesparser import AppearanceYamlParser
+from .schemas.entity import EntityConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .yamlparser import YamlModuleParser
@@ -33,17 +33,17 @@ class EntityYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        name = data.get('name')
-        shape, extra = ShapeYamlParser.decode(data.get('shape'))
-        appearance_data = data.get('appearance')
+        config = EntityConfig.model_validate(data)
+        shape, extra = ShapeYamlParser.decode(config.shape)
+        appearance_data = config.appearance
         if appearance_data is None:
             if isinstance(shape, MeshShape):
                 appearance_data = 'model'
             else:
                 appearance_data = 'textures'
         appearance = AppearanceYamlParser.decode(appearance_data)
-        lighting_model = LightingModelYamlParser.decode(data.get('lighting-model'), appearance)
+        lighting_model = LightingModelYamlParser.decode(config.lighting_model, appearance)
         shader = RenderingShader(lighting_model=lighting_model)
-        entity = Entity(name, shape, appearance, shader)
-        entity.physics = data.get('physics')
+        entity = Entity(config.name, shape, appearance, shader)
+        entity.physics = config.physics
         return entity

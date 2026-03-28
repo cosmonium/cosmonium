@@ -26,7 +26,7 @@ Defines Pydantic models for texture sources and configurations.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from pydantic import Field
 
@@ -46,5 +46,5 @@ class TextureDictionaryConfig(ConfigBase):
 
     srgb: Optional[bool] = Field(None, description="Use sRGB color space")
     entries: Dict[str, Any] = Field(default_factory=dict, description="Dictionary entries")
-    scale: Optional[float] = Field(None, description="Texture scale")
+    scale: Optional[float | List[float]] = Field(None, description="Texture scale")
     tiling: Optional[Any] = Field(None, description="Tiling configuration")

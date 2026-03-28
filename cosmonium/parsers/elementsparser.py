@@ -18,13 +18,13 @@
 #
 
 
-from ..components.elements.rings import Rings
+from .. import settings
 from ..components.elements.clouds import Clouds
+from ..components.elements.rings import Rings
 from ..patchedshapes.lodcontrol import VertexSizeLodControl, TextureOrVertexSizeLodControl
 from ..shaders.rendering import RenderingShader
-from .. import settings
-
 from .appearancesparser import AppearanceYamlParser
+from .schemas.elements import CloudsConfig, RingsConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .yamlparser import YamlModuleParser
@@ -35,9 +35,10 @@ class CloudsYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        height = float(data.get('height'))
-        shape, extra = ShapeYamlParser.decode(data.get('shape'), use_skirt=False)
-        appearance = AppearanceYamlParser.decode(data.get('appearance'))
+        config = CloudsConfig.model_validate(data)
+        height = float(config.height)
+        shape, extra = ShapeYamlParser.decode(config.shape, use_skirt=False)
+        appearance = AppearanceYamlParser.decode(config.appearance)
         if shape.patchable:
             if appearance.texture is None or appearance.texture.source.procedural:
                 shape.set_lod_control(
@@ -61,11 +62,9 @@ class RingsYamlParser(YamlModuleParser):
     def decode(cls, data):
         if data is None:
             return None
-        inner_radius = data.get('inner-radius')
-        outer_radius = data.get('outer-radius')
-        lighting_model = data.get('lighting-model')
-        appearance = AppearanceYamlParser.decode(data.get('appearance'), patched_shape=False)
-        lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
+        config = RingsConfig.model_validate(data)
+        appearance = AppearanceYamlParser.decode(config.appearance, patched_shape=False)
+        lighting_model = LightingModelYamlParser.decode(config.lighting_model, appearance)
         shader = RenderingShader(lighting_model=lighting_model)
-        rings = Rings(inner_radius, outer_radius, appearance, shader)
+        rings = Rings(config.inner_radius, config.outer_radius, appearance, shader)
         return rings

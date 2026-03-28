@@ -24,6 +24,7 @@ from ..procedural.populator import CpuTerrainPopulator, GpuTerrainPopulator, Ran
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 from .appearancesparser import AppearanceYamlParser
+from .schemas.populator import PopulatorConfig
 from .shadersparser import VertexControlYamlParser
 from .shapesparser import ShapeYamlParser
 from .yamlparser import TypedYamlParser
@@ -44,36 +45,32 @@ class PlacerYamlParser(TypedYamlParser):
 class PopulatorYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
+        config = PopulatorConfig.model_validate(data)
         if OpenGLConfig.hardware_instancing:
-            default = 'gpu'
+            populator_type = config.type or 'gpu'
         else:
-            default = 'cpu'
-        (populator_type, populator_data) = cls.get_type_and_data(data, default)
-        populator = None
-        density = data.get('density', 250)
-        density /= 1000000.0
-        max_instances = data.get('max-instances', 1000)
-        min_lod = data.get('min-lod', 0)
-        shape, extra = ShapeYamlParser.decode(populator_data.get('shape', None))
-        appearance = populator_data.get('appearance', None)
+            populator_type = config.type or 'cpu'
+        density = config.density / 1000000.0
+        shape, extra = ShapeYamlParser.decode(config.shape)
+        appearance = config.appearance
         if appearance is None:
             if isinstance(shape, MeshShape):
                 appearance = 'model'
             else:
                 appearance = 'textures'
         appearance = AppearanceYamlParser.decode(appearance)
-        vertex_control = VertexControlYamlParser.decode(populator_data.get('vertex', None))
-        shader = RenderingShader(  # lighting_model=lighting_model,
-            # scattering=scattering,
+        vertex_control = VertexControlYamlParser.decode(config.vertex)
+        shader = RenderingShader(
             vertex_control=vertex_control,
             use_model_texcoord=not extra.get('create-uv', False),
         )
         object_template = Entity('template', shape=shape, appearance=appearance, shader=shader)
-        placer = PlacerYamlParser.decode(populator_data.get('placer', None))
+        placer = PlacerYamlParser.decode(config.placer)
         if populator_type == 'cpu':
-            populator = CpuTerrainPopulator(object_template, density, max_instances, placer, min_lod)
+            populator = CpuTerrainPopulator(object_template, density, config.max_instances, placer, config.min_lod)
         elif populator_type == 'gpu':
-            populator = GpuTerrainPopulator(object_template, density, max_instances, placer, min_lod)
+            populator = GpuTerrainPopulator(object_template, density, config.max_instances, placer, config.min_lod)
         else:
-            print("Unknown populator", populator_type, populator_data)
+            print("Unknown populator", populator_type, data)
+            populator = None
         return populator

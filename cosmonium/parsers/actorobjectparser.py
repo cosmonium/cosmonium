@@ -21,9 +21,9 @@
 from ..entities.entity import Entity
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
-
 from .actorshapeparser import ActorShapeYamlParser
 from .appearancesparser import AppearanceYamlParser
+from .schemas.actor import ActorObjectConfig
 from .shadersparser import LightingModelYamlParser
 from .yamlparser import YamlModuleParser
 
@@ -32,18 +32,16 @@ class ActorObjectYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        name = data.get('name')
-        shape = data.get('shape')
-        appearance = data.get('appearance')
-        lighting_model = data.get('lighting-model')
-        shape, extra = ActorShapeYamlParser.decode(shape)
+        config = ActorObjectConfig.model_validate(data)
+        shape, extra = ActorShapeYamlParser.decode(config.shape)
+        appearance = config.appearance
         if appearance is None:
             if isinstance(shape, MeshShape):
                 appearance = 'model'
             else:
                 appearance = 'textures'
         appearance = AppearanceYamlParser.decode(appearance)
-        lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
+        lighting_model = LightingModelYamlParser.decode(config.lighting_model, appearance)
         shader = RenderingShader(lighting_model=lighting_model, use_model_texcoord=not extra.get('create-uv', False))
-        actor_object = Entity(name, shape=shape, appearance=appearance, shader=shader)
+        actor_object = Entity(config.name, shape=shape, appearance=appearance, shader=shader)
         return actor_object

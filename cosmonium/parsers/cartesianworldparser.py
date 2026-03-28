@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from ..scene.sceneworld import CartesianWorld
 from .controllersparser import ControllerYamlParser
 from .entityparser import EntityYamlParser
 from .locallightparser import LocalLightYamlParser
+from .schemas.world import CartesianWorldConfig
 from .yamlparser import YamlModuleParser
 
 
@@ -30,18 +31,17 @@ class CartesianWorldYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name')
-        world = CartesianWorld(name)
-        controller_data = data.get('controller')
-        if controller_data is not None:
-            controller = ControllerYamlParser.decode(controller_data, world.anchor)
+        config = CartesianWorldConfig.model_validate(data)
+        world = CartesianWorld(config.name)
+        if config.controller is not None:
+            controller = ControllerYamlParser.decode(config.controller, world.anchor)
             world.set_controller(controller)
-        for entity_data in data.get('entities', []):
+        for entity_data in config.entities:
             if entity_data.get('disabled'):
                 continue
             entity = EntityYamlParser.decode(entity_data)
             world.add_component(entity)
-        for light_data in data.get('lights', []):
+        for light_data in config.lights:
             if light_data.get('disabled'):
                 continue
             light = LocalLightYamlParser.decode(light_data)

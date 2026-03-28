@@ -21,6 +21,7 @@
 from panda3d.core import LVector3d, LQuaterniond
 
 from ..shapes.actor import ActorShape
+from .schemas.actor import ActorShapeConfig
 from .yamlparser import YamlModuleParser
 
 
@@ -30,25 +31,15 @@ class ActorShapeYamlParser(YamlModuleParser):
     def decode(cls, data):
         if isinstance(data, str):
             data = {'model': data}
-        model = data.get('model')
-        animations = data.get('animations', {})
-        panda = data.get('panda', True)
-        auto_scale_mesh = data.get('auto-scale', False)
-        auto_center_mesh = data.get('auto-center', False)
-        offset = data.get('offset', None)
-        rotation_data = data.get('rotation', None)
-        if not auto_scale_mesh:
-            scale = data.get('scale', None)
-        else:
-            scale = None
-        if offset is not None:
-            offset = LVector3d(*offset)
-        else:
-            offset = LVector3d()
+        config = ActorShapeConfig.model_validate(data)
+        auto_scale_mesh = config.auto_scale
+        scale = None if auto_scale_mesh else config.scale
+        offset = LVector3d(*config.offset) if config.offset is not None else LVector3d()
         if isinstance(scale, (int, float)):
             scale = LVector3d(scale)
         elif isinstance(scale, list):
             scale = LVector3d(*scale)
+        rotation_data = config.rotation
         if rotation_data is not None:
             if len(rotation_data) == 3:
                 rotation = LQuaterniond()
@@ -57,19 +48,17 @@ class ActorShapeYamlParser(YamlModuleParser):
                 rotation = LQuaterniond(*rotation_data)
         else:
             rotation = None
-        flatten = data.get('flatten', True)
-        attribution = data.get('attribution', None)
         shape = ActorShape(
-            model,
-            animations,
+            config.model,
+            config.animations,
             offset,
             rotation,
             scale,
             auto_scale_mesh,
-            auto_center_mesh,
-            flatten,
-            panda,
-            attribution,
+            config.auto_center,
+            config.flatten,
+            config.panda,
+            config.attribution,
             context=YamlModuleParser.context,
         )
         return shape, {}

@@ -18,23 +18,25 @@
 #
 
 
-from panda3d.bullet import BulletCapsuleShape, Z_up
+"""
+World configuration schemas.
 
-from .schemas.physics import BulletCapsuleShapeConfig
-from .yamlparser import TypedYamlParser, YamlModuleParser
+Defines Pydantic models for Cartesian world configurations.
+"""
 
+from __future__ import annotations
 
-class BulletCapsuleShapeYamlParser(YamlModuleParser):
+from typing import Any, List, Optional
 
-    @classmethod
-    def decode(cls, data):
-        config = BulletCapsuleShapeConfig.model_validate(data)
-        shape = BulletCapsuleShape(config.width, config.height - 2 * config.width, Z_up)
-        return shape
+from pydantic import Field
 
-
-class BulletPhysicsShapeYamlParser(TypedYamlParser):
-    """Parser for Bullet physics shapes."""
+from .base import ConfigBase
 
 
-BulletPhysicsShapeYamlParser.register('capsule', BulletCapsuleShapeYamlParser, BulletCapsuleShapeConfig)
+class CartesianWorldConfig(ConfigBase):
+    """Configuration for a Cartesian (non-stellar) world."""
+
+    name: Optional[str] = Field(None, description="World name")
+    controller: Optional[Any] = Field(None, description="Movement controller configuration")
+    entities: List[Any] = Field(default_factory=list, description="List of entity configurations")
+    lights: List[Any] = Field(default_factory=list, description="List of local light configurations")

@@ -22,6 +22,7 @@ from panda3d.core import LVector3d
 
 from ..camera.fixed_controller import FixedCameraController
 from ..camera.follow_controller import SurfaceFollowCameraController
+from .schemas.camera import FixedCameraConfig, SurfaceFollowCameraConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -29,10 +30,8 @@ class SurfaceFollowCameraControllerYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        distance = data.get('distance', 5)
-        max_ = data.get('max', 1.5)
         camera_controller = SurfaceFollowCameraController()
-        camera_controller.set_camera_hints(distance=distance, max=max_)
+        camera_controller.set_camera_hints(distance=data.distance, max=data.max_)
         return camera_controller
 
 
@@ -41,8 +40,8 @@ class FixedCameraControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
         camera_controller = FixedCameraController()
-        if 'position' in data:
-            position = LVector3d(*data.get('position'))
+        if data.position is not None:
+            position = LVector3d(*data.position)
         else:
             position = LVector3d(0)
         camera_controller.set_camera_hints(position=position)
@@ -54,5 +53,7 @@ class CameraControllerYamlParser(TypedYamlParser):
 
 
 def register_camera_parsers():
-    CameraControllerYamlParser.register('surface-follow', SurfaceFollowCameraControllerYamlParser)
-    CameraControllerYamlParser.register('fixed', FixedCameraControllerYamlParser)
+    CameraControllerYamlParser.register(
+        'surface-follow', SurfaceFollowCameraControllerYamlParser, SurfaceFollowCameraConfig
+    )
+    CameraControllerYamlParser.register('fixed', FixedCameraControllerYamlParser, FixedCameraConfig)

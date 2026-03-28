@@ -20,6 +20,7 @@
 
 from panda3d.core import CollisionCapsule
 
+from .schemas.physics import CollisionCapsuleShapeConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -27,9 +28,8 @@ class CollisionCapsuleShapeYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        width = data.get('width', 0.5)
-        height = data.get('height', 1.8)
-        shape = CollisionCapsule(0, 0, height * 0.1, 0, 0, height, width)
+        config = CollisionCapsuleShapeConfig.model_validate(data)
+        shape = CollisionCapsule(0, 0, config.height * 0.1, 0, 0, config.height, config.width)
         return shape
 
 
@@ -37,4 +37,4 @@ class CollisionShapeYamlParser(TypedYamlParser):
     """Parser for collision shapes."""
 
 
-CollisionShapeYamlParser.register('capsule', CollisionCapsuleShapeYamlParser)
+CollisionShapeYamlParser.register('capsule', CollisionCapsuleShapeYamlParser, CollisionCapsuleShapeConfig)

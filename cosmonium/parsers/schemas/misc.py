@@ -34,6 +34,33 @@ from pydantic import Field
 from .base import ConfigBase
 
 
+class ScriptControllerConfig(ConfigBase):
+    """Configuration for a script-based movement controller."""
+
+    type: Literal['script'] = Field(default='script', description="Controller type")
+    file: str = Field(..., description="Path to the controller script module")
+
+
+class SurfaceControllerConfig(ConfigBase):
+    """Configuration for a spherical surface movement controller."""
+
+    type: Literal['surface'] = Field(default='surface', description="Controller type")
+    long: float = Field(0.0, description="Initial longitude")
+    long_units: str = Field('Deg', description="Units for longitude")
+    lat: float = Field(0.0, description="Initial latitude")
+    lat_units: str = Field('Deg', description="Units for latitude")
+    altitude: float = Field(0.0, description="Initial altitude above surface")
+    altitude_units: str = Field('m', description="Units for altitude")
+
+
+class FlatSurfaceControllerConfig(ConfigBase):
+    """Configuration for a flat terrain surface movement controller."""
+
+    type: Literal['flat-surface'] = Field(default='flat-surface', description="Controller type")
+    position: Optional[List[float]] = Field([0, 0, 0], description="Initial position [x, y, z]")
+    altitude: float = Field(0.0, description="Initial altitude above terrain")
+
+
 class ShipConfig(ConfigBase):
     """Configuration for ships and cockpits."""
 

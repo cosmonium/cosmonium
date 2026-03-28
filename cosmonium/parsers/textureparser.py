@@ -22,6 +22,7 @@ from ..appearances import TexturesBlock
 from ..procedural.appearances import TexturesDictionary
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
 from ..textures import NormalMapTexture, OcclusionMapTexture, SurfaceTexture
+from .schemas.texture import TextureDictionaryConfig
 from .texturesourceparser import TextureSourceYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
@@ -91,10 +92,11 @@ class TextureDictionaryYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
+        config = TextureDictionaryConfig.model_validate(data)
         entries = {}
-        srgb = data.get('srgb')
-        for name, entry in data.get('entries', {}).items():
+        srgb = config.srgb
+        for name, entry in config.entries.items():
             entries[name] = cls.decode_textures_dictionary_entry(entry, srgb)
-        scale = data.get('scale')
-        tiling = TextureTilingYamlParser.decode(data.get('tiling'))
+        scale = config.scale
+        tiling = TextureTilingYamlParser.decode(config.tiling)
         return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
