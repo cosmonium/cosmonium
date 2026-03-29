@@ -34,7 +34,7 @@ from typing import Literal, Optional
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import Vector3Field
+from .types import AngleDegField, TimeYearField, Vector3Field
 
 
 class UniformRotationConfig(ConfigBase):
@@ -43,26 +43,27 @@ class UniformRotationConfig(ConfigBase):
     type: Literal['uniform'] = Field(default='uniform', description="Rotation type identifier")
 
     # Rotation parameters
-    period: Optional[float] = Field(None, description="Rotation period")
-    period_units: Optional[str] = Field('Year', description="Units for period")
+    period: Optional[TimeYearField] = Field(None, description="Rotation period (float in years, or [value, unit])")
 
     synchronous: Optional[bool] = Field(False, description="Whether rotation is synchronous with orbit")
 
     # Orientation parameters
-    inclination: Optional[float] = Field(0.0, description="Axial inclination in degrees")
-    inclination_units: Optional[str] = Field('Deg', description="Units for inclination")
+    inclination: Optional[AngleDegField] = Field(
+        0.0, description="Axial inclination (float in degrees, or [value, unit])"
+    )
+    ascending_node: Optional[AngleDegField] = Field(
+        0.0, description="Ascending node (float in degrees, or [value, unit])"
+    )
 
-    ascending_node: Optional[float] = Field(0.0, description="Ascending node in degrees")
-    ascending_node_units: Optional[str] = Field('Deg', description="Units for ascending node")
-
-    ra: Optional[float] = Field(None, description="Right ascension of north pole in degrees")
-    ra_units: Optional[str] = Field('Deg', description="Units for right ascension")
-
-    de: Optional[float] = Field(0.0, description="Declination of north pole in degrees")
-    de_units: Optional[str] = Field('Deg', description="Units for declination")
-
-    meridian: Optional[float] = Field(0.0, description="Prime meridian angle at epoch in degrees")
-    meridian_units: Optional[str] = Field('Deg', description="Units for meridian angle")
+    ra: Optional[AngleDegField] = Field(
+        None, description="Right ascension of north pole (float in degrees, or [value, unit])"
+    )
+    de: Optional[AngleDegField] = Field(
+        0.0, description="Declination of north pole (float in degrees, or [value, unit])"
+    )
+    meridian: Optional[AngleDegField] = Field(
+        0.0, description="Prime meridian angle at epoch (float in degrees, or [value, unit])"
+    )
 
     # Reference frame and time
     epoch: Optional[float] = Field(None, description="Epoch for rotation parameters (J2000 time)")
@@ -79,17 +80,16 @@ class FixedRotationConfig(ConfigBase):
     axis: Optional[Vector3Field] = Field(None, description="Rotation axis vector [x, y, z]")
 
     # Alternative: orientation parameters
-    ra: Optional[float] = Field(None, description="Right ascension of axis in degrees")
-    ra_units: Optional[str] = Field('Deg', description="Units for right ascension")
-
-    de: Optional[float] = Field(None, description="Declination of axis in degrees")
-    de_units: Optional[str] = Field('Deg', description="Units for declination")
-
-    inclination: Optional[float] = Field(None, description="Axial inclination in degrees")
-    inclination_units: Optional[str] = Field('Deg', description="Units for inclination")
-
-    ascending_node: Optional[float] = Field(None, description="Ascending node in degrees")
-    ascending_node_units: Optional[str] = Field('Deg', description="Units for ascending node")
+    ra: Optional[AngleDegField] = Field(
+        None, description="Right ascension of axis (float in degrees, or [value, unit])"
+    )
+    de: Optional[AngleDegField] = Field(None, description="Declination of axis (float in degrees, or [value, unit])")
+    inclination: Optional[AngleDegField] = Field(
+        None, description="Axial inclination (float in degrees, or [value, unit])"
+    )
+    ascending_node: Optional[AngleDegField] = Field(
+        None, description="Ascending node (float in degrees, or [value, unit])"
+    )
 
     # Reference frame
     frame: Optional[str] = Field(None, description="Reference frame")

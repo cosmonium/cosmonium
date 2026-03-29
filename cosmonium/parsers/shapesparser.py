@@ -95,11 +95,7 @@ class SeSphereYamlParser(YamlModuleParser):
 class MeshYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, radius=None, **kwargs):
-        model = data.model
-        create_uv = data.create_uv
-        panda = data.panda
         auto_scale_mesh = data.auto_scale
-        auto_center_mesh = data.auto_center
         offset = data.offset if data.offset is not None else LVector3d()
         rotation_data = data.rotation
         scale = data.scale
@@ -124,18 +120,18 @@ class MeshYamlParser(YamlModuleParser):
         else:
             rotation = LQuaterniond()
         shape = MeshShape(
-            model,
+            data.model,
             offset,
             rotation,
             scale,
             auto_scale_mesh,
-            auto_center_mesh,
+            data.auto_center,
             data.flatten,
-            panda,
+            data.panda,
             data.attribution,
             context=YamlModuleParser.context,
         )
-        return (shape, {'create-uv': create_uv})
+        return (shape, {'create-uv': data.create_uv})
 
 
 class BillboardYamlParser(YamlModuleParser):

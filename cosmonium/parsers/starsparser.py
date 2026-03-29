@@ -20,7 +20,7 @@
 
 from ..objects.star import Star
 from ..procedural.stars import ProceduralStarSurfaceFactory, proceduralStarSurfaceFactoryDB
-from .elementsparser import CloudsYamlParser
+from .cloudsparser import CloudsYamlParser
 from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser

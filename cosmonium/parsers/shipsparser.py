@@ -39,11 +39,7 @@ class BaseShipYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        name = data.name
-        radius = data.radius
-        radius_units_str = data.radius_units
-        radius_units = getattr(units, radius_units_str, units.m)
-        radius *= radius_units
+        radius = data.radius.scaled_value
         camera_distance = data.camera_distance
         camera_pos = data.camera_position
         camera_pos_units_str = data.camera_position_units
@@ -57,17 +53,15 @@ class BaseShipYamlParser(YamlModuleParser):
                 camera_rot = LQuaterniond(*camera_rot_data)
         else:
             camera_rot = LQuaterniond()
-        shape_data = data.shape
         appearance_data = data.appearance
-        lighting_model_data = data.lighting_model
-        shape, extra = ShapeYamlParser.decode(shape_data)
+        shape, extra = ShapeYamlParser.decode(data.shape)
         if appearance_data is None:
             if isinstance(shape, MeshShape):
                 appearance_data = 'model'
             else:
                 appearance_data = 'textures'
         appearance = AppearanceYamlParser.decode(appearance_data)
-        lighting_model = LightingModelYamlParser.decode(lighting_model_data, appearance)
+        lighting_model = LightingModelYamlParser.decode(data.lighting_model, appearance)
         shader = RenderingShader(lighting_model=lighting_model, use_model_texcoord=not extra.get('create-uv', False))
         ship_object = MeshSurface('ship', shape=shape, appearance=appearance, shader=shader)
         if camera_distance is None:
@@ -79,7 +73,7 @@ class BaseShipYamlParser(YamlModuleParser):
                 camera_distance = camera_pos.length() / radius
         else:
             camera_pos = LPoint3d(0, -camera_distance * radius, 0)
-        ship = VisibleShip(name, ship_object, radius)
+        ship = VisibleShip(data.name, ship_object, radius)
         ship.set_camera_hints(camera_distance, camera_pos, camera_rot)
         for mode in cls.camera_modes:
             ship.add_camera_mode(mode)

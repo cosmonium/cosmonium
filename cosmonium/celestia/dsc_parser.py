@@ -65,7 +65,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
             # TODO: type = value
             pass
         elif key == 'Radius':
-            radius = value
+            radius = value * units.Ly
         elif key == 'Axis':
             axis = LVector3d(*value)
         elif key == 'Angle':

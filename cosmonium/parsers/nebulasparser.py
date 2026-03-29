@@ -37,7 +37,7 @@ class NebulaYamlParser(YamlModuleParser):
         if parent is None:
             return None
         body_class = data.body_class or 'nebula'
-        radius = data.radius
+        radius = data.radius.scaled_value if data.radius is not None else None
         abs_magnitude = data.magnitude
         orbit = OrbitYamlParser.decode(data.orbit, None, parent)
         rotation = RotationYamlParser.decode(data.rotation, None, parent)

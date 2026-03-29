@@ -30,7 +30,7 @@ from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit, LocalFixedPos
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .schemas.orbit import EllipticOrbitConfig, FixedOrbitConfig, GlobalPositionConfig
-from .utilsparser import AngleSpeedUnitsYamlParser, AngleUnitsYamlParser, DistanceUnitsYamlParser, TimeUnitsYamlParser
+from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -38,13 +38,9 @@ class EllipticOrbitYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, frame=None, parent=None):
         semi_major_axis = data.semi_major_axis
-        semi_major_axis_units = DistanceUnitsYamlParser.decode(data.semi_major_axis_units)
         pericenter_distance = data.pericenter_distance
-        pericenter_distance_units = DistanceUnitsYamlParser.decode(data.pericenter_distance_units)
         period = data.period
-        period_units = TimeUnitsYamlParser.decode(data.period_units)
         mean_motion = data.mean_motion
-        mean_motion_units = AngleSpeedUnitsYamlParser.decode(data.mean_motion_units)
         eccentricity = data.eccentricity
         inclination = data.inclination
         ascending_node = data.ascending_node
@@ -62,18 +58,18 @@ class EllipticOrbitYamlParser(YamlModuleParser):
                 # TODO: raise error
                 pericenter_distance = 1
             else:
-                pericenter_distance = semi_major_axis * semi_major_axis_units * (1.0 - eccentricity)
+                pericenter_distance = semi_major_axis.scaled_value * (1.0 - eccentricity)
         else:
-            pericenter_distance = pericenter_distance * pericenter_distance_units
+            pericenter_distance = pericenter_distance.scaled_value
 
         if period is None:
             if mean_motion is None:
                 # TODO: raise error
                 period = 1.0
             else:
-                period = 2 * pi / (mean_motion * mean_motion_units)
+                period = 2 * pi / mean_motion.scaled_value
         else:
-            period = period * period_units
+            period = period.scaled_value
 
         if arg_of_periapsis is None:
             if long_of_pericenter is None:
@@ -105,15 +101,12 @@ class FixedPositionYamlParser(YamlModuleParser):
         position = data.position
         if position is None:
             ra = data.ra
-            ra_units = AngleUnitsYamlParser.decode(data.ra_units)
             decl = data.de
-            decl_units = AngleUnitsYamlParser.decode(data.de_units)
             distance = data.distance
-            distance_units = DistanceUnitsYamlParser.decode(data.distance_units)
             frame = AbsoluteReferenceFrame()
             global_pos = True
-            orientation = calc_orientation(ra * ra_units, decl * decl_units) * units.J2000_Orientation
-            position = orientation.xform(LPoint3d(0, 0, distance * distance_units))
+            orientation = calc_orientation(ra.scaled_value, decl.scaled_value) * units.J2000_Orientation
+            position = orientation.xform(LPoint3d(0, 0, distance.scaled_value))
             frame = AbsoluteReferenceFrame()  # TODO: This should be J2000BarycentricEclipticReferenceFrame
         else:
             position = data.position

@@ -95,55 +95,16 @@ class DistanceUnitsYamlParser(YamlModuleParser):
             return DistanceUnitsYamlParser.translation.get(data.lower(), default)
 
 
-class TimeUnitsYamlParser(YamlModuleParser):
-    translation = {
-        'sec': units.Sec,
-        'min': units.Min,
-        'hour': units.Hour,
-        'day': units.Day,
-        'year': units.JYear,
-    }
-
-    @classmethod
-    def decode(cls, data, default=None):
-        if data is None:
-            return default
-        else:
-            return TimeUnitsYamlParser.translation.get(data.lower(), default)
-
-
-class AngleUnitsYamlParser(YamlModuleParser):
-    translation = {'deg': units.Deg, 'hour': units.HourAngle, 'rad': units.Rad}
-
-    @classmethod
-    def decode(cls, data, default=None):
-        if data is None:
-            return default
-        else:
-            return AngleUnitsYamlParser.translation.get(data.lower(), default)
-
-
-class AngleSpeedUnitsYamlParser(YamlModuleParser):
-    translation = {'deg/day': units.Deg_Per_Day}
-
-    @classmethod
-    def decode(cls, data, default=None):
-        if data is None:
-            return default
-        else:
-            return AngleSpeedUnitsYamlParser.translation.get(data.lower(), default)
-
-
 def get_radius_scale(data, parent):
-    radius = data.radius if hasattr(data, 'radius') else data.get('radius', None)
+    radius = data.radius
     if radius is None:
-        diameter = data.diameter if hasattr(data, 'diameter') else data.get('diameter', None)
+        diameter = data.diameter
         if diameter is not None:
-            radius = diameter / 2.0
+            radius = diameter.scaled_value / 2.0
     else:
-        radius = float(radius)
-    ellipticity = data.ellipticity if hasattr(data, 'ellipticity') else data.get('ellipticity', None)
-    scale = data.axes if hasattr(data, 'axes') else data.get('axes', None)
+        radius = radius.scaled_value
+    ellipticity = data.ellipticity
+    scale = data.axes
     if scale is not None:
         if radius is None:
             radius = max(scale) / 2.0

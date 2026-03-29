@@ -34,7 +34,14 @@ from typing import Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import Point3Field
+from .types import (
+    AngleDegField,
+    AngleSpeedDegPerDayField,
+    DistanceAUField,
+    DistancePcField,
+    Point3Field,
+    TimeYearField,
+)
 
 
 class FixedOrbitConfig(ConfigBase):
@@ -42,12 +49,11 @@ class FixedOrbitConfig(ConfigBase):
 
     type: Literal['fixed'] = Field(default='fixed', description="Orbit type identifier")
     position: Optional[Point3Field] = Field(None, description="Fixed position coordinates [x, y, z]")
-    ra: Optional[float] = Field(None, description="Right ascension in degrees")
-    ra_units: Optional[str] = Field('Deg', description="Units for right ascension")
-    de: Optional[float] = Field(None, description="Declination in degrees")
-    de_units: Optional[str] = Field('Deg', description="Units for declination")
-    distance: Optional[float] = Field(None, description="Distance from parent")
-    distance_units: Optional[str] = Field('pc', description="Units for distance")
+    ra: Optional[AngleDegField] = Field(None, description="Right ascension (float in degrees, or [value, unit])")
+    de: Optional[AngleDegField] = Field(None, description="Declination (float in degrees, or [value, unit])")
+    distance: Optional[DistancePcField] = Field(
+        None, description="Distance from parent (float in pc, or [value, unit])"
+    )
     longitude: Optional[float] = Field(None, description="Longitude in degrees")
     latitude: Optional[float] = Field(None, description="Latitude in degrees")
     global_: Optional[bool] = Field(True, description="Global position flag", alias='global')
@@ -59,7 +65,7 @@ class GlobalPositionConfig(ConfigBase):
 
     type: Literal['global'] = Field(default='global', description="Orbit type identifier")
     position: Optional[Point3Field] = Field(default_factory=lambda: [0, 0, 0], description="Global position [x, y, z]")
-    position_units: Optional[str] = Field('pc', description="Units for position")
+    position_units: Optional[str] = Field('pc', description="Units for position (applied to all 3 components)")
     frame: Optional[Union[str, dict]] = Field(None, description="Reference frame")
 
 
@@ -69,17 +75,16 @@ class EllipticOrbitConfig(ConfigBase):
     type: Literal['elliptic'] = Field(default='elliptic', description="Orbit type identifier")
 
     # Primary orbital elements
-    semi_major_axis: Optional[float] = Field(None, description="Semi-major axis")
-    semi_major_axis_units: Optional[str] = Field('AU', description="Units for semi-major axis")
-
-    pericenter_distance: Optional[float] = Field(None, description="Pericenter distance")
-    pericenter_distance_units: Optional[str] = Field('AU', description="Units for pericenter distance")
-
-    period: Optional[float] = Field(None, description="Orbital period")
-    period_units: Optional[str] = Field('Year', description="Units for period")
-
-    mean_motion: Optional[float] = Field(None, description="Mean motion")
-    mean_motion_units: Optional[str] = Field('deg/day', description="Units for mean motion")
+    semi_major_axis: Optional[DistanceAUField] = Field(
+        None, description="Semi-major axis (float in AU, or [value, unit])"
+    )
+    pericenter_distance: Optional[DistanceAUField] = Field(
+        None, description="Pericenter distance (float in AU, or [value, unit])"
+    )
+    period: Optional[TimeYearField] = Field(None, description="Orbital period (float in years, or [value, unit])")
+    mean_motion: Optional[AngleSpeedDegPerDayField] = Field(
+        None, description="Mean motion (float in deg/day, or [value, unit])"
+    )
 
     eccentricity: Optional[float] = Field(0.0, description="Orbital eccentricity")
 

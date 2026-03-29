@@ -50,7 +50,7 @@ class TestObjectParserValidation:
         validated = ObjectYamlParser.validate_and_decode('star', star_data)
         assert isinstance(validated, StarConfig)
         assert validated.name == 'TestStar'
-        assert validated.radius == 696000
+        assert validated.radius.scaled_value == 696000
         assert validated.temperature == 5778
 
     def test_validate_planet(self):
@@ -62,7 +62,7 @@ class TestObjectParserValidation:
         validated = ObjectYamlParser.validate_and_decode('planet', planet_data)
         assert isinstance(validated, ReflectiveBodyConfig)
         assert validated.name == 'Mars'
-        assert validated.radius == 3396
+        assert validated.radius.scaled_value == 3396
         assert validated.albedo == 0.25
 
     def test_validation_error_fallback(self):

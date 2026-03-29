@@ -34,6 +34,7 @@ from .oneilscatteringparser import register_oneil_parsers
 from .orbitsparser import register_orbit_parsers
 from .pluginparser import register_plugin_parsers
 from .raymarchingparser import register_raymarching_parsers
+from .ringsparser import register_rings_parsers
 from .rotationsparser import register_rotation_parsers
 from .shapesparser import register_shape_parsers
 from .shipsparser import register_ship_parsers
@@ -59,6 +60,7 @@ def register_parsers():
     register_orbit_parsers()
     register_plugin_parsers()
     register_raymarching_parsers()
+    register_rings_parsers()
     register_rotation_parsers()
     register_shape_parsers()
     register_ship_parsers()

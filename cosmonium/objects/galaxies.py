@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,7 +62,6 @@ class Galaxy(OctreeSystem):
         names,
         source_names,
         radius=None,
-        radius_units=units.Ly,
         abs_magnitude=None,
         shape_type=None,
         shape=None,
@@ -74,7 +73,6 @@ class Galaxy(OctreeSystem):
         point_color=None,
         description='',
     ):
-        radius = radius * radius_units
         super().__init__(names, source_names, orbit, rotation, frame, body_class, radius, point_color, description)
         # TODO: This should be done in create_anchor
         self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0

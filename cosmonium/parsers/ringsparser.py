@@ -20,12 +20,16 @@
 
 from panda3d.core import LColor
 
+from ..components.elements.rings import Rings
 from ..objects.rings import StellarRings
-from .elementsparser import RingsYamlParser
+from ..shaders.rendering import RenderingShader
+from .appearancesparser import AppearanceYamlParser
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
+from .schemas.stellarobjects import StellarRingsConfig
+from .shadersparser import LightingModelYamlParser
 from .utilsparser import check_parent
 from .yamlparser import YamlModuleParser
 
@@ -35,20 +39,24 @@ class StellarRingsYamlParser(YamlModuleParser):
         self.body_class = body_class
 
     def decode(self, data, parent=None):
-        name = data.get('name')
+        name = data.name
         (translated_names, source_names) = self.translate_names(name)
-        parent_name = data.get('parent')
+        parent_name = data.parent
         parent, _explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
             return None
         actual_parent = parent.primary or parent
-        body_class = data.get('body-class', self.body_class)
-        rings_object = RingsYamlParser.decode(data)
-        point_color = data.get('point-color', [1, 1, 1])
-        point_color = LColor(point_color[0], point_color[1], point_color[2], 1.0)
-        frame = FrameYamlParser.decode(data.get('frame'), actual_parent, default="mean-equatorial")
-        orbit = OrbitYamlParser.decode(data.get('orbit'), frame, actual_parent)
-        rotation = RotationYamlParser.decode(data.get('rotation'), frame, actual_parent, default="fixed")
+        body_class = data.body_class or self.body_class
+        point_color = data.point_color
+        if point_color is None:
+            point_color = LColor(1, 1, 1, 1)
+        frame = FrameYamlParser.decode(data.frame, actual_parent, default="mean-equatorial")
+        orbit = OrbitYamlParser.decode(data.orbit, frame, actual_parent)
+        rotation = RotationYamlParser.decode(data.rotation, frame, actual_parent, default="fixed")
+        appearance = AppearanceYamlParser.decode(data.appearance, patched_shape=False)
+        lighting_model = LightingModelYamlParser.decode(data.lighting_model, appearance)
+        shader = RenderingShader(lighting_model=lighting_model)
+        rings_object = Rings(data.inner_radius.scaled_value, data.outer_radius.scaled_value, appearance, shader)
         body = StellarRings(
             names=translated_names,
             source_names=source_names,
@@ -63,4 +71,5 @@ class StellarRingsYamlParser(YamlModuleParser):
         return body
 
 
-ObjectYamlParser.register_object_parser('rings', StellarRingsYamlParser('rings'))
+def register_rings_parsers():
+    ObjectYamlParser.register_object_parser('rings', StellarRingsYamlParser('rings'), model=StellarRingsConfig)

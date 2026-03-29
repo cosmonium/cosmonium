@@ -31,28 +31,18 @@ from ..mathutil.quaternion import quaternion_from_axis_angle
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .schemas.rotation import FixedRotationConfig, UniformRotationConfig
-from .utilsparser import AngleUnitsYamlParser, TimeUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class OrientationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, flipped):
-        inclination = data.inclination if data.inclination is not None else 0.0
-        inclination_units = AngleUnitsYamlParser.decode(data.inclination_units)
-        ascending_node = data.ascending_node if data.ascending_node is not None else 0.0
-        ascending_node_units = AngleUnitsYamlParser.decode(data.ascending_node_units)
         right_ascension = data.ra
-        right_ascension_units = AngleUnitsYamlParser.decode(data.ra_units)
-        declination = data.de if data.de is not None else 0.0
-        declination_units = AngleUnitsYamlParser.decode(data.de_units)
         if right_ascension is not None:
-            orientation = calc_orientation(
-                right_ascension * right_ascension_units, declination * declination_units, flipped
-            )
+            orientation = calc_orientation(right_ascension.scaled_value, data.de.scaled_value, flipped)
         else:
             orientation = calc_orientation_from_incl_an(
-                inclination * inclination_units, ascending_node * ascending_node_units, flipped
+                data.inclination.scaled_value, data.ascending_node.scaled_value, flipped
             )
         return orientation
 
@@ -62,9 +52,7 @@ class UniformYamlParser(YamlModuleParser):
     def decode(cls, data, frame, parent):
         synchronous = data.synchronous if data.synchronous is not None else False
         period = data.period
-        period_units = TimeUnitsYamlParser.decode(data.period_units)
-        meridian_angle = data.meridian if data.meridian is not None else 0.0
-        meridian_units = AngleUnitsYamlParser.decode(data.meridian_units)
+        meridian_angle = data.meridian.scaled_value
         epoch = data.epoch if data.epoch is not None else units.J2000
         if data.frame is not None or frame is None:
             if data.ra is not None:
@@ -72,10 +60,10 @@ class UniformYamlParser(YamlModuleParser):
             else:
                 default_frame = 'j2000ecliptic'
             frame = FrameYamlParser.decode(data.frame if data.frame else default_frame, parent)
-        flipped = period is not None and period < 0
+        flipped = period is not None and period.value < 0
         orientation = OrientationYamlParser.decode(data, flipped)
         if synchronous:
-            rotation = SynchronousRotation(orientation, meridian_angle * meridian_units, epoch, frame)
+            rotation = SynchronousRotation(orientation, meridian_angle, epoch, frame)
             if parent is not None:
                 if parent.anchor.has_system():
                     rotation.set_parent_body(parent.anchor.get_system())
@@ -84,9 +72,10 @@ class UniformYamlParser(YamlModuleParser):
         else:
             if period is None:
                 print("WARNING: Missing period")
-                period = 1
-            mean_motion = 2 * pi / (period * period_units)
-            rotation = UniformRotation(orientation, mean_motion, meridian_angle * meridian_units, epoch, frame)
+                mean_motion = 2 * pi / units.JYear
+            else:
+                mean_motion = 2 * pi / period.scaled_value
+            rotation = UniformRotation(orientation, mean_motion, meridian_angle, epoch, frame)
         return rotation
 
 

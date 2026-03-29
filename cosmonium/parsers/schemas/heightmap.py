@@ -29,6 +29,7 @@ from typing import Any, Optional
 from pydantic import Field
 
 from .base import ConfigBase
+from .types import DistanceMField
 
 
 class HeightmapConfig(ConfigBase):
@@ -37,18 +38,11 @@ class HeightmapConfig(ConfigBase):
     name: Optional[str] = Field(None, description="Heightmap name")
 
     # Height parameters
-    min_height: Optional[float] = Field(None, description="Minimum height")
-    max_height: Optional[float] = Field(None, description="Maximum height")
-    height_scale: Optional[float] = Field(1.0, description="Height scale factor")
-    height_offset: Optional[float] = Field(0.0, description="Height offset")
-    scale_length: Optional[float] = Field(None, description="Scale length")
-
-    # Units
-    min_height_units: Optional[str] = Field('m', description="Units for min height")
-    max_height_units: Optional[str] = Field('m', description="Units for max height")
-    height_scale_units: Optional[str] = Field('m', description="Units for height scale")
-    height_offset_units: Optional[str] = Field('m', description="Units for height offset")
-    scale_length_units: Optional[str] = Field('m', description="Units for scale length")
+    min_height: Optional[DistanceMField] = Field(None, description="Minimum height (float in m, or [value, unit])")
+    max_height: Optional[DistanceMField] = Field(None, description="Maximum height (float in m, or [value, unit])")
+    height_scale: DistanceMField = Field(1.0, description="Height scale factor (float in m, or [value, unit])")
+    height_offset: DistanceMField = Field(0.0, description="Height offset (float in m, or [value, unit])")
+    scale_length: Optional[DistanceMField] = Field(None, description="Scale length (float in m, or [value, unit])")
 
     # Noise/procedural configuration
     func: Optional[dict] = Field(None, description="Noise function configuration")

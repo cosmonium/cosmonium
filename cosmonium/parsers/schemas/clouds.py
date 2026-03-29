@@ -33,15 +33,6 @@ from pydantic import Field
 from .base import ConfigBase
 
 
-class RingsConfig(ConfigBase):
-    """Configuration for planetary rings."""
-
-    inner_radius: Optional[float] = Field(None, description="Inner radius of the rings")
-    outer_radius: Optional[float] = Field(None, description="Outer radius of the rings")
-    lighting_model: Optional[Any] = Field(None, description="Lighting model configuration")
-    appearance: Optional[Any] = Field(None, description="Appearance configuration")
-
-
 class CloudsConfig(ConfigBase):
     """Configuration for cloud layers."""
 

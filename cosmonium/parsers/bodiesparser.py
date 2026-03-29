@@ -22,12 +22,11 @@ from panda3d.core import LColor
 
 from ..objects.reflective import ReflectiveBody
 from .atmospheresparser import AtmosphereYamlParser
+from .cloudsparser import CloudsYamlParser
 from .controllersparser import ControllerYamlParser
-from .elementsparser import CloudsYamlParser
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
-from .ringsparser import StellarRingsYamlParser
 from .rotationsparser import RotationYamlParser
 from .schemas.stellarobjects import ReflectiveBodyConfig
 from .surfacesparser import SurfaceYamlParser
@@ -97,13 +96,13 @@ class ReflectiveYamlParser(YamlModuleParser):
         rings = data.rings
         if rings is not None:
             rings['name'] = data.name + "'s rings"
-            rings_parser = StellarRingsYamlParser('rings')
+            rings['type'] = 'rings'
             if parent.primary is not body:
                 system = body.get_or_create_system()
                 body = system
             else:
                 system = parent
-            rings_parser.decode(rings, system)
+            ObjectYamlParser.decode(rings, parent=system)
         return body
 
 

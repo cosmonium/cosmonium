@@ -20,12 +20,10 @@
 
 from .. import settings
 from ..components.elements.clouds import Clouds
-from ..components.elements.rings import Rings
 from ..patchedshapes.lodcontrol import TextureOrVertexSizeLodControl, VertexSizeLodControl
 from ..shaders.rendering import RenderingShader
 from .appearancesparser import AppearanceYamlParser
-from .schemas.elements import CloudsConfig, RingsConfig
-from .shadersparser import LightingModelYamlParser
+from .schemas.clouds import CloudsConfig
 from .shapesparser import ShapeYamlParser
 from .yamlparser import YamlModuleParser
 
@@ -55,16 +53,3 @@ class CloudsYamlParser(YamlModuleParser):
         shader = RenderingShader(lighting_model=lighting_model)
         clouds = Clouds(height, appearance, shader, shape)
         return clouds
-
-
-class RingsYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(cls, data):
-        if data is None:
-            return None
-        config = RingsConfig.model_validate(data)
-        appearance = AppearanceYamlParser.decode(config.appearance, patched_shape=False)
-        lighting_model = LightingModelYamlParser.decode(config.lighting_model, appearance)
-        shader = RenderingShader(lighting_model=lighting_model)
-        rings = Rings(config.inner_radius, config.outer_radius, appearance, shader)
-        return rings

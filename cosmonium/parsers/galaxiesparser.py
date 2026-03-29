@@ -35,7 +35,7 @@ from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
 from .schemas.stellarobjects import GalaxyConfig
-from .utilsparser import DistanceUnitsYamlParser, check_parent
+from .utilsparser import check_parent
 from .yamlparser import YamlModuleParser
 
 
@@ -216,7 +216,6 @@ class GalaxyYamlParser(YamlModuleParser):
             return None
         body_class = data.body_class or 'galaxy'
         radius = data.radius
-        radius_units = DistanceUnitsYamlParser.decode(data.radius_units)
         abs_magnitude = data.magnitude
         shape_type = data.classification
         orbit = OrbitYamlParser.decode(data.orbit, None, parent)
@@ -231,8 +230,7 @@ class GalaxyYamlParser(YamlModuleParser):
             shape=shape,
             appearance=appearance,
             abs_magnitude=abs_magnitude,
-            radius=radius,
-            radius_units=radius_units,
+            radius=radius.scaled_value if radius is not None else None,
             orbit=orbit,
             rotation=rotation,
         )

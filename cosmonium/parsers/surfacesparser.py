@@ -45,6 +45,7 @@ from ..shapes.mesh import MeshShape
 from .appearancesparser import AppearanceYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .objectparser import ObjectYamlParser
+from .schemas.surface import SurfaceConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .utilsparser import get_radius_scale
@@ -54,29 +55,36 @@ from .yamlparser import YamlModuleParser
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
     def decode_surface(self, data, previous, owner):
-        name = data.get('name', None)
-        category_name = data.get('category', 'visible')
+        # Cascade defaults from previous surface (must happen on the raw dict before validation)
+        data.setdefault('heightmap', previous.get('heightmap'))
+        data.setdefault('shape', previous.get('shape'))
+        data.setdefault('appearance', previous.get('appearance'))
+        data.setdefault('lighting-model', previous.get('lighting-model'))
+
+        # Validate through the schema (after cascaded defaults are in the dict)
+        config = SurfaceConfig.model_validate(data)
+
+        name = config.name
+        category_name = config.category or 'visible'
         category = surfaceCategoryDB.get(category_name)
         if category is None:
             print("Category '%s' unknown" % category_name)
             category = SurfaceCategory(category_name)
             surfaceCategoryDB.add(category)
-        resolution = data.get('resolution', None)
-        attribution = data.get('attribution', data.get('source'))
-        radius, ellipticity, scale = get_radius_scale(data, owner)
-        # The next parameters are using set_default in order to propagate
-        # their manual configuration to the next surface, if any.
-        heightmap_data = data.setdefault('heightmap', previous.get('heightmap'))
-        shape = data.setdefault('shape', previous.get('shape'))
-        appearance = data.setdefault('appearance', previous.get('appearance'))
-        lighting_model = data.setdefault('lighting-model', previous.get('lighting-model'))
+        resolution = config.resolution
+        attribution = config.attribution or config.source
+        radius, ellipticity, scale = get_radius_scale(config, owner)
+        heightmap_data = config.heightmap
+        shape = config.shape
+        appearance = config.appearance
+        lighting_model = config.lighting_model
         if shape is None and heightmap_data is not None:
             shape = 'sqrt-sphere'
         if shape is not None:
             shape, extra = ShapeYamlParser.decode(shape, radius=radius)
         if heightmap_data is not None:
             if isinstance(heightmap_data, dict):
-                name = data.get('name', 'heightmap')
+                name = config.name or 'heightmap'
                 heightmap = HeightmapYamlParser.decode(heightmap_data, name, shape.patchable, radius)
             else:
                 if shape.patchable:

@@ -25,7 +25,6 @@ from ..controllers.position import FlatSurfaceMovementController, SurfaceMovemen
 from ..plugins import moduleLoader
 from .objectparser import ObjectYamlParser
 from .schemas.misc import FlatSurfaceControllerConfig, ScriptControllerConfig, SurfaceControllerConfig
-from .utilsparser import AngleUnitsYamlParser, DistanceUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -42,14 +41,12 @@ class ScriptControllerYamlParser(YamlModuleParser):
 class SurfaceControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, anchor):
-        long = data.long
-        long_units = AngleUnitsYamlParser.decode(data.long_units)
-        lat = data.lat
-        lat_units = AngleUnitsYamlParser.decode(data.lat_units)
-        altitude = data.altitude
-        altitude_units = DistanceUnitsYamlParser.decode(data.altitude_units)
         return SurfaceMovementController(
-            anchor, anchor.parent.body.primary, long * long_units, lat * lat_units, altitude * altitude_units
+            anchor,
+            anchor.parent.body.primary,
+            data.long.scaled_value,
+            data.lat.scaled_value,
+            data.altitude.scaled_value,
         )
 
 

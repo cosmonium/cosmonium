@@ -31,7 +31,7 @@ from typing import Any, List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import ColorField, Point3Field, Vector3Field
+from .types import ColorField, DistanceKmField, DistanceLyField, Point3Field, Vector3Field
 
 
 class StellarObjectConfig(ConfigBase):
@@ -52,8 +52,8 @@ class StellarBodyConfig(StellarObjectConfig):
     """Base configuration for stellar bodies (stars and reflective bodies)."""
 
     # Body properties
-    radius: Optional[float] = Field(None, description="Body radius")
-    diameter: Optional[float] = Field(None, description="Body diameter")
+    radius: Optional[DistanceKmField] = Field(None, description="Body radius (float in km, or [value, unit])")
+    diameter: Optional[DistanceKmField] = Field(None, description="Body diameter (float in km, or [value, unit])")
     ellipticity: Optional[float] = Field(None, description="Body oblateness/ellipticity")
     axes: Optional[Vector3Field] = Field(None, description="Body axes [a, b, c]")
 
@@ -104,16 +104,16 @@ class ReflectiveBodyConfig(StellarBodyConfig):
     controller: Optional[Any] = Field(None, description="Controller configuration")
 
 
-class RingsConfig(StellarObjectConfig):
+class StellarRingsConfig(StellarObjectConfig):
     """Configuration for stellar rings."""
 
     type: Literal['rings'] = Field(default='rings', description="Object type")
 
     # Ring properties
-    inner_radius: Optional[float] = Field(None, description="Inner radius")
-    outer_radius: Optional[float] = Field(None, description="Outer radius")
-    appearance: dict = Field(default_factory=dict, description="Rings appearance configuration")
-    lighting_model: Optional[str] = Field(None, description="Rings lighting model")
+    inner_radius: DistanceKmField = Field(description="Inner radius of the rings")
+    outer_radius: DistanceKmField = Field(description="Outer radius of the rings")
+    lighting_model: Optional[Any] = Field(None, description="Lighting model configuration")
+    appearance: Optional[Any] = Field(None, description="Appearance configuration")
 
 
 class SystemConfig(StellarObjectConfig):
@@ -135,8 +135,7 @@ class GalaxyConfig(StellarObjectConfig):
     body_class: Optional[str] = Field('galaxy', description="Body classification")
 
     # Galaxy properties
-    radius: Optional[float] = Field(None, description="Star radius")
-    radius_units: Optional[str] = Field('Ly', description="Units for radius")
+    radius: Optional[DistanceLyField] = Field(None, description="Galaxy radius (float in ly, or [value, unit])")
     classification: Optional[str] = Field(None, description="Galaxy classification (spiral, elliptical, etc.)")
     magnitude: Optional[float] = Field(None, description="Absolute magnitude")
     shape: dict = Field(default_factory=dict, description="Galaxy shape configuration")
@@ -168,7 +167,7 @@ class NebulaConfig(StellarObjectConfig):
     body_class: Optional[str] = Field('nebula', description="Body classification")
 
     # Nebula properties
-    radius: Optional[float] = Field(None, description="Nebula radius")
+    radius: Optional[DistanceKmField] = Field(None, description="Nebula radius (float in km, or [value, unit])")
     magnitude: Optional[float] = Field(None, description="Absolute magnitude")
 
     # Appearance

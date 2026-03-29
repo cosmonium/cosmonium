@@ -20,7 +20,6 @@
 
 from math import pi
 
-from ..astro import units
 from ..filters import BilinearFilter, BSplineFilter, NearestFilter, QuinticFilter, SmoothstepFilter
 from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
 from ..interpolators import HardwareInterpolator, SoftwareInterpolator
@@ -30,7 +29,6 @@ from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
 from .schemas.heightmap import HeightmapConfig
 from .texturesourceparser import TextureSourceYamlParser
-from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -73,16 +71,10 @@ class HeightmapYamlParser(YamlModuleParser):
     def decode(cls, data, name, patched, radius=None, scale=1.0, coord_scale=1.0):
         data = HeightmapConfig.model_validate(data)
         heightmap_type = 'texture' if data.data else 'procedural'
-        min_height = data.min_height
-        max_height = data.max_height
-        height_scale = data.height_scale
-        height_offset = data.height_offset
-        if min_height is not None:
-            min_height *= DistanceUnitsYamlParser.decode(data.min_height_units, units.m)
-        if max_height is not None:
-            max_height *= DistanceUnitsYamlParser.decode(data.max_height_units, units.m)
-        height_scale *= DistanceUnitsYamlParser.decode(data.height_scale_units, units.m)
-        height_offset *= DistanceUnitsYamlParser.decode(data.height_offset_units, units.m)
+        min_height = data.min_height.scaled_value if data.min_height is not None else None
+        max_height = data.max_height.scaled_value if data.max_height is not None else None
+        height_scale = data.height_scale.scaled_value
+        height_offset = data.height_offset.scaled_value
         if min_height is None:
             if max_height is None:
                 min_height = -(height_scale + height_offset)
@@ -94,7 +86,7 @@ class HeightmapYamlParser(YamlModuleParser):
                 max_height = -min_height
         if radius is not None:
             if data.scale_length is not None:
-                scale_length = data.scale_length * DistanceUnitsYamlParser.decode(data.scale_length_units, units.m)
+                scale_length = data.scale_length.scaled_value
             else:
                 scale_length = radius * 2 * pi
             min_height /= radius
@@ -102,10 +94,10 @@ class HeightmapYamlParser(YamlModuleParser):
             height_scale /= radius
             height_offset /= radius
         else:
-            scale_length = data.scale_length
-            if scale_length is None:
+            if data.scale_length is not None:
+                scale_length = data.scale_length.scaled_value
+            else:
                 scale_length = 1.0
-            scale_length = scale_length * DistanceUnitsYamlParser.decode(data.scale_length_units, units.m)
             min_height /= scale
             max_height /= scale
             height_scale /= scale

@@ -32,7 +32,7 @@ from typing import Any, List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import Point3Field
+from .types import AngleDegField, DistanceMField, Point3Field
 
 
 class ScriptControllerConfig(ConfigBase):
@@ -46,12 +46,9 @@ class SurfaceControllerConfig(ConfigBase):
     """Configuration for a spherical surface movement controller."""
 
     type: Literal['surface'] = Field(default='surface', description="Controller type")
-    long: float = Field(0.0, description="Initial longitude")
-    long_units: str = Field('Deg', description="Units for longitude")
-    lat: float = Field(0.0, description="Initial latitude")
-    lat_units: str = Field('Deg', description="Units for latitude")
-    altitude: float = Field(0.0, description="Initial altitude above surface")
-    altitude_units: str = Field('m', description="Units for altitude")
+    long: AngleDegField = Field(0.0, description="Initial longitude (float in degrees, or [value, unit])")
+    lat: AngleDegField = Field(0.0, description="Initial latitude (float in degrees, or [value, unit])")
+    altitude: DistanceMField = Field(0.0, description="Initial altitude above surface (float in m, or [value, unit])")
 
 
 class FlatSurfaceControllerConfig(ConfigBase):
@@ -69,8 +66,7 @@ class ShipConfig(ConfigBase):
     name: str = Field(..., description="Ship/cockpit name")
 
     # Ship properties
-    radius: Optional[float] = Field(10, description="Ship radius")
-    radius_units: Optional[str] = Field('m', description="Units for radius")
+    radius: Optional[DistanceMField] = Field(10, description="Ship radius (float in m, or [value, unit])")
     camera_distance: Optional[float] = Field(None, description="Camera distance")
     camera_position: Optional[List[float]] = Field(None, description="Camera position")
     camera_position_units: Optional[str] = Field('m', description="Units for camera position")

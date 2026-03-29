@@ -31,7 +31,7 @@ from typing import Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import Vector3Field
+from .types import DistanceKmField, Vector3Field
 
 
 class SurfaceConfig(ConfigBase):
@@ -40,10 +40,11 @@ class SurfaceConfig(ConfigBase):
     name: Optional[str] = Field(None, description="Surface name")
     category: Optional[str] = Field('visible', description="Surface category")
 
-    # Surface properties
-    radius: Optional[float] = Field(None, description="Surface radius")
-    oblateness: Optional[float] = Field(None, description="Surface oblateness/ellipticity")
-    scale: Optional[Vector3Field] = Field(None, description="Surface scale [x, y, z]")
+    # Surface geometry
+    radius: Optional[DistanceKmField] = Field(None, description="Surface radius (float in km, or [value, unit])")
+    diameter: Optional[DistanceKmField] = Field(None, description="Surface diameter (float in km, or [value, unit])")
+    ellipticity: Optional[float] = Field(None, description="Surface oblateness/ellipticity")
+    axes: Optional[Vector3Field] = Field(None, description="Ellipsoid semi-axes [a, b, c] in km")
 
     # Nested configurations - can be references (strings) or inline dicts
     appearance: Optional[Union[str, dict]] = Field(None, description="Appearance configuration or reference")
@@ -54,7 +55,7 @@ class SurfaceConfig(ConfigBase):
     lighting_model: Optional[str] = Field(None, description="Lighting model name")
 
     # Metadata
-    resolution: Optional[float] = Field(None, description="Surface resolution")
+    resolution: Optional[float | str] = Field(None, description="Surface resolution")
     attribution: Optional[str] = Field(None, description="Data attribution/source")
     source: Optional[str] = Field(None, description="Data source (alias for attribution)")
 
