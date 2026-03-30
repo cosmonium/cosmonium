@@ -214,7 +214,6 @@ class OctreeNode:
             self.max_luminosity = luminosity
         if not self.has_children or luminosity > self.threshold:
             self.leaves.append(obj)
-            obj.parent = self
         else:
             self._add_in_child(obj, position, luminosity)
         if self.level < self.max_level and len(self.leaves) >= self.max_leaves and not self.has_children:

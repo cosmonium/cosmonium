@@ -154,7 +154,6 @@ OctreeNode::_add(StellarAnchor *leaf, LPoint3d const &position, double luminosit
     }
     if (!has_children || luminosity > threshold) {
         leaves.push_back(leaf);
-        leaf->parent = this;
     } else {
         add_in_child(leaf, position, luminosity);
     }
