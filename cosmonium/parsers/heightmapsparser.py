@@ -27,7 +27,7 @@ from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderPatchedH
 from ..textures import HeightMapTexture
 from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
-from .schemas.heightmap import HeightmapConfig
+from .schemas.heightmap import HeightmapConfig, StandaloneHeightmapConfig
 from .texturesourceparser import TextureSourceYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
@@ -160,14 +160,13 @@ class HeightmapYamlParser(YamlModuleParser):
 class StandaloneHeightmapYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        data = HeightmapConfig.model_validate(data)
         name = data.name
-        heightmap = HeightmapYamlParser.decode(data, name, False, None)
-        patched_heightmap = HeightmapYamlParser.decode(data, name, True, None)
+        raw_data = data.to_dict()
+        heightmap = HeightmapYamlParser.decode(raw_data, name, False, None)
+        patched_heightmap = HeightmapYamlParser.decode(raw_data, name, True, None)
         heightmapRegistry.register(name, heightmap)
         heightmapRegistry.register(name + '-patched', patched_heightmap)
-        return None
 
 
 def register_heightmap_parsers():
-    ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser())
+    ObjectYamlParser.register_object_parser('heightmap', StandaloneHeightmapYamlParser(), StandaloneHeightmapConfig)

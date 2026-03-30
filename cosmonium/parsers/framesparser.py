@@ -38,6 +38,7 @@ from .schemas.frame import (
     J2000EclipticFrameConfig,
     J2000EquatorialFrameConfig,
     MeanEquatorialFrameConfig,
+    NamedFrameConfig,
 )
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
@@ -143,16 +144,13 @@ def register_frame_parsers():
     FrameYamlParser.register_parser('fixed', FixedFrameYamlParser, FixedFrameConfig)
 
     # Register top-level object parser
-    ObjectYamlParser.register_object_parser('frame', NamedFrameYamlParser())
-    ObjectYamlParser.register_object_parser('equatorial', NamedFrameYamlParser())
+    ObjectYamlParser.register_object_parser('frame', NamedFrameYamlParser(), model=NamedFrameConfig)
+    ObjectYamlParser.register_object_parser('equatorial', NamedFrameYamlParser(), model=NamedFrameConfig)
 
 
 class NamedFrameYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name')
-        if name is None:
-            return None
-        frame = FrameYamlParser.decode(data, None)
-        frames_db.register_frame(name, frame)
+        frame = FrameYamlParser.decode(data.to_dict(), None)
+        frames_db.register_frame(data.name, frame)
         return None

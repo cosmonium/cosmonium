@@ -30,7 +30,7 @@ from ..astro.rotations import FixedRotation, SynchronousRotation, UniformRotatio
 from ..mathutil.quaternion import quaternion_from_axis_angle
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
-from .schemas.rotation import FixedRotationConfig, UniformRotationConfig
+from .schemas.rotation import FixedRotationConfig, NamedRotationConfig, UniformRotationConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -131,12 +131,8 @@ class RotationYamlParser(TypedYamlParser):
 class NamedRotationYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name')
-        category = data.get('category')
-        if name is None or category is None:
-            return None
-        rotation = RotationYamlParser.decode(data)
-        rotation_elements_db.register_element(category, name, rotation)
+        rotation = RotationYamlParser.decode(data.to_dict())
+        rotation_elements_db.register_element(data.category, data.name, rotation)
         return None
 
 
@@ -147,6 +143,6 @@ def register_rotation_parsers():
     RotationYamlParser.register_parser('fixed', FixedRotationYamlParser, FixedRotationConfig)
 
     # Register top-level object parser
-    ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser())
-    ObjectYamlParser.register_object_parser('uniform', NamedRotationYamlParser())
-    ObjectYamlParser.register_object_parser('fixed', NamedRotationYamlParser())
+    ObjectYamlParser.register_object_parser('rotation', NamedRotationYamlParser(), model=NamedRotationConfig)
+    ObjectYamlParser.register_object_parser('uniform', NamedRotationYamlParser(), model=NamedRotationConfig)
+    ObjectYamlParser.register_object_parser('fixed', NamedRotationYamlParser(), model=NamedRotationConfig)

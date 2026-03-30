@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from typing import Any, List, Literal, Optional, Union
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import ConfigBase
 from .types import AngleDegField, DistanceMField, Point3Field
@@ -116,3 +116,15 @@ class AttributionsConfig(ConfigBase):
     type: Literal['attributions'] = Field(default='attributions', description="Object type")
     # This will store a dict of attribution_id -> attribution data
     # The actual structure is handled by the parser
+
+
+class StandaloneControllerConfig(ConfigBase):
+    """Configuration for standalone controllers attached to existing bodies.
+
+    Controller specific parameters are not specified, all extra parameters are forwarded
+    to the appropriate controller sub-parser.
+    """
+
+    model_config = ConfigDict(extra='allow')  # Allow extra fields for controller-specific parameters
+    name: Optional[str] = Field(None, description="Optional controller name")
+    body: str = Field(..., description="Name of the body to attach the controller to")

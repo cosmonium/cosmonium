@@ -45,7 +45,7 @@ from ..shapes.mesh import MeshShape
 from .appearancesparser import AppearanceYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .objectparser import ObjectYamlParser
-from .schemas.surface import SurfaceConfig
+from .schemas.surface import StandaloneSurfaceConfig, SurfaceConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .utilsparser import get_radius_scale
@@ -311,18 +311,15 @@ class FlatSurfaceParser(YamlModuleParser):
 class StandaloneSurfaceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        name = data.get('name', None)
-        parent_name = data.get('parent')
-        parent = objectsDB.get(parent_name)
+        parent = objectsDB.get(data.parent)
         if parent is None:
-            print("ERROR: Parent '%s' of surface '%s' not found" % (parent_name, name))
+            print(f"ERROR: Parent '{data.parent}' of surface '{data.name}' not found")
             return None
-        active = data.get('active', 'True')
-        surface = SurfaceYamlParser.decode_surface(data, {}, parent)
+        surface = SurfaceYamlParser.decode_surface(data.to_dict(), {}, parent)
         parent.add_surface(surface)
-        if active:
+        if data.active:
             parent.set_surface(surface)
         return None
 
 
-ObjectYamlParser.register_object_parser('surface', StandaloneSurfaceYamlParser())
+ObjectYamlParser.register_object_parser('surface', StandaloneSurfaceYamlParser(), model=StandaloneSurfaceConfig)

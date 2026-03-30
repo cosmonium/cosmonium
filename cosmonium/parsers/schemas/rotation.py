@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import ConfigBase
 from .types import AngleDegField, TimeYearField, Vector3Field
@@ -93,3 +93,15 @@ class FixedRotationConfig(ConfigBase):
 
     # Reference frame
     frame: Optional[str] = Field(None, description="Reference frame")
+
+
+class NamedRotationConfig(ConfigBase):
+    """Named rotation for database registration.
+
+    Rotation specific parameters are not specified, all extra parameters are forwarded
+    to the appropriate rotation sub-parser.
+    """
+
+    model_config = ConfigDict(extra='allow')  # Allow extra fields for rotation-specific parameters
+    name: str = Field(..., description="Name to register in the rotation database")
+    category: str = Field(..., description="Category under which to register the rotation")

@@ -26,7 +26,7 @@ Defines Pydantic models for reference frames.
 
 from typing import Literal, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import ConfigBase
 
@@ -79,3 +79,14 @@ class FixedFrameConfig(ConfigBase):
 
     type: Literal['fixed'] = Field(default='fixed', description="Frame type")
     center: Optional[str] = Field(None, description="Center body reference")
+
+
+class NamedFrameConfig(ConfigBase):
+    """Named frame for database registration.
+
+    Frame specific parameters are not specified, all extra parameters are forwarded
+    to the appropriate frame sub-parser.
+    """
+
+    model_config = ConfigDict(extra='allow')  # Allow extra fields for frame-specific parameters
+    name: str = Field(..., description="Name to register in the frames database")

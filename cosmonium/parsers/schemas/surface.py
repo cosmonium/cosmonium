@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional, Union
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import ConfigBase
 from .types import DistanceKmField, Vector3Field
@@ -58,6 +58,19 @@ class SurfaceConfig(ConfigBase):
     resolution: Optional[float | str] = Field(None, description="Surface resolution")
     attribution: Optional[str] = Field(None, description="Data attribution/source")
     source: Optional[str] = Field(None, description="Data source (alias for attribution)")
+
+
+class StandaloneSurfaceConfig(ConfigBase):
+    """Configuration for standalone surface objects.
+
+    Surface specific parameters are not specified, all extra parameters are forwarded
+    to the appropriate surface sub-parser.
+    """
+
+    model_config = ConfigDict(extra='allow')  # Allow extra fields for surface-specific parameters
+    type: Literal['surface'] = Field(default='surface', description="Object type")
+    parent: str = Field(..., description="Parent body name")
+    active: bool = Field(True, description="Whether surface is active")
 
 
 class SurfaceCategoryConfig(ConfigBase):

@@ -24,7 +24,12 @@ from ..catalogs import objectsDB
 from ..controllers.position import FlatSurfaceMovementController, SurfaceMovementController
 from ..plugins import moduleLoader
 from .objectparser import ObjectYamlParser
-from .schemas.misc import FlatSurfaceControllerConfig, ScriptControllerConfig, SurfaceControllerConfig
+from .schemas.misc import (
+    FlatSurfaceControllerConfig,
+    ScriptControllerConfig,
+    StandaloneControllerConfig,
+    SurfaceControllerConfig,
+)
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -85,16 +90,16 @@ ControllerYamlParser.register_parser('flat-surface', FlatSurfaceControllerYamlPa
 class StandaloneControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        name = data.get('name', None)
-        body_name = data.get('body')
-        body = objectsDB.get(body_name)
+        body = objectsDB.get(data.body)
         if body is None:
-            print("ERROR: Parent '%s' of controller '%s' not found" % (body_name, name))
+            print(f"ERROR: Parent '{data.body}' of controller '{data.name or '(unnamed)'}' not found")
             return None
-        controller_class = ControllerYamlParser.decode(data)
+        controller_class = ControllerYamlParser.decode(data.to_dict())
         controller = controller_class(body)
         cls.app.add_controller(controller)
         return None
 
 
-ObjectYamlParser.register_object_parser('controller', StandaloneControllerYamlParser())
+ObjectYamlParser.register_object_parser(
+    'controller', StandaloneControllerYamlParser(), model=StandaloneControllerConfig
+)

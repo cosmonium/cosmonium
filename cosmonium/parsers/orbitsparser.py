@@ -29,7 +29,13 @@ from ..astro.frame import AbsoluteReferenceFrame, BodyReferenceFrames, J2000Ecli
 from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit, LocalFixedPosition
 from .framesparser import FrameYamlParser
 from .objectparser import ObjectYamlParser
-from .schemas.orbit import EllipticOrbitConfig, FixedOrbitConfig, GlobalPositionConfig
+from .schemas.orbit import (
+    EllipticOrbitConfig,
+    FixedOrbitConfig,
+    GlobalPositionConfig,
+    NamedOrbitConfig,
+    OrbitCategoryConfig,
+)
 from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
@@ -157,8 +163,8 @@ class OrbitYamlParser(TypedYamlParser):
 class OrbitCategoryYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name')
-        priority = data.get('priority')
+        name = data.name
+        priority = data.priority
         orbit_elements_db.register_category(name, priority)
         return None
 
@@ -166,12 +172,8 @@ class OrbitCategoryYamlParser(YamlModuleParser):
 class NamedOrbitYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        name = data.get('name')
-        category = data.get('category')
-        if name is None or category is None:
-            return None
-        orbit = OrbitYamlParser.decode(data)
-        orbit_elements_db.register_element(category, name, orbit)
+        orbit = OrbitYamlParser.decode(data.to_dict())
+        orbit_elements_db.register_element(data.category, data.name, orbit)
         return None
 
 
@@ -183,8 +185,8 @@ def register_orbit_parsers():
     OrbitYamlParser.register_parser('global', GlobalPositionYamlParser, GlobalPositionConfig)
 
     # Register top-level object parsers
-    ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser())
-    ObjectYamlParser.register_object_parser('elliptic', NamedOrbitYamlParser())
-    ObjectYamlParser.register_object_parser('fixed', NamedOrbitYamlParser())
-    ObjectYamlParser.register_object_parser('global', NamedOrbitYamlParser())
-    ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser())
+    ObjectYamlParser.register_object_parser('orbit', NamedOrbitYamlParser(), model=NamedOrbitConfig)
+    ObjectYamlParser.register_object_parser('elliptic', NamedOrbitYamlParser(), model=NamedOrbitConfig)
+    ObjectYamlParser.register_object_parser('fixed', NamedOrbitYamlParser(), model=NamedOrbitConfig)
+    ObjectYamlParser.register_object_parser('global', NamedOrbitYamlParser(), model=NamedOrbitConfig)
+    ObjectYamlParser.register_object_parser('orbit-category', OrbitCategoryYamlParser(), model=OrbitCategoryConfig)

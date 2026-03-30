@@ -26,7 +26,7 @@ Defines Pydantic models for heightmaps with noise configuration.
 
 from typing import Any, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import ConfigBase
 from .types import DistanceMField
@@ -59,3 +59,14 @@ class HeightmapConfig(ConfigBase):
 
     # LOD control
     max_lod: int = Field(100, description="Maximum level of detail")
+
+
+class StandaloneHeightmapConfig(ConfigBase):
+    """Configuration for standalone heightmap.
+
+    Heightmap specific parameters are not specified, all extra parameters are forwarded
+    to the appropriate heightmap sub-parser.
+    """
+
+    model_config = ConfigDict(extra='allow')  # Allow extra fields for heightmap-specific parameters
+    name: str = Field(..., description="Name to register in the heightmap database")
