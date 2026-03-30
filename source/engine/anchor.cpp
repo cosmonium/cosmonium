@@ -403,3 +403,42 @@ AnchorBase::_is_named(const std::string &name_up) const
   }
   return false;
 }
+
+std::string
+AnchorBase::_build_fullname(const std::string &name, const std::string &separator) const
+{
+  AnchorBase *parent_anchor = DCAST(AnchorBase, parent);
+  if (parent_anchor == nullptr) {
+    return name;
+  }
+  std::string parent_fullname;
+  bool parent_primary_is_self = false;
+  // Parent should always be a system, but check just in case
+  if (parent_anchor->is_system()) {
+    SystemAnchor *parent_system = DCAST(SystemAnchor, parent_anchor);
+    if (parent_system != nullptr) {
+      parent_primary_is_self = ((const AnchorBase *)parent_system->get_primary() == this);
+    }
+  }
+  if (!parent_primary_is_self) {
+    parent_fullname = parent_anchor->get_fullname(separator);
+  } else {
+    // We are the primary of the parent system, so skip it to avoid duplication in the name
+    if (parent->parent != nullptr) {
+      AnchorBase *pp = DCAST(AnchorBase, parent->parent);
+      parent_fullname = pp ? pp->get_fullname(separator) : "";
+    } else {
+      parent_fullname = "";
+    }
+  }
+  if (!parent_fullname.empty()) {
+    return parent_fullname + separator + name;
+  }
+  return name;
+}
+
+std::string
+AnchorBase::get_fullname(const std::string &separator) const
+{
+  return _build_fullname(get_c_name(), separator);
+}

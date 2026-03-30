@@ -43,6 +43,7 @@ PUBLISHED:
       PyObject *names = nullptr,
       PyObject *source_names = nullptr,
       const std::string &description = "");
+  virtual std::string get_fullname(const std::string &separator = "/") const;
   virtual void traverse(AnchorTraverser &visitor);
 
   MAKE_TYPE("UniverseAnchor", OctreeAnchor);

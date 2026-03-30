@@ -175,18 +175,7 @@ class StellarObject:
         self.shown = False
 
     def get_fullname(self, separator='/'):
-        if hasattr(self, "primary") and self.primary is not None:
-            name = self.primary.get_c_name()
-        else:
-            name = self.get_c_name()
-        if not hasattr(self.parent, "primary") or self.parent.primary is not self:
-            fullname = self.parent.get_fullname(separator)
-        else:
-            fullname = self.parent.parent.get_fullname(separator)
-        if fullname != '':
-            return fullname + separator + name
-        else:
-            return name
+        return self.anchor.get_fullname(separator)
 
     def create_components(self):
         pass

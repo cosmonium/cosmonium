@@ -206,6 +206,49 @@ class AnchorBase(ABC):
         """
         return self.description
 
+    def _build_fullname(self, name: str, separator: str) -> str:
+        """Build a full hierarchical name given this anchor's local name component.
+
+        Walks up the parent chain, skipping the immediate parent when this
+        anchor is the primary of that parent system (to avoid duplication).
+
+        Args:
+            name: The local name component for this anchor.
+            separator: String used to join path components.
+
+        Returns:
+            The full name string (e.g. ``"Sun/Earth/Moon"``), or just *name*
+            when there is no parent.
+        """
+        if self.parent is None:
+            return name
+        # Parent should always be a system, but check just in case
+        if not self.parent.is_system() or self.parent.primary != self:
+            parent_fullname = self.parent.get_fullname(separator)
+        else:
+            # We are the primary of the parent system, so skip it to avoid duplication in the name
+            if self.parent.parent is not None:
+                parent_fullname = self.parent.parent.get_fullname(separator)
+            else:
+                parent_fullname = None
+        if parent_fullname:
+            return parent_fullname + separator + name
+        return name
+
+    def get_fullname(self, separator: str = '/') -> str:
+        """Get the full hierarchical name of this anchor.
+
+        Builds the full path name by walking up the parent chain.
+
+        Args:
+            separator: String used to join path components.
+
+        Returns:
+            The full name string (e.g. ``"Sun/Earth/Moon"``).
+        """
+        name = self.get_c_name()
+        return self._build_fullname(name, separator)
+
     def get_point_color(self) -> LColor:
         """Get the point color used for rendering.
 
@@ -1059,7 +1102,7 @@ class StellarAnchor(AnchorBase):
         """
         if self.system is None:
             # Lazy imports to avoid circular dependencies
-            from ...astro.frame import OrbitReferenceFrame, J2000BarycentricEclipticReferenceFrame
+            from ...astro.frame import J2000BarycentricEclipticReferenceFrame, OrbitReferenceFrame
             from ...astro.orbits import LocalFixedPosition
             from ...astro.rotations import FixedRotation
 
@@ -1329,6 +1372,23 @@ class SystemAnchor(StellarAnchor):
         if primary is not None:
             primary.set_system(self)
 
+    def get_fullname(self, separator: str = '/') -> str:
+        """Get the full hierarchical name of this system anchor.
+
+        Uses the primary body's name if a primary is set.
+
+        Args:
+            separator: String used to join path components.
+
+        Returns:
+            The full name string (e.g. ``"Sun"`` or ``"Sun/Earth"``).
+        """
+        if self.primary is not None:
+            name = self.primary.get_c_name()
+        else:
+            name = self.get_c_name()
+        return self._build_fullname(name, separator)
+
     def add_child(self, child: AnchorBase) -> None:
         """Add a child anchor to the system and register its names.
 
@@ -1583,6 +1643,9 @@ class UniverseAnchor(OctreeAnchor):
         OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color, names, source_names, description)
         self.visible = True
         self.resolved = True
+
+    def get_fullname(self, separator: str = '/') -> str:
+        return ''
 
     def traverse(self, visitor: object) -> None:
         """Accept a visitor for traversal.

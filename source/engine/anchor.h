@@ -115,6 +115,7 @@ PUBLISHED:
   std::string get_c_name(void) const;
   std::string get_description(void) const;
   bool _is_named(const std::string &name_up) const;
+  virtual std::string get_fullname(const std::string &separator = "/") const;
 
   MAKE_SEQ(get_names, get_num_names, get_name_at);
   MAKE_SEQ(get_source_names, get_num_source_names, get_source_name_at);
@@ -231,6 +232,9 @@ protected:
 
   // If this anchor is the primary body of a stellar system, this will point to the system anchor
   PT(SystemAnchor) _system;
+
+  // Helper: build full path name from a pre-computed local name component.
+  std::string _build_fullname(const std::string &name, const std::string &separator) const;
 
 public:
   // Temporary

@@ -51,6 +51,12 @@ UniverseAnchor::UniverseAnchor(PyObject *ref_object,
   resolved = true;
 }
 
+std::string
+UniverseAnchor::get_fullname(const std::string &separator) const
+{
+  return "";
+}
+
 void
 UniverseAnchor::traverse(AnchorTraverser &visitor)
 {

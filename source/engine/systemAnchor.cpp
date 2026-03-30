@@ -58,6 +58,18 @@ SystemAnchor::is_system(void) const
   return true;
 }
 
+std::string
+SystemAnchor::get_fullname(const std::string &separator) const
+{
+  std::string name;
+  if (_primary != nullptr) {
+    name = _primary->get_c_name();
+  } else {
+    name = get_c_name();
+  }
+  return _build_fullname(name, separator);
+}
+
 SystemAnchor *
 SystemAnchor::get_or_create_system(void)
 {

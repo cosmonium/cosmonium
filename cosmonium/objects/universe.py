@@ -44,9 +44,6 @@ class Universe(OctreeSystem):
     def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
         return UniverseAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)
 
-    def get_fullname(self, separator='/'):
-        return ''
-
     def find_by_path(self, path, separator='/'):
         # TODO: Should probably moved outsidde Of Universe class
         if not isinstance(path, str):

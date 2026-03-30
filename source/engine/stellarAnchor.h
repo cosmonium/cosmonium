@@ -87,8 +87,6 @@ PUBLISHED:
 
   virtual LQuaterniond get_sync_rotation(void) const;
 
-  virtual std::string get_fullname(const std::string &separator = "/") const;
-
   virtual double get_absolute_magnitude(void) const;
 
   virtual double get_apparent_magnitude(void) const;

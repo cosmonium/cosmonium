@@ -201,16 +201,6 @@ StellarAnchor::get_sync_rotation(void) const
 }
 
 
-std::string
-StellarAnchor::get_fullname(const std::string &separator) const
-{
-  // This needs to access Python object's parent/primary for full path
-  // For now, just return the c_name (base implementation)
-  // The Python side will handle the complex parent hierarchy
-  return get_c_name();
-}
-
-
 double
 StellarAnchor::get_absolute_magnitude(void) const
 {
