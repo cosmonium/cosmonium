@@ -123,9 +123,6 @@ class StellarObject:
             name = 'x' + name
         return name
 
-    def get_exact_name(self, text):
-        return self.anchor.get_exact_name(text)
-
     def get_description(self):
         return self.anchor.get_description()
 
@@ -211,28 +208,6 @@ class StellarObject:
 
     def set_rotation(self, rotation):
         self.anchor.rotation = rotation
-
-    def _is_named(self, name_up):
-        for name in self.get_names():
-            if name.upper() == name_up:
-                return True
-        for name in self.get_source_names():
-            if name.upper() == name_up:
-                return True
-        return False
-
-    def is_named(self, name):
-        name_up = name.upper()
-        return self._is_named(name_up)
-
-    def get_name_from_upper(self, name_up):
-        for name in self.get_names():
-            if name.upper() == name_up:
-                return name
-        for name in self.get_source_names():
-            if name.upper() == name_up:
-                return name
-        return None
 
     def set_focused(self, focused):
         self.focused = focused
