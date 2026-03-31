@@ -25,7 +25,7 @@ from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
 from .orbitsparser import OrbitYamlParser
 from .rotationsparser import RotationYamlParser
-from .schemas.stellarobjects import StarConfig
+from .schemas.stellarobjects import StarConfig, StarSurfaceFactoryConfig
 from .surfacesparser import SurfaceYamlParser
 from .utilsparser import check_parent, get_radius_scale
 from .yamlparser import YamlModuleParser
@@ -84,14 +84,14 @@ class StarYamlParser(YamlModuleParser):
 class StarSurfaceFactoryYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        name = data.get('name')
+        name = data.name
         noise_parser = NoiseYamlParser()
-        func = data.get('func')
+        func = data.func
         if func is None:
-            func = data.get('noise')
+            func = data.noise
             print("Warning: 'noise' entry is deprecated, use 'func' instead'")
         func = noise_parser.decode(func)
-        size = int(data.get('size', 256))
+        size = int(data.size)
         factory = ProceduralStarSurfaceFactory(func, size)
         proceduralStarSurfaceFactoryDB.add(name, factory)
         return None
@@ -99,4 +99,6 @@ class StarSurfaceFactoryYamlParser(YamlModuleParser):
 
 def register_star_parsers():
     ObjectYamlParser.register_object_parser('star', StarYamlParser('star'), model=StarConfig)
-    ObjectYamlParser.register_object_parser('star-surface', StarSurfaceFactoryYamlParser())
+    ObjectYamlParser.register_object_parser(
+        'star-surface', StarSurfaceFactoryYamlParser(), model=StarSurfaceFactoryConfig
+    )

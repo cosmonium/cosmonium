@@ -49,6 +49,7 @@ class LocalDirectionalLightConfig(ConfigBase):
 
     type: Literal['directional'] = Field(default='directional', description="Light type identifier")
     name: Optional[str] = Field(None, description="Light name")
+    disabled: bool = Field(False, description="Whether this light is disabled")
     position: Optional[Point3Field] = Field([0, 0, 0], description="Light position [x, y, z]")
     color: Optional[ColorField] = Field([1, 1, 1, 1], description="Light color [r, g, b] or [r, g, b, a]")
     power: float = Field(1.0, description="Light power multiplier")
@@ -61,6 +62,7 @@ class LocalPointLightConfig(ConfigBase):
 
     type: Literal['point'] = Field(default='point', description="Light type identifier")
     name: Optional[str] = Field(None, description="Light name")
+    disabled: bool = Field(False, description="Whether this light is disabled")
     position: Optional[Point3Field] = Field([0, 0, 0], description="Light position [x, y, z]")
     color: Optional[ColorField] = Field([1, 1, 1, 1], description="Light color [r, g, b] or [r, g, b, a]")
     power: float = Field(1.0, description="Light power multiplier")
@@ -75,6 +77,7 @@ class LocalSpotLightConfig(ConfigBase):
 
     type: Literal['spot'] = Field(default='spot', description="Light type identifier")
     name: Optional[str] = Field(None, description="Light name")
+    disabled: bool = Field(False, description="Whether this light is disabled")
     position: Optional[Point3Field] = Field([0, 0, 0], description="Light position [x, y, z]")
     color: Optional[ColorField] = Field([1, 1, 1, 1], description="Light color [r, g, b] or [r, g, b, a]")
     power: float = Field(1.0, description="Light power multiplier")

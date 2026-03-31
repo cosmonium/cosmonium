@@ -19,6 +19,7 @@
 
 from ..scene.sceneworld import FlatTerrainWorld
 from .populatorsparser import PopulatorYamlParser
+from .schemas.world import FlatTerrainWorldConfig
 from .surfacesparser import FlatSurfaceParser
 from .yamlparser import YamlModuleParser
 
@@ -26,11 +27,11 @@ from .yamlparser import YamlModuleParser
 class FlatTerrainWorldYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
+        config = FlatTerrainWorldConfig.model_validate(data)
         terrain_surface = FlatSurfaceParser.decode(data)
         flat_world = FlatTerrainWorld("terrain")
         flat_world.set_terrain(terrain_surface)
-        layers = data.get('layers', [])
-        for layer_data in layers:
+        for layer_data in config.layers:
             layer = PopulatorYamlParser.decode(layer_data)
             flat_world.add_component(layer)
             layer.set_terrain(terrain_surface)

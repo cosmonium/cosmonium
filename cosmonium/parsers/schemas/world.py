@@ -26,7 +26,7 @@ Defines Pydantic models for Cartesian world configurations.
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from pydantic import Field
 
@@ -40,3 +40,29 @@ class CartesianWorldConfig(ConfigBase):
     controller: Optional[Any] = Field(None, description="Movement controller configuration")
     entities: List[Any] = Field(default_factory=list, description="List of entity configurations")
     lights: List[Any] = Field(default_factory=list, description="List of local light configurations")
+
+
+class FlatTerrainWorldConfig(ConfigBase):
+    """Configuration for a flat terrain world."""
+
+    tile_size: int = Field(1024, description="Tile size in meters")
+    max_vertex_size: int = Field(128, description="Maximum vertex count per patch edge")
+    max_lod: int = Field(10, description="Maximum LOD level")
+    max_distance: Optional[float] = Field(None, description="Maximum visibility distance")
+    tile_density: Optional[float] = Field(None, description="Tile density")
+    hw_tessellation: bool = Field(False, description="Hardware tessellation enabled")
+    shape: Optional[Any] = Field(None, description="Shape configuration")
+    appearance: Optional[Union[str, dict, Any]] = Field(None, description="Appearance")
+    lighting_model: Optional[str] = Field(None, description="Lighting model name")
+    heightmap: Optional[Union[str, dict, Any]] = Field(None, description="Heightmap")
+    biome: Optional[Union[str, dict, Any]] = Field(None, description="Biome heightmap")
+    layers: List[Any] = Field(default_factory=list, description="Populator layers")
+
+
+class FlatUniverseConfig(ConfigBase):
+    """Configuration for a flat (non-stellar) universe."""
+
+    terrain: Optional[Any] = Field(None, description="Terrain configuration")
+    lights: List[Any] = Field(default_factory=list, description="Light configurations")
+    scattering: Optional[Any] = Field(None, description="Scattering configuration")
+    worlds: List[Any] = Field(default_factory=list, description="World configurations")

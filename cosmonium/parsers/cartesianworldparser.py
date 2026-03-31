@@ -36,13 +36,9 @@ class CartesianWorldYamlParser(YamlModuleParser):
             controller = ControllerYamlParser.decode(config.controller, world.anchor)
             world.set_controller(controller)
         for entity_data in config.entities:
-            if entity_data.get('disabled'):
-                continue
             entity = EntityYamlParser.decode(entity_data)
             world.add_component(entity)
         for light_data in config.lights:
-            if light_data.get('disabled'):
-                continue
             light = LocalLightYamlParser.decode(light_data)
             world.add_component(light)
         return world

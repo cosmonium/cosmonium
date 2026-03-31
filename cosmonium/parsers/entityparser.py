@@ -31,9 +31,11 @@ from .yamlparser import YamlModuleParser
 class EntityYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        if data is None:
-            return None
         config = EntityConfig.model_validate(data)
+        # TODO: Disabled entity is treated as non-existent, so we return None instead of an entity object
+        # We should return an entity object with a disabled flag instead of None
+        if config.disabled:
+            return None
         shape, extra = ShapeYamlParser.decode(config.shape)
         appearance_data = config.appearance
         if appearance_data is None:

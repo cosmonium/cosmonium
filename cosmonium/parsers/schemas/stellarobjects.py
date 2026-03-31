@@ -34,6 +34,16 @@ from .base import ConfigBase
 from .types import ColorField, DistanceKmField, Vector3Field
 
 
+class StarSurfaceFactoryConfig(ConfigBase):
+    """Configuration for procedural star surface factory."""
+
+    type: Literal['star-surface'] = Field(default='star-surface', description="Object type")
+    name: Optional[str] = Field(None, description="Factory name")
+    func: Optional[Any] = Field(None, description="Noise function configuration")
+    noise: Optional[Any] = Field(None, description="Noise function (deprecated, use func)")
+    size: int = Field(256, description="Texture size")
+
+
 class StellarObjectConfig(ConfigBase):
     """Base configuration for stellar objects."""
 

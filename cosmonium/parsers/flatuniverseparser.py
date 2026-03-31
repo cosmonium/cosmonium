@@ -22,6 +22,7 @@ from .cartesianworldparser import CartesianWorldYamlParser
 from .flatterrainworldparser import FlatTerrainWorldYamlParser
 from .lightparser import InfiniteSunLightYamlParser
 from .scatteringparser import ScatteringYamlParser
+from .schemas.world import FlatUniverseConfig
 from .skyboxparser import SkyBoxYamlParser
 from .yamlparser import YamlModuleParser
 
@@ -35,18 +36,18 @@ class FlatUniverseYamlParser(YamlModuleParser):
         self.universe = universe
 
     def decode(self, data, parent=None):
-        if data.get('terrain'):
-            terrain = FlatTerrainWorldYamlParser.decode(data.get('terrain'))
+        config = FlatUniverseConfig.model_validate(data)
+        if config.terrain is not None:
+            terrain = FlatTerrainWorldYamlParser.decode(config.terrain)
             self.universe.set_terrain(terrain)
-        # children = ObjectYamlParser.decode_objects_list(data.get('children', []), self.universe)
-        for light_data in data.get('lights', []):
+        for light_data in config.lights:
             light = InfiniteSunLightYamlParser.decode(light_data)
             self.universe.add_light(light)
-        scattering = ScatteringYamlParser.decode(data.get('scattering'))
+        scattering = ScatteringYamlParser.decode(config.scattering)
         self.universe.set_scattering(scattering)
         if scattering is not None:
             skybox = SkyBoxYamlParser.decode({}, scattering)
             self.universe.set_skybox(skybox)
-        for world_data in data.get('worlds', []):
+        for world_data in config.worlds:
             world = CartesianWorldYamlParser.decode(world_data, parent=self.universe)
             self.universe.add_world(world)

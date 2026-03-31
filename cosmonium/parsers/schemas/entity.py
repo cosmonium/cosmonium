@@ -37,8 +37,8 @@ class EntityConfig(ConfigBase):
     """Configuration for a scene entity."""
 
     name: Optional[str] = Field(None, description="Entity name")
+    disabled: bool = Field(False, description="Whether the entity is disabled")
     shape: Optional[Any] = Field(None, description="Shape configuration")
     appearance: Optional[Any] = Field(None, description="Appearance configuration")
     lighting_model: Optional[Any] = Field(None, description="Lighting model configuration")
     physics: Optional[Any] = Field(None, description="Physics shape configuration")
-    disabled: bool = Field(False, description="Whether the entity is disabled")

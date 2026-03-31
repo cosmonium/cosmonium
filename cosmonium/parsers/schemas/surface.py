@@ -26,7 +26,7 @@ Defines Pydantic models for surface appearance, shape, and complete surface conf
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from pydantic import ConfigDict, Field
 
@@ -58,6 +58,23 @@ class SurfaceConfig(ConfigBase):
     resolution: Optional[float | str] = Field(None, description="Surface resolution")
     attribution: Optional[str] = Field(None, description="Data attribution/source")
     source: Optional[str] = Field(None, description="Data source (alias for attribution)")
+
+
+class FlatSurfaceConfig(ConfigBase):
+    """Configuration for a flat terrain surface."""
+
+    tile_size: int = Field(1024, description="Tile size")
+    max_vertex_size: int = Field(128, description="Maximum vertex size")
+    max_lod: int = Field(10, description="Maximum LOD level")
+    max_distance: Optional[float] = Field(None, description="Maximum distance")
+    tile_density: Optional[float] = Field(None, description="Tile density")
+    hw_tessellation: bool = Field(False, description="Use hardware tessellation")
+    shape: Optional[Any] = Field(None, description="Shape configuration")
+    appearance: Optional[Union[str, dict]] = Field(None, description="Appearance configuration")
+    lighting_model: Optional[str] = Field(None, description="Lighting model name")
+    heightmap: Optional[Union[str, dict]] = Field(None, description="Heightmap configuration")
+    biome: Optional[Union[str, dict]] = Field(None, description="Biome configuration")
+    layers: List[Any] = Field(default_factory=list, description="Populator layers")
 
 
 class StandaloneSurfaceConfig(ConfigBase):

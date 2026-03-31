@@ -45,7 +45,7 @@ from ..shapes.mesh import MeshShape
 from .appearancesparser import AppearanceYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .objectparser import ObjectYamlParser
-from .schemas.surface import StandaloneSurfaceConfig, SurfaceConfig
+from .schemas.surface import FlatSurfaceConfig, StandaloneSurfaceConfig, SurfaceConfig
 from .shadersparser import LightingModelYamlParser
 from .shapesparser import ShapeYamlParser
 from .utilsparser import get_radius_scale
@@ -55,14 +55,17 @@ from .yamlparser import YamlModuleParser
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
     def decode_surface(self, data, previous, owner):
-        # Cascade defaults from previous surface (must happen on the raw dict before validation)
-        data.setdefault('heightmap', previous.get('heightmap'))
-        data.setdefault('shape', previous.get('shape'))
-        data.setdefault('appearance', previous.get('appearance'))
-        data.setdefault('lighting-model', previous.get('lighting-model'))
-
-        # Validate through the schema (after cascaded defaults are in the dict)
-        config = SurfaceConfig.model_validate(data)
+        if isinstance(data, SurfaceConfig):
+            # Already validated - use model directly (no cascading needed)
+            config = data
+        else:
+            # Cascade defaults from previous surface (must happen on the raw dict before validation)
+            data.setdefault('heightmap', previous.get('heightmap'))
+            data.setdefault('shape', previous.get('shape'))
+            data.setdefault('appearance', previous.get('appearance'))
+            data.setdefault('lighting-model', previous.get('lighting-model'))
+            # Validate through the schema (after cascaded defaults are in the dict)
+            config = SurfaceConfig.model_validate(data)
 
         name = config.name
         category_name = config.category or 'visible'
@@ -205,20 +208,21 @@ class SurfaceYamlParser(YamlModuleParser):
 class FlatSurfaceParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        tile_size = data.get("tile-size", 1024)
+        config = FlatSurfaceConfig.model_validate(data)
+        tile_size = config.tile_size
         # TODO: coord_scale should simply be tile_size
         coord_scale = tile_size / 16384
-        max_vertex_size = data.get('max-vertex-size', 128)
-        max_lod = data.get('max-lod', 10)
-        max_distance = data.get('max-distance', 1.001 * 1024 * sqrt(2))
-        tile_density = data.get('tile-density', settings.patch_default_density)
-        hw_tessellation = data.get('hw-tessellation', False)
+        max_vertex_size = config.max_vertex_size
+        max_lod = config.max_lod
+        max_distance = config.max_distance if config.max_distance is not None else 1.001 * tile_size * sqrt(2)
+        tile_density = config.tile_density if config.tile_density is not None else settings.patch_default_density
+        hw_tessellation = config.hw_tessellation
 
-        shape_data = data.get('shape')
-        appearance = data.get('appearance')
-        lighting_model = data.get('lighting-model')
-        heightmap_data = data.get('heightmap')
-        biome_data = data.get('biome')
+        shape_data = config.shape
+        appearance = config.appearance
+        lighting_model = config.lighting_model
+        heightmap_data = config.heightmap
+        biome_data = config.biome
 
         if shape_data is None:
             shape_data = {'type': 'tiled-plane'}

@@ -27,7 +27,9 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        if data is None:
+        # TODO: Disabled light is treated as non-existent, so we return None instead of a light object
+        # Wwe should return a light object with a disabled flag instead of None
+        if data.disabled:
             return None
         direction = data.direction.normalized()
         if data.shadows is not None:
@@ -46,7 +48,9 @@ class LocalPointLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        if data is None:
+        # TODO: Disabled light is treated as non-existent, so we return None instead of a light object
+        # Wwe should return a light object with a disabled flag instead of None
+        if data.disabled:
             return None
         light = LocalPointLight(
             data.name, data.position, data.color, data.power, data.attenuation, data.max_distance, cast_shadows=False
@@ -58,7 +62,9 @@ class LocalSpotLightYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
-        if data is None:
+        # TODO: Disabled light is treated as non-existent, so we return None instead of a light object
+        # Wwe should return a light object with a disabled flag instead of None
+        if data.disabled:
             return None
         direction = data.direction.normalized()
         if data.shadows is not None:
