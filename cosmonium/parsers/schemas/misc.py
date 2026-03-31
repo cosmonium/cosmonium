@@ -27,7 +27,7 @@ in other categories (ships, controllers, plugins, attributions, etc.)
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import ConfigDict, Field
 
@@ -111,11 +111,23 @@ class AttributionConfig(ConfigBase):
 
 
 class AttributionsConfig(ConfigBase):
-    """Configuration for multiple attributions (dict of attributions)."""
+    """Configuration for multiple attributions."""
 
     type: Literal['attributions'] = Field(default='attributions', description="Object type")
-    # This will store a dict of attribution_id -> attribution data
-    # The actual structure is handled by the parser
+    attributions: List[Dict[str, Any]] = Field(default_factory=list, description="Attribution entries")
+
+
+class CatalogEntryConfig(ConfigBase):
+    """Configuration for a single catalog entry."""
+
+    prefix: str = Field(..., description="Catalog prefix identifier")
+    description: str = Field('', description="Catalog description")
+
+
+class CatalogsConfig(ConfigBase):
+    """Configuration for catalogs list."""
+
+    catalogs: List[CatalogEntryConfig] = Field(default_factory=list, description="List of catalog definitions")
 
 
 class StandaloneControllerConfig(ConfigBase):

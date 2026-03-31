@@ -21,7 +21,7 @@
 from ..components.elements.surface_categories import SurfaceCategory, surfaceCategoryDB
 from ..dataattribution import DataAttribution, dataAttributionDB
 from .schemas.base import IncludeConfig
-from .schemas.misc import AttributionConfig
+from .schemas.misc import AttributionConfig, AttributionsConfig
 from .schemas.stellarobjects import UniverseConfig
 from .schemas.surface import SurfaceCategoryConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
@@ -60,11 +60,7 @@ class DataAttributionYamlParser(YamlModuleParser):
     def decode(cls, data, attribution_id=None):
         if attribution_id is None:
             attribution_id = data.id
-        name = data.name
-        copyright = data.copyright
-        license = data.license
-        url = data.url
-        attribution = DataAttribution(name, copyright, license, url)
+        attribution = DataAttribution(data.name, data.copyright, data.license, data.url)
         dataAttributionDB.add_attribution(attribution_id, attribution)
         return None
 
@@ -72,12 +68,10 @@ class DataAttributionYamlParser(YamlModuleParser):
 class DataAttributionsListYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, parent=None):
-        # data is a dict of attribution_id -> attribution data
-        # This parser doesn't validate individual attributions, just passes them through
-        attributions = data.get('attributions', {})
-        for attribution_id, attribution_data in attributions.items():
+        config = AttributionsConfig.model_validate(data)
+        for attribution_data in config.attributions:
             validated_attribution = AttributionConfig.model_validate(attribution_data)
-            DataAttributionYamlParser.decode(validated_attribution, attribution_id)
+            DataAttributionYamlParser.decode(validated_attribution, validated_attribution.id)
         return None
 
 
@@ -96,7 +90,7 @@ def register_object_parsers():
     ObjectYamlParser.register_object_parser('universe', universeYamlParser, UniverseConfig)
     ObjectYamlParser.register_object_parser('include', IncludeYamlParser(), IncludeConfig)
     ObjectYamlParser.register_object_parser('attributions', DataAttributionsListYamlParser())
-    ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser(), model=AttributionConfig)
+    ObjectYamlParser.register_object_parser('attribution', DataAttributionYamlParser(), AttributionConfig)
     ObjectYamlParser.register_object_parser(
         'surface-category', SurfaceCategoryYamlParser(), model=SurfaceCategoryConfig
     )
