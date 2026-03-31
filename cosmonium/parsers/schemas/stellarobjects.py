@@ -31,7 +31,7 @@ from typing import Any, List, Literal, Optional, Union
 from pydantic import Field
 
 from .base import ConfigBase
-from .types import ColorField, DistanceKmField, DistanceLyField, Point3Field, Vector3Field
+from .types import ColorField, DistanceKmField, Vector3Field
 
 
 class StellarObjectConfig(ConfigBase):
@@ -123,29 +123,6 @@ class SystemConfig(StellarObjectConfig):
 
     # System properties
     star_system: Optional[bool] = Field(False, description="Is this a star system")
-
-    # Hierarchical structure
-    children: Optional[List[Any]] = Field(None, description="Child object configurations")
-
-
-class GalaxyConfig(StellarObjectConfig):
-    """Configuration for galaxies (handle type field conflict with galaxy-type)."""
-
-    type: Literal['galaxy'] = Field(default='galaxy', description="Object type")
-    body_class: Optional[str] = Field('galaxy', description="Body classification")
-
-    # Galaxy properties
-    radius: Optional[DistanceLyField] = Field(None, description="Galaxy radius (float in ly, or [value, unit])")
-    classification: Optional[str] = Field(None, description="Galaxy classification (spiral, elliptical, etc.)")
-    magnitude: Optional[float] = Field(None, description="Absolute magnitude")
-    shape: dict = Field(default_factory=dict, description="Galaxy shape configuration")
-    appearance: dict = Field(default_factory=dict, description="Galaxy appearance configuration")
-
-    # Position and scale
-    position: Optional[Point3Field] = Field(None, description="Galaxy position")
-    distance: Optional[float] = Field(None, description="Distance from observer")
-    size: Optional[float] = Field(None, description="Galaxy size")
-    scale: Optional[Vector3Field] = Field(None, description="Galaxy scale")
 
     # Hierarchical structure
     children: Optional[List[Any]] = Field(None, description="Child object configurations")
