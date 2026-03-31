@@ -33,6 +33,12 @@ from ..procedural.texturecontrol import (
     SlopeTextureControl,
     SlopeTextureControlEntry,
 )
+from .schemas.texturecontrol import (
+    BiomeTextureEntryConfig,
+    HeightColorControlConfig,
+    HeightTextureEntryConfig,
+    SlopeTextureEntryConfig,
+)
 from .utilsparser import DistanceUnitsYamlParser
 from .yamlparser import YamlModuleParser, YamlParser
 
@@ -47,12 +53,12 @@ class HeightColorControlYamlParser(YamlParser):
         self.height_offset = 0.0
 
     def decode_height_layer(self, data):
-        height = data.get("height", 0.0)
+        height = data.height
         if not self.percentage:
-            height_units = DistanceUnitsYamlParser.decode(data.get("height-units"), units.m)
+            height_units = DistanceUnitsYamlParser.decode(data.height_units, units.m)
             height *= height_units
-        bottom = data.get("bottom", None)
-        top = data.get("top", [0, 0, 0])
+        bottom = data.bottom
+        top = data.top
         if bottom is not None:
             if not self.float_values:
                 bottom = LColor(bottom[0] / 255.0, bottom[1] / 255.0, bottom[2] / 255.0, 1.0)
@@ -64,24 +70,24 @@ class HeightColorControlYamlParser(YamlParser):
             top = LColor(top[0], top[1], top[2], 1.0)
         return ColormapLayer(height * self.height_scale - self.height_offset, bottom, top)
 
-    def decode_height_control(self, data):
+    def decode_height_control(self, entries):
         self.colormap_id += 1
-        entries = []
-        for entry in data:
-            entries.append(self.decode_height_layer(entry))
-        return HeightColorMap('colormap_%d' % self.colormap_id, entries)
+        result = []
+        for entry in entries:
+            result.append(self.decode_height_layer(entry))
+        return HeightColorMap('colormap_%d' % self.colormap_id, result)
 
     def decode(self, data, heightmap, radius=1.0):
-        entries = data.get('entries', [])
-        self.percentage = data.get('percentage', False)
-        self.float_values = data.get('float', False)
+        config = HeightColorControlConfig.model_validate(data)
+        self.percentage = config.percentage
+        self.float_values = config.float_values
         if self.percentage:
             self.height_scale = 1.0 / (heightmap.max_height - heightmap.min_height) / radius
             self.height_offset = heightmap.min_height * self.height_scale
         else:
             self.height_scale = 1.0 / radius
             self.height_offset = 0.0
-        return self.decode_height_control(entries)
+        return self.decode_height_control(config.entries)
 
 
 class MixTextureControlYamlParser(YamlParser):
@@ -92,58 +98,58 @@ class MixTextureControlYamlParser(YamlParser):
         self.height_scale = 0.0
 
     def decode_height_entry(self, data):
-        entry = self.decode_entry(data.get('entry'))
-        height = data.get("height", 0.0)
-        height_units = DistanceUnitsYamlParser.decode(data.get("height-units"), units.m)
+        entry = self.decode_entry(data.entry)
+        height = data.height
+        height_units = DistanceUnitsYamlParser.decode(data.height_units, units.m)
         height *= height_units
-        blend = data.get("blend", 0.0)
+        blend = data.blend
         blend *= height_units
         return HeightTextureControlEntry(entry, height * self.height_scale, blend * self.height_scale)
 
-    def decode_height_control(self, data):
+    def decode_height_control(self, entries):
         self.height_id += 1
-        entries = []
-        for entry in data:
-            entries.append(self.decode_height_entry(entry))
-        return HeightTextureControl('height_%d' % self.height_id, entries)
+        result = []
+        for entry in entries:
+            config = HeightTextureEntryConfig.model_validate(entry) if isinstance(entry, dict) else entry
+            result.append(self.decode_height_entry(config))
+        return HeightTextureControl('height_%d' % self.height_id, result)
 
     def decode_slope_entry(self, data):
-        entry = self.decode_entry(data.get('entry'))
-        angle = data.get("angle", 0.0)
-        blend = data.get("blend", 0.0)
-        return SlopeTextureControlEntry(entry, angle, blend)
+        entry = self.decode_entry(data.entry)
+        return SlopeTextureControlEntry(entry, data.angle, data.blend)
 
-    def decode_slope_control(self, data):
+    def decode_slope_control(self, entries):
         self.slope_id += 1
-        entries = []
-        for entry in data:
-            entries.append(self.decode_slope_entry(entry))
-        return SlopeTextureControl('slope_%d' % self.slope_id, entries)
+        result = []
+        for entry in entries:
+            config = SlopeTextureEntryConfig.model_validate(entry) if isinstance(entry, dict) else entry
+            result.append(self.decode_slope_entry(config))
+        return SlopeTextureControl('slope_%d' % self.slope_id, result)
 
     def decode_biome_entry(self, data):
-        entry = self.decode_entry(data.get('entry'))
-        value = data.get("value", 0.0)
-        blend = data.get("blend", 1.0)
-        return BiomeTextureControlEntry(entry, value, blend)
+        entry = self.decode_entry(data.entry)
+        return BiomeTextureControlEntry(entry, data.value, data.blend)
 
-    def decode_biome_control(self, data):
-        entries = []
-        for entry in data:
-            entries.append(self.decode_biome_entry(entry))
-        return BiomeControl('dummy', 'biome', entries)  # TODO: make biome source configurable
+    def decode_biome_control(self, entries):
+        result = []
+        for entry in entries:
+            config = BiomeTextureEntryConfig.model_validate(entry) if isinstance(entry, dict) else entry
+            result.append(self.decode_biome_entry(config))
+        return BiomeControl('dummy', 'biome', result)  # TODO: make biome source configurable
 
     def decode_entry(self, data):
+        if data is None:
+            return None
         if isinstance(data, str):
             return SimpleTextureControl(data)
         else:
-            entry_type = list(data)[0]
-            entry = data[entry_type]
+            entry_type = list(data)[0] if isinstance(data, dict) else None
             if entry_type == 'height':
-                return self.decode_height_control(entry)
+                return self.decode_height_control(data['height'])
             elif entry_type == 'slope':
-                return self.decode_slope_control(entry)
+                return self.decode_slope_control(data['slope'])
             elif entry_type == 'biome':
-                return self.decode_biome_control(entry)
+                return self.decode_biome_control(data['biome'])
             else:
                 return None
 
@@ -158,7 +164,7 @@ class TextureControlYamlParser(YamlModuleParser):
     def decode(self, data, heightmap, radius=1.0):
         if data is None:
             return None
-        control_type = data.get('type', 'textures')
+        control_type = data.get('type', 'textures') if isinstance(data, dict) else getattr(data, 'type', 'textures')
         if control_type == 'textures':
             control_parser = MixTextureControlYamlParser()
             control = control_parser.decode(data, heightmap, radius)

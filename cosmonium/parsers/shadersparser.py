@@ -25,6 +25,7 @@ from ..shaders.lighting.flat import FlatLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..shaders.lighting.oren_nayar import OrenNayarPhongLightingModel
 from ..shaders.lighting.pbr import PbrLightingModel
+from .schemas.shader import CustomShaderComponentConfig
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
@@ -33,31 +34,32 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
 
     @classmethod
     def decode(cls, data):
+        config = CustomShaderComponentConfig.model_validate(data)
         custom_id = "custom%d" % cls.count
         cls.count += 1
         custom = CustomShaderComponent(custom_id)
-        for required in data.get('vertex-requires', []):
+        for required in config.vertex_requires:
             custom.vertex_requires.add(required)
-        for provide in data.get('vertex-provides', []):
+        for provide in config.vertex_provides:
             custom.vertex_provides.add(provide)
-        for required in data.get('fragment-requires', []):
+        for required in config.fragment_requires:
             custom.fragment_requires.add(required)
-        for provide in data.get('fragment-provides', []):
+        for provide in config.fragment_provides:
             custom.fragment_provides.add(provide)
 
-        custom.vertex_uniforms_data = [data.get('vertex-uniforms', '')]
-        custom.vertex_inputs_data = [data.get('vertex-inputs', '')]
-        custom.vertex_outputs_data = [data.get('vertex-outputs', '')]
-        custom.vertex_extra_data = [data.get('vertex-extra', '')]
-        custom.update_vertex_data = [data.get('update-vertex', '')]
-        custom.update_normal_data = [data.get('update-normal', '')]
-        custom.vertex_shader_data = [data.get('vertex-shader', '')]
-        custom.fragment_uniforms_data = [data.get('fragment-uniforms', '')]
-        custom.fragment_inputs_data = [data.get('fragment-inputs', '')]
-        custom.fragment_extra_data = [data.get('fragment-extra', '')]
-        custom.fragment_shader_decl_data = [data.get('fragment-shader-decl', '')]
-        custom.fragment_shader_distort_coord_data = [data.get('fragment-shader-distort-coord', '')]
-        custom.fragment_shader_data = [data.get('fragment-shader', '')]
+        custom.vertex_uniforms_data = [config.vertex_uniforms]
+        custom.vertex_inputs_data = [config.vertex_inputs]
+        custom.vertex_outputs_data = [config.vertex_outputs]
+        custom.vertex_extra_data = [config.vertex_extra]
+        custom.update_vertex_data = [config.update_vertex]
+        custom.update_normal_data = [config.update_normal]
+        custom.vertex_shader_data = [config.vertex_shader]
+        custom.fragment_uniforms_data = [config.fragment_uniforms]
+        custom.fragment_inputs_data = [config.fragment_inputs]
+        custom.fragment_extra_data = [config.fragment_extra]
+        custom.fragment_shader_decl_data = [config.fragment_shader_decl]
+        custom.fragment_shader_distort_coord_data = [config.fragment_shader_distort_coord]
+        custom.fragment_shader_data = [config.fragment_shader]
 
         return custom
 

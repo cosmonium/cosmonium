@@ -22,7 +22,7 @@ from ..appearances import TexturesBlock
 from ..procedural.appearances import TexturesDictionary
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
 from ..textures import NormalMapTexture, OcclusionMapTexture, SurfaceTexture
-from .schemas.texture import TextureDictionaryConfig
+from .schemas.texture import TextureDictionaryConfig, TextureDictionaryEntryConfig
 from .texturesourceparser import TextureSourceYamlParser
 from .yamlparser import TypedYamlParser, YamlModuleParser
 
@@ -79,13 +79,14 @@ class TextureDictionaryYamlParser(YamlModuleParser):
             albedo = self.decode_texture_albedo(data, srgb)
             entry.set_albedo(albedo)
         else:
-            albedo = self.decode_texture_albedo(data.get('albedo'), srgb)
+            config = TextureDictionaryEntryConfig.model_validate(data)
+            albedo = self.decode_texture_albedo(config.albedo, srgb)
             if albedo is not None:
                 entry.set_albedo(albedo)
-            normal = self.decode_texture_normal(data.get('normal'))
+            normal = self.decode_texture_normal(config.normal)
             if normal is not None:
                 entry.set_normal(normal)
-            occlusion = self.decode_texture_occlusion(data.get('occlusion'))
+            occlusion = self.decode_texture_occlusion(config.occlusion)
             if occlusion is not None:
                 entry.set_occlusion(occlusion)
         return entry
