@@ -86,13 +86,12 @@ class AutoPilot(object):
         else:
             if self.current_interval is not None:
                 self.current_interval.pause()
+            self.start_pos = self.controller.get_frame_position()
             if absolute:
-                self.start_pos = self.controller.get_frame_position()
                 self.end_pos = self.controller.anchor.calc_frame_position_of_local(new_pos)
-            if ease:
-                blend_type = 'easeInOut'
             else:
-                blend_type = 'noBlend'
+                self.end_pos = new_pos
+            blend_type = 'easeInOut' if ease else 'noBlend'
             self.current_interval = LerpFunc(
                 self.do_move, fromData=0, toData=1, duration=duration, blendType=blend_type, name=None
             )
