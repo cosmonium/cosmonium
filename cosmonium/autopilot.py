@@ -41,7 +41,6 @@ class AutoPilot(object):
         self.current_interval = None
         self.timed_interval = None
         self.last_interval_time = None
-        self.fake = None
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
         self.trans_easing = ExpEasing()
@@ -278,9 +277,6 @@ class AutoPilot(object):
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
     def go_pole(self, target, lat, duration, zoom):
-        if not self.ui.selected:
-            return
-        target = self.ui.selected
         if zoom:
             distance = settings.default_distance
         else:
@@ -331,8 +327,6 @@ class AutoPilot(object):
         return rot
 
     def align_on_ecliptic(self, duration=None):
-        if duration is None:
-            duration = settings.fast_move
         ecliptic_normal = (
             self.controller.get_frame_orientation()
             .conjugate()
@@ -340,11 +334,8 @@ class AutoPilot(object):
         )
         rot = self._compute_roll_to_align(ecliptic_normal)
         self.controller.step_turn_local(rot)
-        # self.move_and_rotate_to(position, orientation, duration=duration)
 
     def align_on_equatorial(self, duration=None):
-        if duration is None:
-            duration = settings.fast_move
         equatorial_normal = (
             self.controller.get_frame_orientation()
             .conjugate()
@@ -370,7 +361,6 @@ class AutoPilot(object):
             self.controller.set_local_position(center + new_pos)
 
     def change_distance(self, rate, duration=None):
-        print("Change distance")
         if duration is None:
             duration = settings.fast_move
         self.update_func(self.do_change_distance, duration, [rate])
@@ -395,7 +385,6 @@ class AutoPilot(object):
         self.controller.turn_local(frame_orient * rot_local)
 
     def orbit(self, axis, rate, duration=None):
-        print("Orbit")
         if duration is None:
             duration = settings.slow_move
         self.update_func(self.do_orbit, duration, [axis, rate])
@@ -406,7 +395,6 @@ class AutoPilot(object):
         self.controller.step_turn_local(rot)
 
     def rotate(self, axis, rate, duration=None):
-        print("Rotate")
         if duration is None:
             duration = settings.slow_move
         self.update_func(self.do_rotate, duration, [axis, rate])
