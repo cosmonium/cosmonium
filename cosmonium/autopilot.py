@@ -194,10 +194,11 @@ class AutoPilot(object):
         print("Go to front", target.get_name())
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
-        position = None
+        # Determine the position from which we are viewing the object (i.e. where the light comes from).
+        light_position = None
         if star:
             if target.lights is not None and len(target.lights.lights) > 0:
-                position = target.lights.lights[0].source
+                light_position = target.lights.lights[0].source
         else:
             if (
                 target.parent is not None
@@ -206,17 +207,17 @@ class AutoPilot(object):
             ):
                 if target.parent.primary == target:
                     if target.lights is not None and len(target.lights.lights) > 0:
-                        position = target.lights.lights[0].source
+                        light_position = target.lights.lights[0].source
                 else:
-                    position = target.parent.primary
-        if position is not None:
-            print("Looking from", position.get_name())
-            position = position.anchor.calc_absolute_relative_position_to(
+                    light_position = target.parent.primary
+        if light_position is not None:
+            print("Looking from", light_position.get_name())
+            view_origin = light_position.anchor.calc_absolute_relative_position_to(
                 self.controller.get_absolute_reference_point()
             )
         else:
-            position = self.controller.get_local_position()
-        direction = center - position
+            view_origin = self.controller.get_local_position()
+        direction = center - view_origin
         direction.normalize()
         new_position = center - direction * distance * distance_unit
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
