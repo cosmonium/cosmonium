@@ -382,13 +382,17 @@ class AutoPilot(object):
         relative_pos = self.controller.get_frame_position() - center
         rot = LQuaterniond()
         rot.setFromAxisAngleRad(rate * delta, axis)
-        rot2 = self.controller.get_frame_orientation().conjugate() * rot * self.controller.get_frame_orientation()
-        rot2.normalize()
+        # Transform the world-space rotation into the camera's local frame.
+        frame_orient = self.controller.get_frame_orientation()
+        rot_local = frame_orient.conjugate() * rot * frame_orient
+        rot_local.normalize()
+        # Rotate the relative position and update camera position.
         distance = relative_pos.length()
         relative_pos.normalize()
-        new_pos = rot2.xform(relative_pos) * distance
+        new_pos = rot_local.xform(relative_pos) * distance
         self.controller.set_frame_position(new_pos + center)
-        self.controller.turn_local(self.controller.get_frame_orientation() * rot2)
+        # Apply the same rotation to the camera orientation so it keeps the object in the centre of the view.
+        self.controller.turn_local(frame_orient * rot_local)
 
     def orbit(self, axis, rate, duration=None):
         print("Orbit")
