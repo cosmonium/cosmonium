@@ -254,10 +254,12 @@ class AutoPilot(object):
         print("Go to long-lat", target.get_name())
         self.ui.follow_selected()
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
-        new_position = target.surface.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
-        new_position = target.anchor._orientation.xform(new_position)
-        direction = -new_position.normalized()
-        self.go_to(target, duration, center + new_position, direction, up, start_rotation, end_rotation)
+        # Compute the camera offset from the object centre in the object's
+        # body-fixed frame, then rotate it into the world frame.
+        offset = target.surface.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
+        offset = target.anchor._orientation.xform(offset)
+        direction = -offset.normalized()
+        self.go_to(target, duration, center + offset, direction, up, start_rotation, end_rotation)
 
     def go_to_surface(self, duration=None, height=1.001):
         if not self.ui.selected:
