@@ -18,19 +18,27 @@
 #
 
 
+from __future__ import annotations
+
+from math import acos, exp, log, pi
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
+
 from direct.interval.LerpInterval import LerpFunc
 from direct.showbase.ShowBaseGlobal import globalClock
-from math import acos, pi, exp, log
-from panda3d.core import LQuaterniond, LVector3d, LPoint3d
-from panda3d.core import lookAt
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d, lookAt
 
-from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
+from . import settings
 from .astro import units
+from .astro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from .mathutil.easing import ExpEasing, SinEasing
 from .mathutil.quaternion import slerp
 from .objects.systems import StellarSystem
 from .utils import isclose
-from . import settings
+
+if TYPE_CHECKING:
+    from .camera import BaseCameraController
+    from .controllers.base import MovementController
+    from .objects.stellarobject import StellarObject
 
 
 class AutoPilot(object):
@@ -53,16 +61,16 @@ class AutoPilot(object):
     Reference position changes are handled via ``stash_position`` / ``pop_position``.
     """
 
-    def __init__(self, ui):
+    def __init__(self, ui) -> None:
         self.ui = ui
-        self.controller = None
-        self.camera_controller = None
+        self.controller: Optional[MovementController] = None
+        self.camera_controller: Optional[BaseCameraController] = None
         # Active position/rotation fly-to interval (LerpFunc or None).
-        self.current_interval = None
+        self.current_interval: Optional[LerpFunc] = None
         # Active timed continuous-operation interval (LerpFunc or None).
-        self.timed_interval = None
+        self.timed_interval: Optional[LerpFunc] = None
         # Timestamp of the last timed-interval tick, used to compute delta.
-        self.last_interval_time = None
+        self.last_interval_time: Optional[float] = None
         # Frame-space start/end positions for the current fly-to animation.
         self.start_pos = LPoint3d()
         self.end_pos = LPoint3d()
@@ -70,16 +78,16 @@ class AutoPilot(object):
         self.trans_easing = ExpEasing()
         self.rot_easing = SinEasing()
 
-    def set_controller(self, controller):
+    def set_controller(self, controller: MovementController) -> None:
         """Set the movement controller used to read/write position and orientation."""
         self.controller = controller
 
-    def set_camera_controller(self, camera_controller):
+    def set_camera_controller(self, camera_controller: BaseCameraController) -> None:
         """Set the camera controller, used to prepare for movement (e.g. by cancelling any ongoing
         camera tracking),and to know the camera orientation."""
         self.camera_controller = camera_controller
 
-    def reset(self):
+    def reset(self) -> None:
         """Cancel any in-progress intervals immediately."""
         if self.current_interval is not None:
             self.current_interval.pause()
@@ -88,7 +96,7 @@ class AutoPilot(object):
             self.timed_interval.pause()
             self.timed_interval = None
 
-    def stash_position(self):
+    def stash_position(self) -> None:
         """Convert stored frame-space positions to absolute coordinates.
 
         Called before the reference point changes so that the
@@ -98,7 +106,7 @@ class AutoPilot(object):
         self.start_pos = self.controller.anchor.calc_absolute_position_of(self.start_pos)
         self.end_pos = self.controller.anchor.calc_absolute_position_of(self.end_pos)
 
-    def pop_position(self):
+    def pop_position(self) -> None:
         """Convert stored absolute positions back to frame-space coordinates.
 
         Called after the anchor reference point has changed to restore the
@@ -111,7 +119,7 @@ class AutoPilot(object):
     # Low-level animation helpers
     # ------------------------------------------------------------------
 
-    def do_move(self, step):
+    def do_move(self, step: float) -> None:
         """Interpolation callback for a pure position fly-to animation.
 
         Linearly interpolates between ``start_pos`` and ``end_pos`` in
@@ -123,7 +131,7 @@ class AutoPilot(object):
         if step == 1.0:
             self.current_interval = None
 
-    def move_to(self, new_pos, absolute=True, duration=0, ease=True):
+    def move_to(self, new_pos: LPoint3d, absolute: bool = True, duration: float = 0, ease: bool = True) -> None:
         """Animate the camera to a new position over *duration* seconds.
 
         Args:
@@ -158,7 +166,7 @@ class AutoPilot(object):
             )
             self.current_interval.start()
 
-    def do_update_func(self, step, func, extra):
+    def do_update_func(self, step: float, func: Callable, extra: Tuple) -> None:
         """Per-frame callback for time-limited continuous operations.
 
         Computes the real-time delta since the last tick and passes it to
@@ -173,7 +181,7 @@ class AutoPilot(object):
         if step == 1.0:
             self.timed_interval = None
 
-    def update_func(self, func, duration=0, extra=()):
+    def update_func(self, func: Callable, duration: float = 0, extra: Tuple = ()) -> None:
         """Run *func(delta, *extra)* every frame for *duration* seconds.
 
         Used by :meth:`orbit`, :meth:`rotate` and :meth:`change_distance`
@@ -196,7 +204,7 @@ class AutoPilot(object):
             )
             self.timed_interval.start()
 
-    def do_move_and_rot(self, step):
+    def do_move_and_rot(self, step: float) -> None:
         """Interpolation callback for a combined position+rotation fly-to.
 
         Position uses ``trans_easing`` (ExpEasing) applied over the full
@@ -229,7 +237,15 @@ class AutoPilot(object):
         if step == 1.0:
             self.current_interval = None
 
-    def move_and_rotate_to(self, new_pos, new_rot, absolute=True, duration=0, start_rotation=0.0, end_rotation=0.5):
+    def move_and_rotate_to(
+        self,
+        new_pos: LPoint3d,
+        new_rot: LQuaterniond,
+        absolute: bool = True,
+        duration: float = 0,
+        start_rotation: float = 0.0,
+        end_rotation: float = 0.5,
+    ) -> None:
         """Animate the camera to a new position and orientation simultaneously.
 
         The rotation sub-animation starts at *start_rotation* and ends at
@@ -278,7 +294,16 @@ class AutoPilot(object):
     # High-level navigation commands
     # ------------------------------------------------------------------
 
-    def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
+    def go_to(
+        self,
+        target: StellarObject,
+        duration: float,
+        position: LPoint3d,
+        direction: LVector3d,
+        up: Optional[LVector3d],
+        start_rotation: float,
+        end_rotation: float,
+    ) -> None:
         """Fly to *position* facing *direction*, with an optional *up* hint.
 
         Builds the target orientation from *direction* and *up* using
@@ -311,7 +336,15 @@ class AutoPilot(object):
             position, orientation, duration=duration, start_rotation=start_rotation, end_rotation=end_rotation
         )
 
-    def go_to_front(self, duration=None, distance=None, up=None, star=False, start_rotation=0.0, end_rotation=0.5):
+    def go_to_front(
+        self,
+        duration: Optional[float] = None,
+        distance: Optional[float] = None,
+        up: Optional[LVector3d] = None,
+        star: bool = False,
+        start_rotation: float = 0.0,
+        end_rotation: float = 0.5,
+    ) -> None:
         """Fly to the illuminated face of the selected object.
 
         The camera is positioned *distance* radii away from the object,
@@ -371,7 +404,14 @@ class AutoPilot(object):
         new_position = center - direction * distance * distance_unit
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
-    def go_to_object(self, duration=None, distance=None, up=None, start_rotation=0.0, end_rotation=0.5):
+    def go_to_object(
+        self,
+        duration: Optional[float] = None,
+        distance: Optional[float] = None,
+        up: Optional[LVector3d] = None,
+        start_rotation: float = 0.0,
+        end_rotation: float = 0.5,
+    ) -> None:
         """Fly toward the selected object from the current camera direction.
 
         The camera travels to a point *distance* radii in front of the
@@ -404,8 +444,15 @@ class AutoPilot(object):
         self.go_to(target, duration, new_position, direction, up, start_rotation, end_rotation)
 
     def go_to_object_long_lat(
-        self, longitude, latitude, duration=None, distance=None, up=None, start_rotation=0.25, end_rotation=0.75
-    ):
+        self,
+        longitude: float,
+        latitude: float,
+        duration: Optional[float] = None,
+        distance: Optional[float] = None,
+        up: Optional[LVector3d] = None,
+        start_rotation: float = 0.25,
+        end_rotation: float = 0.75,
+    ) -> None:
         """Fly to a specific longitude/latitude on the selected object.
 
         The camera is placed *distance* radii above the geodetic position
@@ -442,7 +489,7 @@ class AutoPilot(object):
         direction = -offset.normalized()
         self.go_to(target, duration, center + offset, direction, up, start_rotation, end_rotation)
 
-    def go_to_surface(self, duration=None, altitude=2):
+    def go_to_surface(self, duration: Optional[float] = None, altitude: float = 2) -> None:
         """Fly the camera down to just above the surface below the current position.
 
         The camera is placed at the terrain height directly below its
@@ -451,9 +498,7 @@ class AutoPilot(object):
 
         Args:
             duration: Animation duration.  Defaults to ``settings.slow_move``.
-            height: Reserved for future use; currently the landing height is
-                computed from the actual terrain height plus a fixed 10-metre
-                safety margin.
+            altitude: The landing height in meters. Default to 2 meters above the surface.
         """
         if not self.ui.selected:
             return
@@ -470,7 +515,7 @@ class AutoPilot(object):
         new_position = center + new_orientation.xform(LVector3d(0, distance, 0))
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
-    def go_pole(self, target, lat, duration, zoom):
+    def go_pole(self, target: StellarObject, lat: float, duration: Optional[float], zoom: bool) -> None:
         """Fly to the pole at *lat* radians latitude on the given object.
 
         Args:
@@ -489,7 +534,7 @@ class AutoPilot(object):
             distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, lat, duration, distance)
 
-    def go_north(self, duration=None, zoom=False):
+    def go_north(self, duration: Optional[float] = None, zoom: bool = False) -> None:
         """Fly to the north pole of the selected object.
 
         Args:
@@ -505,7 +550,7 @@ class AutoPilot(object):
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
-    def go_south(self, duration=None, zoom=False):
+    def go_south(self, duration: Optional[float] = None, zoom: bool = False) -> None:
         """Fly to the south pole of the selected object.
 
         Args:
@@ -521,7 +566,7 @@ class AutoPilot(object):
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
-    def go_meridian(self, duration=None, zoom=False):
+    def go_meridian(self, duration: Optional[float] = None, zoom: bool = False) -> None:
         """Fly to the prime meridian (longitude=0, latitude=0) of the selected object.
 
         Args:
@@ -541,7 +586,7 @@ class AutoPilot(object):
             distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, 0, duration, distance)
 
-    def _compute_roll_to_align(self, plane_normal):
+    def _compute_roll_to_align(self, plane_normal: LVector3d) -> LQuaterniond:
         """Compute the roll angle required to align the camera to a reference plane.
 
         Given the normal of a reference plane (e.g. the ecliptic or
@@ -565,7 +610,7 @@ class AutoPilot(object):
         rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
         return rot
 
-    def align_on_ecliptic(self, duration=None):
+    def align_on_ecliptic(self, duration: Optional[float] = None) -> None:
         """Roll the camera so its up axis aligns with the J2000 ecliptic plane.
 
         The alignment is applied instantly regardless of *duration* (animated
@@ -582,7 +627,7 @@ class AutoPilot(object):
         rot = self._compute_roll_to_align(ecliptic_normal)
         self.controller.step_turn_local(rot)
 
-    def align_on_equatorial(self, duration=None):
+    def align_on_equatorial(self, duration: Optional[float] = None) -> None:
         """Roll the camera so its up axis aligns with the J2000 equatorial plane.
 
         The alignment is applied instantly regardless of *duration* (animated
@@ -603,7 +648,7 @@ class AutoPilot(object):
     # Continuous movement operations
     # ------------------------------------------------------------------
 
-    def do_change_distance(self, delta, rate):
+    def do_change_distance(self, delta: float, rate: float) -> None:
         """Per-frame callback for exponential distance change toward the selected object.
 
         Applies an exponential zoom so that the *rate* of change feels
@@ -632,7 +677,7 @@ class AutoPilot(object):
             new_pos = relative_pos * (new_distance / target.anchor.distance_to_obs)
             self.controller.set_local_position(center + new_pos)
 
-    def change_distance(self, rate, duration=None):
+    def change_distance(self, rate: float, duration: Optional[float] = None) -> None:
         """Zoom in or out relative to the selected object over *duration* seconds.
 
         Args:
@@ -641,9 +686,9 @@ class AutoPilot(object):
         """
         if duration is None:
             duration = settings.fast_move
-        self.update_func(self.do_change_distance, duration, [rate])
+        self.update_func(self.do_change_distance, duration, (rate,))
 
-    def do_orbit(self, delta, axis, rate):
+    def do_orbit(self, delta: float, axis: LVector3d, rate: float) -> None:
         """Per-frame callback that rotates the camera around the selected object.
 
         The camera is orbited about the object's centre in frame space.
@@ -674,7 +719,7 @@ class AutoPilot(object):
         # Apply the same rotation to the camera orientation so it keeps the object in the centre of the view.
         self.controller.turn_local(frame_orient * rot_local)
 
-    def orbit(self, axis, rate, duration=None):
+    def orbit(self, axis: LVector3d, rate: float, duration: Optional[float] = None) -> None:
         """Orbit the camera around the selected object for *duration* seconds.
 
         Args:
@@ -686,7 +731,7 @@ class AutoPilot(object):
             duration = settings.slow_move
         self.update_func(self.do_orbit, duration, [axis, rate])
 
-    def do_rotate(self, delta, axis, rate):
+    def do_rotate(self, delta: float, axis: LVector3d, rate: float) -> None:
         """Per-frame callback that rotates the camera in place.
 
         Args:
@@ -698,7 +743,7 @@ class AutoPilot(object):
         rot.setFromAxisAngleRad(rate * delta, axis)
         self.controller.step_turn_local(rot)
 
-    def rotate(self, axis, rate, duration=None):
+    def rotate(self, axis: LVector3d, rate: float, duration: Optional[float] = None) -> None:
         """Rotate the camera in place for *duration* seconds.
 
         Args:
