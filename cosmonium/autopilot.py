@@ -119,18 +119,27 @@ class AutoPilot(object):
             self.timed_interval.start()
 
     def do_move_and_rot(self, step):
-        rot_step = (step - self.start_rotation) / (self.end_rotation - self.start_rotation)
-        if rot_step >= 0 and rot_step <= 1:
+        # Compute the normalised rotation progress within its sub-range.
+        rot_range = self.end_rotation - self.start_rotation
+        if rot_range != 0.0:
+            rot_step = (step - self.start_rotation) / rot_range
+        else:
+            # start_rotation == end_rotation: rotation is already complete.
+            rot_step = 1.0
+
+        if rot_step < 0.0:
+            rot = self.start_rot
+        elif rot_step > 1.0:
+            rot = self.end_rot
+        else:
             rot = slerp(self.start_rot, self.end_rot, self.rot_easing.easing(rot_step))
             rot.normalize()
-        elif rot_step < 0:
-            rot = self.start_rot
-        else:
-            rot = self.end_rot
         self.controller.set_frame_orientation(rot)
+
         pos_step = self.trans_easing.easing(step)
         position = self.end_pos * pos_step + self.start_pos * (1.0 - pos_step)
         self.controller.set_frame_position(position)
+
         if step == 1.0:
             self.current_interval = None
 
