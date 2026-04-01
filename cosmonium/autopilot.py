@@ -260,7 +260,7 @@ class AutoPilot(object):
         direction = -offset.normalized()
         self.go_to(target, duration, center + offset, direction, up, start_rotation, end_rotation)
 
-    def go_to_surface(self, duration=None, height=1.001):
+    def go_to_surface(self, duration=None, altitude=2):
         if not self.ui.selected:
             return
         target = self.ui.selected
@@ -272,8 +272,8 @@ class AutoPilot(object):
         direction = self.controller.get_local_position() - center
         new_orientation = LQuaterniond()
         lookAt(new_orientation, direction)
-        height = target.get_height_under(self.controller.get_local_position()) + 10 * units.m
-        new_position = center + new_orientation.xform(LVector3d(0, height, 0))
+        distance = target.get_height_under(self.controller.get_local_position()) + altitude * units.m
+        new_position = center + new_orientation.xform(LVector3d(0, distance, 0))
         self.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
     def go_pole(self, target, lat, duration, zoom):
