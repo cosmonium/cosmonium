@@ -321,6 +321,15 @@ class AutoPilot(object):
             distance = target.anchor.distance_to_obs / distance_unit
         self.go_to_object_long_lat(0, 0, duration, distance)
 
+    def _compute_roll_to_align(self, plane_normal):
+        angle = acos(plane_normal.dot(LVector3d.right()))
+        direction = plane_normal.cross(LVector3d.right()).dot(LVector3d.forward())
+        if direction < 0:
+            angle = 2 * pi - angle
+        rot = LQuaterniond()
+        rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
+        return rot
+
     def align_on_ecliptic(self, duration=None):
         if duration is None:
             duration = settings.fast_move
@@ -329,29 +338,19 @@ class AutoPilot(object):
             .conjugate()
             .xform(J2000EclipticReferenceFrame().get_orientation().xform(LVector3d.up()))
         )
-        angle = acos(ecliptic_normal.dot(LVector3d.right()))
-        direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
-        if direction < 0:
-            angle = 2 * pi - angle
-        rot = LQuaterniond()
-        rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
+        rot = self._compute_roll_to_align(ecliptic_normal)
         self.controller.step_turn_local(rot)
         # self.move_and_rotate_to(position, orientation, duration=duration)
 
     def align_on_equatorial(self, duration=None):
         if duration is None:
             duration = settings.fast_move
-        ecliptic_normal = (
+        equatorial_normal = (
             self.controller.get_frame_orientation()
             .conjugate()
             .xform(J2000EquatorialReferenceFrame().get_orientation().xform(LVector3d.up()))
         )
-        angle = acos(ecliptic_normal.dot(LVector3d.right()))
-        direction = ecliptic_normal.cross(LVector3d.right()).dot(LVector3d.forward())
-        if direction < 0:
-            angle = 2 * pi - angle
-        rot = LQuaterniond()
-        rot.setFromAxisAngleRad(pi / 2 - angle, LVector3d.forward())
+        rot = self._compute_roll_to_align(equatorial_normal)
         self.controller.step_turn_local(rot)
 
     def do_change_distance(self, delta, rate):
