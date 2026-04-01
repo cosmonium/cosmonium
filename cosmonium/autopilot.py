@@ -171,8 +171,9 @@ class AutoPilot(object):
         if isclose(abs(up.dot(direction)), 1.0):
             print("Warning: lookat vector identical to up vector")
         else:
-            # Make the up vector orthogonal to the direction using Gram-Schmidt
-            up = up - direction * up.dot(direction)
+            # Make the up vector orthogonal to direction (Gram-Schmidt) and
+            # normalise so that lookAt receives a proper unit vector.
+            up = (up - direction * up.dot(direction)).normalized()
         orientation = LQuaterniond()
         lookAt(orientation, direction, up)
         self.move_and_rotate_to(
