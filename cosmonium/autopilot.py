@@ -149,20 +149,17 @@ class AutoPilot(object):
         else:
             if self.current_interval is not None:
                 self.current_interval.pause()
+            self.start_pos = self.controller.get_frame_position()
+            self.start_rot = self.controller.get_frame_orientation()
             if absolute:
-                self.start_pos = self.controller.get_frame_position()
                 self.end_pos = self.controller.anchor.calc_frame_position_of_local(new_pos)
-                self.start_rot = self.controller.get_frame_orientation()
                 self.end_rot = self.controller.anchor.calc_frame_orientation_of(new_rot)
             else:
-                self.start_pos = self.controller.get_frame_position()
                 self.end_pos = new_pos
-                self.start_rot = self.controller.get_frame_orientation()
                 self.end_rot = new_rot
             self.start_rotation = start_rotation
             self.end_rotation = end_rotation
-            func_lerp = LerpFunc(self.do_move_and_rot, fromData=0, toData=1, duration=duration, name=None)
-            self.current_interval = func_lerp
+            self.current_interval = LerpFunc(self.do_move_and_rot, fromData=0, toData=1, duration=duration, name=None)
             self.current_interval.start()
 
     def go_to(self, target, duration, position, direction, up, start_rotation, end_rotation):
