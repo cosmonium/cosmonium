@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,15 +19,14 @@
 
 
 import logging
+import sys
+from math import exp, pi
 
 from direct.showbase.ShowBaseGlobal import globalClock
-from math import pi, exp
-from panda3d.core import LVector3, LVector3d, LPoint3d, LQuaterniond
-import sys
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from . import settings
 from .astro import units
-
 
 logger = logging.getLogger("nav")
 
@@ -95,12 +94,9 @@ class InteractiveNavigationController(NavigationController):
         self.wheel_event_time = 0.0
         self.wheel_direction = 0.0
 
-    def get_name(self):
-        return 'Free navigation'
-
-    def set_key(self, key, state, *keys):
+    def set_key(self, key, state, *extra_keys):
         self.key_map[key] = state
-        for key in keys:
+        for key in extra_keys:
             self.key_map[key] = state
 
     def register_wheel_events(self, event_ctrl):
@@ -290,14 +286,12 @@ class FreeNav(InteractiveNavigationController):
 
     def select_target(self):
         if self.base.follow is not None:
-            target = self.base.follow
-        elif self.base.sync is not None:
-            target = self.base.sync
-        elif self.base.selected is not None:
-            target = self.base.selected
-        else:
-            target = None
-        return target
+            return self.base.follow
+        if self.base.sync is not None:
+            return self.base.sync
+        if self.base.selected is not None:
+            return self.base.selected
+        return None
 
     def switch_direction(self):
         self.speed = -self.speed
@@ -761,8 +755,7 @@ class ControlNav(InteractiveNavigationController):
         self.controller.step_relative(distance)
 
     def change_altitude(self, rate):
-        if rate == 0.0:
-            return
+        pass
 
     def turn(self, angle):
         self.controller.turn_relative(angle)
@@ -817,7 +810,7 @@ class KineticNav(InteractiveNavigationController):
 
     def update(self, time, dt):
         is_moving = False
-        speed = LVector3(0, 0, 0)
+        speed = LVector3d(0, 0, 0)
         y = self.key_map['up'] - self.key_map['down']
         if y:
             speed.set_y(y * self.speed * self.speed_factor)
