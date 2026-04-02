@@ -18,6 +18,7 @@
 #
 
 
+from abc import ABC, abstractmethod
 import logging
 import sys
 from math import exp, pi
@@ -31,7 +32,14 @@ from .astro import units
 logger = logging.getLogger("nav")
 
 
-class NavigationController:
+class NavigationController(ABC):
+    """Abstract base class for all navigation controllers.
+
+    A navigation controller translates user input (keyboard, mouse, etc.) into
+    camera and scene-body movement.  Subclasses override :meth:`register_events`,
+    :meth:`remove_events`, and :meth:`update` to provide concrete behaviour.
+    """
+
     def __init__(self):
         self.base = None
         self.camera = None
@@ -39,50 +47,141 @@ class NavigationController:
         self.controller = None
 
     def init(self, base, camera, camera_controller, controller):
+        """Bind the controller to the application and its subsystems.
+
+        Args:
+            base: The Panda3D ShowBase application instance.
+            camera: The scene camera object.
+            camera_controller: The object responsible for camera orientation.
+            controller: The movement controller for the observed body/ship.
+        """
         self.base = base
         self.camera = camera
         self.camera_controller = camera_controller
         self.controller = controller
 
     def set_target(self, target):
-        pass
+        """Set the navigation target (e.g. a celestial body for surface walk).
 
+        The base implementation is a no-op. Subclasses that require a target
+        (i.e. require_target returns True) must override this method.
+
+        Args:
+            target: The target scene object.
+        """
+
+    @abstractmethod
     def get_name(self):
-        return ''
+        """Return a human-readable name for this navigation mode.
 
+        Returns:
+            Display name string.
+        """
+
+    @abstractmethod
     def get_id(self):
-        return ''
+        """Return the identifier for this navigation mode.
+
+        Returns:
+            Identifier string.
+        """
 
     def require_target(self):
+        """Whether this controller requires a target body to be active.
+
+        Returns:
+            True if a target must be provided before activation.
+        """
         return False
 
     def require_controller(self):
+        """Whether this controller requires a movement controller to be active.
+
+        Returns:
+            True if a movement controller must be provided.
+        """
         return False
 
+    @abstractmethod
     def register_events(self, event_ctrl):
-        # TODO: Should inherit from DirectObject and use own event handler
-        pass
+        """Attach input event handlers.
 
+        Args:
+            event_ctrl: An object that exposes accept(event, callback, args)
+                (typically the Panda3D ShowBase instance).
+
+        Note:
+            Each call to register_events **must** be paired with a
+            corresponding call to remove_events when this controller is
+            deactivated to avoid stale event handlers.
+            Instead of relying on the event_ctrl, this class should inherit
+            from DirectObject and use its own event handler.
+        """
+
+    @abstractmethod
     def remove_events(self, event_ctrl):
-        pass
+        """Detach previously registered input event handlers.
+
+        Args:
+            event_ctrl: The same object passed to register_events.
+        """
 
     def set_controller(self, controller):
+        """Replace the movement controller.
+
+        Args:
+            controller: New movement controller, or None to clear.
+        """
         self.controller = controller
 
     def set_camera_controller(self, camera_controller):
+        """Replace the camera orientation controller.
+
+        Args:
+            camera_controller: New camera controller.
+        """
         self.camera_controller = camera_controller
 
     def stash_position(self):
-        pass
+        """Convert internally tracked positions to absolute frame before a
+        reference point change (called by the engine on anchor switches).
+
+        The base implementation is a no-op. Subclasses that track positions
+        (e.g. InteractiveNavigationController) override this method.
+        """
 
     def pop_position(self):
-        pass
+        """Convert internally tracked positions back to the local frame after a
+        reference-frame change.
+
+        The base implementation is a no-op. Subclasses that track positions
+        (e.g. InteractiveNavigationController) override this method.
+        """
 
     def update(self, time, dt):
-        pass
+        """Advance the navigation state for one simulation tick.
+
+        The base implementation is a no-op. Concrete navigation controllers
+        must override this method to process input and move the observer.
+
+        Args:
+            time: Current simulation time (seconds).
+            dt: Elapsed time since the previous tick (seconds).
+        """
 
 
 class InteractiveNavigationController(NavigationController):
+    """Base class for navigation controllers that respond to keyboard and mouse.
+
+    Provides shared machinery for:
+
+    * A key-state map (``key_map``) updated via :meth:`set_key`.
+    * Mouse-wheel debouncing (``wheel_event_time`` / ``wheel_event_duration``).
+    * Orbit computations used by :meth:`create_orbit_params` / :meth:`do_orbit`.
+    * Reference-frame stash/pop helpers for anchor switches.
+    """
+
+    #: How long (in seconds) a single wheel tick is considered "active".
     wheel_event_duration = 0.1
 
     def __init__(self):
@@ -95,37 +194,77 @@ class InteractiveNavigationController(NavigationController):
         self.wheel_direction = 0.0
 
     def set_key(self, key, state, *extra_keys):
+        """Update one or more entries in the key-state map.
+
+        This method is used as a key event callback. The *primary* key is
+        always set to *state*, and any additional *extra_keys* are also set to
+        *state* (useful for clearing composite modifiers on key-up events).
+
+        Args:
+            key: Primary key name (must exist in key_map).
+            state: Integer state value — 1 for pressed, 0 for released.
+            *extra_keys: Optional additional key names to set to *state*.
+        """
         self.key_map[key] = state
-        for key in extra_keys:
-            self.key_map[key] = state
+        for extra in extra_keys:
+            self.key_map[extra] = state
 
     def register_wheel_events(self, event_ctrl):
+        """Register mouse-wheel up/down events.
+
+        Args:
+            event_ctrl: Event controller (ShowBase instance).
+        """
         event_ctrl.accept("wheel_up", self.wheel_event, [1])
         event_ctrl.accept("wheel_down", self.wheel_event, [-1])
 
     def remove_wheel_events(self, event_ctrl):
+        """Unregister mouse-wheel events previously registered by
+        register_wheel_events.
+
+        Args:
+            event_ctrl: Event controller (ShowBase instance).
+        """
         event_ctrl.ignore("wheel_up")
         event_ctrl.ignore("wheel_down")
 
     def wheel_event(self, direction):
+        """Handle a mouse-wheel tick.
+
+        Records the direction and timestamp so that update can apply
+        the scroll for one wheel_event_duration window.
+
+        Args:
+            direction: +1 for scroll-up (zoom in), -1 for scroll-down.
+        """
         if settings.invert_wheel:
             direction = -direction
         self.wheel_event_time = globalClock.get_real_time()
         self.wheel_direction = direction
 
     def stash_position(self):
+        """Convert orbit_center to absolute coordinates before an anchor switch."""
         self.orbit_center = self.controller.anchor.calc_absolute_position_of(self.orbit_center)
 
     def pop_position(self):
+        """Convert orbit_center back to frame-local coordinates after an anchor switch."""
         self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(self.orbit_center)
 
     def create_orbit_params(self, target, surface=False):
-        # Orbiting around a body involve both the object and the camera controller
-        # The orbit position is set on the object while the camera orientation is set on the camera controller
-        # The position must be done in the object frame otherwise the orbit point will drift away
+        """Initialise orbit state around *target* for a subsequent do_orbit call.
+
+        Orbiting a body involves both the scene object and the camera controller:
+        the orbit pivot is stored in the object's local frame to prevent drift as
+        the reference frame moves.
+
+        Args:
+            target: The celestial body (or other anchor-bearing object) to orbit.
+            surface: When True the pivot is placed on the body's surface
+                directly below the observer rather than at the body centre.
+        """
         center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         if surface:
-            # Set the orbit center at the surface of the body
+            # Place the orbit pivot at the surface of the body beneath the observer.
             center += target.anchor.vector_to_obs * target.anchor._height_under
         self.orbit_center = self.controller.anchor.calc_frame_position_of_local(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
@@ -135,6 +274,20 @@ class InteractiveNavigationController(NavigationController):
             self.orbit_orientation = self.controller.get_frame_orientation()
 
     def do_orbit(self, z_angle, x_angle):
+        """Apply an incremental orbit rotation around the current pivot.
+
+        Two rotations are computed independently:
+
+        1. **Orientation**: rotates the camera (or body) around the pivot using
+           self.orbit_orientation as the reference frame.
+        2. **Position**: moves the observer along the orbit arc using either the
+           object-frame orientation (non-camera orbit) or the frame-converted
+           orientation (camera orbit).
+
+        Args:
+            z_angle: Rotation angle (radians) around the local *up* axis.
+            x_angle: Rotation angle (radians) around the local *right* axis.
+        """
         # --- Orientation update ---
         orient_z_rot = LQuaterniond()
         orient_x_rot = LQuaterniond()
@@ -172,8 +325,30 @@ class InteractiveNavigationController(NavigationController):
 
 
 class FreeNav(InteractiveNavigationController):
+    """Free-flight navigation controller.
+
+    Provides 6-DOF movement through space:
+
+    * **Arrow keys** — pitch and yaw (direction follows the ``celestia_nav``
+      setting for compatibility with Celestia-style controls).
+    * **Ctrl + left/right** (or **Alt** on macOS) — roll.
+    * **Home / End** (or mouse-wheel) — move forward/backward along the
+      current heading.
+    * **a / z** — exponentially accelerate or decelerate forward motion.
+    * **q** — reverse the current travel direction.
+    * **s** — stop forward motion.
+    * **x** — align the camera to the natural body-up axis.
+    * **Shift + arrow keys** — keyboard-driven orbit around the selected body.
+    * **Right mouse button** (hold + drag) — mouse orbit around the selected body.
+    * **Shift + right mouse button** — mouse orbit anchored to the surface point
+      directly below the observer.
+    """
+
+    #: Rate of altitude change per unit time when Home/End/wheel is pressed.
     distance_speed = 2.0
+    #: Maximum angular speed (rad/s) for keyboard pitch/yaw/roll.
     rotation_speed = 2 * pi / 3
+    #: Exponential damping coefficient applied to rotational velocity each tick.
     rotation_damping = 2.0
 
     def __init__(self):
@@ -189,12 +364,23 @@ class FreeNav(InteractiveNavigationController):
         self.orbit_z = 0.0
 
     def get_name(self):
+        """Return the human-readable name for this navigation mode.
+
+        Returns:
+            Display name string.
+        """
         return 'Free navigation'
 
     def get_id(self):
+        """Return the stable identifier for this navigation mode.
+
+        Returns:
+            Short ASCII identifier string.
+        """
         return 'free'
 
     def register_events(self, event_ctrl):
+        """Register all keyboard and mouse events for free-flight navigation."""
         self.key_map = {
             "left": 0,
             "right": 0,
@@ -227,6 +413,7 @@ class FreeNav(InteractiveNavigationController):
             event_ctrl.accept("control-arrow_left", self.set_key, ['control-left', 1])
             event_ctrl.accept("control-arrow_right", self.set_key, ['control-right', 1])
         else:
+            # macOS: Ctrl+arrow is intercepted by the OS; use Alt instead.
             event_ctrl.accept("alt-arrow_left", self.set_key, ['control-left', 1])
             event_ctrl.accept("alt-arrow_right", self.set_key, ['control-right', 1])
         event_ctrl.accept("home", self.set_key, ['home', 1])
@@ -248,6 +435,7 @@ class FreeNav(InteractiveNavigationController):
         self.register_wheel_events(event_ctrl)
 
     def remove_events(self, event_ctrl):
+        """Unregister all events registered by register_events."""
         event_ctrl.ignore("arrow_up")
         event_ctrl.ignore("arrow_up-up")
         event_ctrl.ignore("arrow_down")
@@ -285,6 +473,13 @@ class FreeNav(InteractiveNavigationController):
         self.remove_wheel_events(event_ctrl)
 
     def select_target(self):
+        """Return the best available navigation target.
+
+        Priority: followed body > synchronised body > selected body > None.
+
+        Returns:
+            The current target object, or None if none is available.
+        """
         if self.base.follow is not None:
             return self.base.follow
         if self.base.sync is not None:
@@ -294,15 +489,28 @@ class FreeNav(InteractiveNavigationController):
         return None
 
     def switch_direction(self):
+        """Reverse the current forward-travel direction."""
         self.speed = -self.speed
 
     def stop(self):
+        """Bring forward motion to an immediate halt."""
         self.speed = 0
 
     def align_camera(self):
+        """Align the camera orientation to the natural up axis of the reference body."""
         self.camera_controller.prepare_movement()
 
     def on_orbit_click(self, orbit_surface):
+        """Begin a mouse-drag orbit when the right mouse button is pressed.
+
+        If *orbit_surface* is True the pivot is placed on the body surface;
+        otherwise it is placed at the body centre with the orbit angular speed
+        automatically scaled to the body's apparent size on screen.
+
+        Args:
+            orbit_surface: True to orbit around the surface point beneath
+                the observer; False to orbit around the body centre.
+        """
         if not self.base.mouseWatcherNode.hasMouse():
             return
         mpos = self.base.mouseWatcherNode.getMouse()
@@ -312,11 +520,12 @@ class FreeNav(InteractiveNavigationController):
         if target is not None:
             self.mouse_orbit = True
             if orbit_surface:
-                # When orbiting a point on the surface, the orbit speed should be constant
+                # Constant angular speed when orbiting a surface point.
                 self.orbit_angle_x = pi / 3
                 self.orbit_angle_y = pi / 3
             else:
-                # Adapt the orbit speed so that orbiting is still manageable when close to the body
+                # Scale angular speed so that orbit remains manageable at any
+                # distance from the body.
                 arc_length = pi * target.get_apparent_radius()
                 apparent_size = arc_length / (
                     (target.anchor.distance_to_obs - target.anchor._height_under) * self.camera.pixel_size
@@ -325,15 +534,25 @@ class FreeNav(InteractiveNavigationController):
                     self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
                     self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
                 else:
-                    # Body has no defined surface, use constant orbit speed
+                    # Body has no measurable surface; fall back to constant speed.
                     self.orbit_angle_x = pi
                     self.orbit_angle_y = pi
             self.create_orbit_params(target, orbit_surface)
 
     def on_orbit_release(self):
+        """End the mouse-drag orbit when the right mouse button is released."""
         self.mouse_orbit = False
 
     def update(self, time, dt):
+        """Advance free-navigation state by one tick.
+
+        Processes mouse orbit, keyboard rotation/translation, keyboard orbit,
+        forward-speed acceleration, damped rotation, and altitude changes.
+
+        Args:
+            time: Current simulation time (seconds, unused here).
+            dt: Elapsed time since the previous tick (seconds).
+        """
         rot_x = 0.0
         rot_y = 0.0
         rot_z = 0.0
@@ -449,11 +668,28 @@ class FreeNav(InteractiveNavigationController):
         self.change_altitude(distance * self.distance_speed * dt)
 
     def turn(self, axis, angle):
+        """Apply an incremental rotation around *axis* to the movement controller.
+
+        Args:
+            axis: Unit vector (in local frame) to rotate around.
+            angle: Rotation amount in radians.
+        """
         rot = LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
         self.controller.step_turn(rot)
 
     def change_altitude(self, rate):
+        """Move the observer towards or away from the surface of the target body.
+
+        The movement is along the surface normal so that altitude changes cleanly
+        on curved surfaces. When the observer would go below the minimum safe
+        altitude (settings.min_altitude) it is instead snapped
+        to that altitude.
+
+        Args:
+            rate: Fractional altitude change per tick; positive moves away
+                from the surface, negative moves towards it.
+        """
         if rate == 0.0:
             return
         target = self.select_target()
@@ -474,8 +710,27 @@ class FreeNav(InteractiveNavigationController):
 
 
 class WalkNav(InteractiveNavigationController):
+    """Surface-walk (fly) navigation controller.
+
+    Moves an observer along the surface of a target body, following the terrain
+    curvature so that the altitude above the surface is maintained.
+
+    * **Up / Down** — move forward / backward along the surface.
+    * **Left / Right** — yaw (turn) left / right.
+    * **Shift + Up / Down** — pitch the camera up / down.
+    * **Shift + Left / Right** — additional yaw (same as Left / Right).
+    * **Ctrl + Left / Right** (or **Alt** on macOS) — roll.
+    * **Home / End** (or mouse-wheel) — increase / decrease altitude.
+    * **a** (hold) — activate fast movement (10× speed).
+
+    Requires a target body to be set via :meth:`set_target`.
+    """
+
+    #: Rotation rate in radians per second.
     rot_step_per_sec = pi / 4
+    #: Base movement speed in kilometres (converted from metres by :mod:`~cosmonium.astro.units`).
     speed = 10 * units.m
+    #: Rate of altitude change per tick when Home/End is pressed.
     distance_speed = 2.0
 
     def __init__(self):
@@ -484,18 +739,39 @@ class WalkNav(InteractiveNavigationController):
         self.speed_factor = 1.0
 
     def get_name(self):
+        """Return the human-readable name for this navigation mode.
+
+        Returns:
+            Display name string.
+        """
         return 'Fly'
 
     def get_id(self):
+        """Return the stable identifier for this navigation mode.
+
+        Returns:
+            Short ASCII identifier string.
+        """
         return 'walk'
 
     def require_target(self):
+        """This controller requires a target body.
+
+        Returns:
+            True.
+        """
         return True
 
     def set_target(self, target):
+        """Set the surface body that the observer walks on.
+
+        Args:
+            target: Celestial body or scene object with surface geometry.
+        """
         self.body = target
 
     def register_events(self, event_ctrl):
+        """Register all keyboard and mouse events for surface-walk navigation."""
         self.key_map = {
             "left": 0,
             "right": 0,
@@ -539,6 +815,7 @@ class WalkNav(InteractiveNavigationController):
         event_ctrl.accept("a-up", self.slow)
 
     def remove_events(self, event_ctrl):
+        """Unregister all events registered by register_events."""
         event_ctrl.ignore("arrow_up")
         event_ctrl.ignore("arrow_up-up")
         event_ctrl.ignore("arrow_down")
@@ -568,12 +845,23 @@ class WalkNav(InteractiveNavigationController):
         event_ctrl.ignore("a-up")
 
     def fast(self):
+        """Engage fast movement (10× base speed)."""
         self.speed_factor = 10.0
 
     def slow(self):
+        """Return to normal movement speed."""
         self.speed_factor = 1.0
 
     def update(self, time, dt):
+        """Advance surface-walk state by one tick.
+
+        Handles forward/backward stepping, yaw/pitch/roll rotation, and altitude
+        adjustment via Home/End or the mouse wheel.
+
+        Args:
+            time: Current simulation time (seconds, unused here).
+            dt: Elapsed time since the previous tick (seconds).
+        """
         if self.key_map['up']:
             self.step(self.speed * self.speed_factor * dt)
 
@@ -615,6 +903,15 @@ class WalkNav(InteractiveNavigationController):
             self.change_altitude(distance * self.distance_speed * dt)
 
     def step(self, distance):
+        """Move the observer along the surface by *distance* kilometres.
+
+        The movement direction is derived from the observer's forward orientation
+        projected onto the local surface tangent plane, so that the observer
+        hugs the terrain regardless of the body's curvature.
+
+        Args:
+            distance: Signed distance to travel (positive = forward).
+        """
         object_position = self.controller.get_local_position()
         (_lon, _lat, normal) = self.body.get_tangent_plane_under(object_position)
         surface_point = self.body.get_point_under(self.controller.get_local_position())
@@ -628,6 +925,16 @@ class WalkNav(InteractiveNavigationController):
         self.controller.set_local_position(new_position + normal * altitude)
 
     def change_altitude(self, rate):
+        """Adjust the observer's altitude above the surface.
+
+        If the observer would fall below the minimum safe altitude
+        (settings.min_altitude) it is snapped to that value
+        instead.
+
+        Args:
+            rate: Fractional altitude change; positive moves away from the
+                surface, negative moves towards it.
+        """
         if rate == 0.0:
             return
         (tangent, binormal, normal) = self.body.get_tangent_plane_under(self.controller.get_local_position())
@@ -641,14 +948,37 @@ class WalkNav(InteractiveNavigationController):
             self.controller.set_local_position(surface_point + settings.min_altitude * normal)
 
     def turn(self, axis, angle):
+        """Apply an incremental rotation to the movement controller.
+
+        Args:
+            axis: Unit vector (in local frame) to rotate around.
+            angle: Rotation amount in radians.
+        """
         rot = LQuaterniond()
         rot.setFromAxisAngleRad(angle, axis)
         self.controller.step_turn(rot)
 
 
 class ControlNav(InteractiveNavigationController):
+    """Direct body-control navigation controller.
+
+    Drives a scene entity (e.g. a vehicle or character) through the world by
+    delegating to the entity's movement controller:
+
+    * **Up / Down** — move forward / backward.
+    * **Left / Right** — rotate the body left / right.
+    * **Home / End** (or mouse-wheel) — altitude change (no-op by default, but
+      subclasses or external logic can override :meth:`change_altitude`).
+    * **a** (hold) — fast movement (10× base speed).
+
+    Requires a movement controller to be set via :meth:`set_controller`.
+    """
+
+    #: Rotation rate in radians per second.
     rot_step_per_sec = pi / 4
+    #: Base movement speed in kilometres.
     speed = 10 * units.m
+    #: Rate of altitude change per tick (unused by the default implementation).
     distance_speed = 2.0
 
     def __init__(self):
@@ -657,18 +987,39 @@ class ControlNav(InteractiveNavigationController):
         self.speed_factor = 1.0
 
     def get_name(self):
+        """Return the human-readable name for this navigation mode.
+
+        Returns:
+            Display name string.
+        """
         return 'Control body'
 
     def get_id(self):
+        """Return the stable identifier for this navigation mode.
+
+        Returns:
+            Short ASCII identifier string.
+        """
         return 'control'
 
     def require_controller(self):
+        """This controller requires a movement controller.
+
+        Returns:
+            True.
+        """
         return True
 
     def set_controller(self, controller):
+        """Set the movement controller that receives step/turn commands.
+
+        Args:
+            controller: Movement controller instance, or None to clear.
+        """
         self.controller = controller
 
     def register_events(self, event_ctrl):
+        """Register all keyboard and mouse events for body-control navigation."""
         self.key_map = {
             "left": 0,
             "right": 0,
@@ -696,6 +1047,7 @@ class ControlNav(InteractiveNavigationController):
         event_ctrl.accept("a-up", self.slow)
 
     def remove_events(self, event_ctrl):
+        """Unregister all events registered by register_events."""
         event_ctrl.ignore("arrow_up")
         event_ctrl.ignore("arrow_up-up")
         event_ctrl.ignore("arrow_down")
@@ -715,12 +1067,23 @@ class ControlNav(InteractiveNavigationController):
         event_ctrl.ignore("a-up")
 
     def fast(self):
+        """Engage fast movement (10× base speed)."""
         self.speed_factor = 10.0
 
     def slow(self):
+        """Return to normal movement speed."""
         self.speed_factor = 1.0
 
     def update(self, time, dt):
+        """Advance body-control state by one tick.
+
+        Forwards movement and rotation commands to the underlying movement
+        controller and updates the controller's animation state accordingly.
+
+        Args:
+            time: Current simulation time (seconds, unused here).
+            dt: Elapsed time since the previous tick (seconds).
+        """
         is_moving = False
         if self.key_map['up']:
             self.step(self.speed * self.speed_factor * dt)
@@ -752,18 +1115,53 @@ class ControlNav(InteractiveNavigationController):
             self.controller.set_state('idle')
 
     def step(self, distance):
+        """Move the controlled body forward or backward by *distance* km.
+
+        Args:
+            distance: Signed distance (positive = forward).
+        """
         self.controller.step_relative(distance)
 
     def change_altitude(self, rate):
-        pass
+        """Altitude adjustment hook (no-op in this controller).
+
+        ControlNav does not implement altitude adjustment directly —
+        the controlled entity handles vertical movement through its own physics.
+        This method exists to satisfy the interface contract shared by other
+        interactive controllers. Override in a subclass if altitude control is
+        required.
+
+        Args:
+            rate: Requested altitude change rate (ignored).
+        """
 
     def turn(self, angle):
+        """Rotate the controlled body by *angle* radians around its up axis.
+
+        Args:
+            angle: Rotation amount in radians (positive = left).
+        """
         self.controller.turn_relative(angle)
 
 
 class KineticNav(InteractiveNavigationController):
+    """Physics-driven (kinetic) navigation controller.
+
+    Sends velocity commands to a physics-based movement controller instead of
+    issuing discrete step/turn calls:
+
+    * **Up / Down** — set forward/backward velocity.
+    * **Left / Right** — rotate left / right.
+    * **Space** — jump (when supported by the physics controller).
+
+    Requires a movement controller to be set via :meth:`set_controller`.
+    """
+
+    #: Rotation rate in radians per second.
     rot_step_per_sec = pi / 4
+    #: Base movement speed in kilometres.
     speed = 10 * units.m
+    #: Unused — kept for API consistency with other nav controllers.
     distance_speed = 2.0
 
     def __init__(self):
@@ -772,18 +1170,39 @@ class KineticNav(InteractiveNavigationController):
         self.speed_factor = 1.0
 
     def get_name(self):
+        """Return the human-readable name for this navigation mode.
+
+        Returns:
+            Display name string.
+        """
         return 'Kinetic control'
 
     def get_id(self):
+        """Return the stable identifier for this navigation mode.
+
+        Returns:
+            Short ASCII identifier string.
+        """
         return 'kinetic'
 
     def require_controller(self):
+        """This controller requires a movement controller.
+
+        Returns:
+            True.
+        """
         return True
 
     def set_controller(self, controller):
+        """Set the physics-based movement controller.
+
+        Args:
+            controller: Movement controller instance, or None to clear.
+        """
         self.controller = controller
 
     def register_events(self, event_ctrl):
+        """Register all keyboard events for kinetic navigation."""
         self.key_map = {"left": 0, "right": 0, "up": 0, "down": 0, "home": 0, "end": 0, "jump": 0}
         event_ctrl.accept("arrow_up", self.set_key, ['up', 1])
         event_ctrl.accept("arrow_up-up", self.set_key, ['up', 0])
@@ -797,6 +1216,7 @@ class KineticNav(InteractiveNavigationController):
         event_ctrl.accept(" -up", self.set_key, ['jump', 0])
 
     def remove_events(self, event_ctrl):
+        """Unregister all events registered by register_events."""
         event_ctrl.ignore("arrow_up")
         event_ctrl.ignore("arrow_up-up")
         event_ctrl.ignore("arrow_down")
@@ -809,6 +1229,16 @@ class KineticNav(InteractiveNavigationController):
         event_ctrl.ignore(" -up")
 
     def update(self, time, dt):
+        """Advance kinetic-navigation state by one tick.
+
+        Computes the desired velocity vector and forwards it to the physics
+        controller. Updates the controller's animation state based on whether
+        the entity is moving.
+
+        Args:
+            time: Current simulation time (seconds, unused here).
+            dt: Elapsed time since the previous tick (seconds).
+        """
         is_moving = False
         speed = LVector3d(0, 0, 0)
         y = self.key_map['up'] - self.key_map['down']
@@ -830,7 +1260,18 @@ class KineticNav(InteractiveNavigationController):
             self.controller.set_state('idle')
 
     def set_speed_relative(self, speed):
+        """Forward a velocity vector to the physics controller.
+
+        Args:
+            speed: Desired velocity in the controller's local frame
+                (LVector3d).
+        """
         self.controller.set_speed_relative(speed)
 
     def turn(self, angle):
+        """Rotate the controlled entity by *angle* radians around its up axis.
+
+        Args:
+            angle: Rotation amount in radians (positive = left).
+        """
         self.controller.turn_relative(angle)
