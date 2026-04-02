@@ -270,6 +270,7 @@ class FreeNav(InteractiveNavigationController):
         event_ctrl.ignore("z-up")
         event_ctrl.ignore("q")
         event_ctrl.ignore("s")
+        event_ctrl.ignore("x")
 
         event_ctrl.ignore("mouse3")
         event_ctrl.ignore("shift-mouse3")
@@ -553,6 +554,8 @@ class WalkNav(InteractiveNavigationController):
             event_ctrl.ignore("alt-arrow_right")
         event_ctrl.ignore("home")
         event_ctrl.ignore("home-up")
+        event_ctrl.ignore("end")
+        event_ctrl.ignore("end-up")
 
         self.remove_wheel_events(event_ctrl)
 
@@ -698,6 +701,8 @@ class ControlNav(InteractiveNavigationController):
         event_ctrl.ignore("arrow_right-up")
         event_ctrl.ignore("home")
         event_ctrl.ignore("home-up")
+        event_ctrl.ignore("end")
+        event_ctrl.ignore("end-up")
 
         self.remove_wheel_events(event_ctrl)
 
