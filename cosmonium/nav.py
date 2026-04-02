@@ -88,7 +88,7 @@ class InteractiveNavigationController(NavigationController):
 
     def __init__(self):
         NavigationController.__init__(self)
-        self.keyMap = {}
+        self.key_map = {}
         self.orbit_center = LPoint3d()
         self.orbit_start = None
         self.orbit_orientation = None
@@ -98,10 +98,10 @@ class InteractiveNavigationController(NavigationController):
     def get_name(self):
         return 'Free navigation'
 
-    def setKey(self, key, state, *keys):
-        self.keyMap[key] = state
+    def set_key(self, key, state, *keys):
+        self.key_map[key] = state
         for key in keys:
-            self.keyMap[key] = state
+            self.key_map[key] = state
 
     def register_wheel_events(self, event_ctrl):
         event_ctrl.accept("wheel_up", self.wheel_event, [1])
@@ -185,7 +185,7 @@ class FreeNav(InteractiveNavigationController):
         self.speed = 0.0
         self.rot_speed = LVector3d()
         self.mouse_orbit = False
-        self.keyboardTrack = False
+        self.keyboard_track = False
         self.start_x = 0.0
         self.start_y = 0.0
         self.orbit_coef = 0.0
@@ -199,7 +199,7 @@ class FreeNav(InteractiveNavigationController):
         return 'free'
 
     def register_events(self, event_ctrl):
-        self.keyMap = {
+        self.key_map = {
             "left": 0,
             "right": 0,
             "up": 0,
@@ -215,33 +215,33 @@ class FreeNav(InteractiveNavigationController):
             "a": 0,
             "z": 0,
         }
-        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
-        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0, 'shift-up'])
-        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
-        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0, 'shift-down'])
-        event_ctrl.accept("shift-arrow_up", self.setKey, ['shift-up', 1])
-        event_ctrl.accept("shift-arrow_down", self.setKey, ['shift-down', 1])
-        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
-        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0, 'shift-left', 'control-left'])
-        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
-        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0, 'shift-right', 'control-right'])
-        event_ctrl.accept("shift-arrow_left", self.setKey, ['shift-left', 1])
-        event_ctrl.accept("shift-arrow_right", self.setKey, ['shift-right', 1])
+        event_ctrl.accept("arrow_up", self.set_key, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.set_key, ['up', 0, 'shift-up'])
+        event_ctrl.accept("arrow_down", self.set_key, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.set_key, ['down', 0, 'shift-down'])
+        event_ctrl.accept("shift-arrow_up", self.set_key, ['shift-up', 1])
+        event_ctrl.accept("shift-arrow_down", self.set_key, ['shift-down', 1])
+        event_ctrl.accept("arrow_left", self.set_key, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.set_key, ['left', 0, 'shift-left', 'control-left'])
+        event_ctrl.accept("arrow_right", self.set_key, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.set_key, ['right', 0, 'shift-right', 'control-right'])
+        event_ctrl.accept("shift-arrow_left", self.set_key, ['shift-left', 1])
+        event_ctrl.accept("shift-arrow_right", self.set_key, ['shift-right', 1])
         if sys.platform != "darwin":
-            event_ctrl.accept("control-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("control-arrow_right", self.setKey, ['control-right', 1])
+            event_ctrl.accept("control-arrow_left", self.set_key, ['control-left', 1])
+            event_ctrl.accept("control-arrow_right", self.set_key, ['control-right', 1])
         else:
-            event_ctrl.accept("alt-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("alt-arrow_right", self.setKey, ['control-right', 1])
-        event_ctrl.accept("home", self.setKey, ['home', 1])
-        event_ctrl.accept("home-up", self.setKey, ['home', 0])
-        event_ctrl.accept("end", self.setKey, ['end', 1])
-        event_ctrl.accept("end-up", self.setKey, ['end', 0])
-        event_ctrl.accept("a", self.setKey, ['a', 1])
-        event_ctrl.accept("a-up", self.setKey, ['a', 0])
-        event_ctrl.accept("z", self.setKey, ['z', 1])
-        event_ctrl.accept("z-up", self.setKey, ['z', 0])
-        event_ctrl.accept("q", self.switchDirection)
+            event_ctrl.accept("alt-arrow_left", self.set_key, ['control-left', 1])
+            event_ctrl.accept("alt-arrow_right", self.set_key, ['control-right', 1])
+        event_ctrl.accept("home", self.set_key, ['home', 1])
+        event_ctrl.accept("home-up", self.set_key, ['home', 0])
+        event_ctrl.accept("end", self.set_key, ['end', 1])
+        event_ctrl.accept("end-up", self.set_key, ['end', 0])
+        event_ctrl.accept("a", self.set_key, ['a', 1])
+        event_ctrl.accept("a-up", self.set_key, ['a', 0])
+        event_ctrl.accept("z", self.set_key, ['z', 1])
+        event_ctrl.accept("z-up", self.set_key, ['z', 0])
+        event_ctrl.accept("q", self.switch_direction)
         event_ctrl.accept("s", self.stop)
         event_ctrl.accept("x", self.align_camera)
 
@@ -299,7 +299,7 @@ class FreeNav(InteractiveNavigationController):
             target = None
         return target
 
-    def switchDirection(self):
+    def switch_direction(self):
         self.speed = -self.speed
 
     def stop(self):
@@ -353,45 +353,45 @@ class FreeNav(InteractiveNavigationController):
             self.do_orbit(z_angle, x_angle)
 
         if settings.celestia_nav:
-            if self.keyMap['up']:
+            if self.key_map['up']:
                 rot_x = -1
-            if self.keyMap['down']:
+            if self.key_map['down']:
                 rot_x = 1
-            if self.keyMap['left']:
+            if self.key_map['left']:
                 rot_y = -1
-            if self.keyMap['right']:
+            if self.key_map['right']:
                 rot_y = 1
         else:
-            if self.keyMap['up']:
+            if self.key_map['up']:
                 rot_x = 1
-            if self.keyMap['down']:
+            if self.key_map['down']:
                 rot_x = -1
-            if self.keyMap['left']:
+            if self.key_map['left']:
                 rot_y = 1
-            if self.keyMap['right']:
+            if self.key_map['right']:
                 rot_y = -1
-        if self.keyMap['control-left']:
+        if self.key_map['control-left']:
             rot_z = 1
-        if self.keyMap['control-right']:
+        if self.key_map['control-right']:
             rot_z = -1
 
-        if self.keyMap['home']:
+        if self.key_map['home']:
             distance = 1
-        if self.keyMap['end']:
+        if self.key_map['end']:
             distance = -1
 
         if self.wheel_event_time + self.wheel_event_duration > globalClock.get_real_time():
             distance = self.wheel_direction
 
-        if not self.keyboardTrack and (
-            self.keyMap['shift-left']
-            or self.keyMap['shift-right']
-            or self.keyMap['shift-up']
-            or self.keyMap['shift-down']
+        if not self.keyboard_track and (
+            self.key_map['shift-left']
+            or self.key_map['shift-right']
+            or self.key_map['shift-up']
+            or self.key_map['shift-down']
         ):
             target = self.select_target()
             if target is not None:
-                self.keyboardTrack = True
+                self.keyboard_track = True
                 arc_length = pi * target.get_apparent_radius()
                 apparent_size = arc_length / (target.anchor.distance_to_obs - target.anchor._height_under)
                 if apparent_size != 0:
@@ -402,41 +402,41 @@ class FreeNav(InteractiveNavigationController):
                 self.orbit_z = 0.0
                 self.create_orbit_params(target)
 
-        if self.keyboardTrack:
+        if self.keyboard_track:
             if not (
-                self.keyMap['shift-left']
-                or self.keyMap['shift-right']
-                or self.keyMap['shift-up']
-                or self.keyMap['shift-down']
+                self.key_map['shift-left']
+                or self.key_map['shift-right']
+                or self.key_map['shift-up']
+                or self.key_map['shift-down']
             ):
-                self.keyboardTrack = False
+                self.keyboard_track = False
 
-            if self.keyMap['shift-left']:
+            if self.key_map['shift-left']:
                 self.orbit_z += self.orbit_coef * dt
                 self.do_orbit(self.orbit_z, self.orbit_x)
 
-            if self.keyMap['shift-right']:
+            if self.key_map['shift-right']:
                 self.orbit_z -= self.orbit_coef * dt
                 self.do_orbit(self.orbit_z, self.orbit_x)
 
-            if self.keyMap['shift-up']:
+            if self.key_map['shift-up']:
                 self.orbit_x += self.orbit_coef * dt
                 self.do_orbit(self.orbit_z, self.orbit_x)
 
-            if self.keyMap['shift-down']:
+            if self.key_map['shift-down']:
                 self.orbit_x -= self.orbit_coef * dt
                 self.do_orbit(self.orbit_z, self.orbit_x)
 
-        if self.keyMap['a'] or self.keyMap['z'] or rot_x != 0 or rot_y != 0 or rot_z != 0:
+        if self.key_map['a'] or self.key_map['z'] or rot_x != 0 or rot_y != 0 or rot_z != 0:
             self.camera_controller.prepare_movement()
 
-        if self.keyMap['a']:
+        if self.key_map['a']:
             if self.speed == 0:
                 self.speed = 0.1
             else:
                 self.speed *= exp(dt * 3)
 
-        if self.keyMap['z']:
+        if self.key_map['z']:
             if self.speed < 1e-5:
                 self.speed = 0
             else:
@@ -502,7 +502,7 @@ class WalkNav(InteractiveNavigationController):
         self.body = target
 
     def register_events(self, event_ctrl):
-        self.keyMap = {
+        self.key_map = {
             "left": 0,
             "right": 0,
             "up": 0,
@@ -516,28 +516,28 @@ class WalkNav(InteractiveNavigationController):
             "control-left": 0,
             "control-right": 0,
         }
-        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
-        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0, 'shift-up'])
-        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
-        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0, 'shift-down'])
-        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
-        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0, 'shift-left', 'control-left'])
-        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
-        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0, 'shift-right', 'control-right'])
-        event_ctrl.accept("shift-arrow_up", self.setKey, ['shift-up', 1])
-        event_ctrl.accept("shift-arrow_down", self.setKey, ['shift-down', 1])
-        event_ctrl.accept("shift-arrow_left", self.setKey, ['shift-left', 1])
-        event_ctrl.accept("shift-arrow_right", self.setKey, ['shift-right', 1])
+        event_ctrl.accept("arrow_up", self.set_key, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.set_key, ['up', 0, 'shift-up'])
+        event_ctrl.accept("arrow_down", self.set_key, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.set_key, ['down', 0, 'shift-down'])
+        event_ctrl.accept("arrow_left", self.set_key, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.set_key, ['left', 0, 'shift-left', 'control-left'])
+        event_ctrl.accept("arrow_right", self.set_key, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.set_key, ['right', 0, 'shift-right', 'control-right'])
+        event_ctrl.accept("shift-arrow_up", self.set_key, ['shift-up', 1])
+        event_ctrl.accept("shift-arrow_down", self.set_key, ['shift-down', 1])
+        event_ctrl.accept("shift-arrow_left", self.set_key, ['shift-left', 1])
+        event_ctrl.accept("shift-arrow_right", self.set_key, ['shift-right', 1])
         if sys.platform != "darwin":
-            event_ctrl.accept("control-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("control-arrow_right", self.setKey, ['control-right', 1])
+            event_ctrl.accept("control-arrow_left", self.set_key, ['control-left', 1])
+            event_ctrl.accept("control-arrow_right", self.set_key, ['control-right', 1])
         else:
-            event_ctrl.accept("alt-arrow_left", self.setKey, ['control-left', 1])
-            event_ctrl.accept("alt-arrow_right", self.setKey, ['control-right', 1])
-        event_ctrl.accept("home", self.setKey, ['home', 1])
-        event_ctrl.accept("home-up", self.setKey, ['home', 0])
-        event_ctrl.accept("end", self.setKey, ['end', 1])
-        event_ctrl.accept("end-up", self.setKey, ['end', 0])
+            event_ctrl.accept("alt-arrow_left", self.set_key, ['control-left', 1])
+            event_ctrl.accept("alt-arrow_right", self.set_key, ['control-right', 1])
+        event_ctrl.accept("home", self.set_key, ['home', 1])
+        event_ctrl.accept("home-up", self.set_key, ['home', 0])
+        event_ctrl.accept("end", self.set_key, ['end', 1])
+        event_ctrl.accept("end-up", self.set_key, ['end', 0])
 
         self.register_wheel_events(event_ctrl)
 
@@ -580,40 +580,40 @@ class WalkNav(InteractiveNavigationController):
         self.speed_factor = 1.0
 
     def update(self, time, dt):
-        if self.keyMap['up']:
+        if self.key_map['up']:
             self.step(self.speed * self.speed_factor * dt)
 
-        if self.keyMap['down']:
+        if self.key_map['down']:
             self.step(-self.speed * self.speed_factor * dt)
 
-        if self.keyMap['left']:
+        if self.key_map['left']:
             self.turn(LVector3d.up(), self.rot_step_per_sec * dt)
 
-        if self.keyMap['right']:
+        if self.key_map['right']:
             self.turn(LVector3d.up(), -self.rot_step_per_sec * dt)
 
-        if self.keyMap['shift-up']:
+        if self.key_map['shift-up']:
             self.turn(LVector3d.right(), self.rot_step_per_sec * dt)
 
-        if self.keyMap['shift-down']:
+        if self.key_map['shift-down']:
             self.turn(LVector3d.right(), -self.rot_step_per_sec * dt)
 
-        if self.keyMap['shift-left']:
+        if self.key_map['shift-left']:
             self.turn(LVector3d.up(), self.rot_step_per_sec * dt)
 
-        if self.keyMap['shift-right']:
+        if self.key_map['shift-right']:
             self.turn(LVector3d.up(), -self.rot_step_per_sec * dt)
 
-        if self.keyMap['control-left']:
+        if self.key_map['control-left']:
             self.turn(LVector3d.forward(), self.rot_step_per_sec * dt)
 
-        if self.keyMap['control-right']:
+        if self.key_map['control-right']:
             self.turn(LVector3d.forward(), -self.rot_step_per_sec * dt)
 
-        if self.keyMap['home']:
+        if self.key_map['home']:
             self.change_altitude(self.distance_speed * dt)
 
-        if self.keyMap['end']:
+        if self.key_map['end']:
             self.change_altitude(-self.distance_speed * dt)
 
         if self.wheel_event_time + self.wheel_event_duration > globalClock.get_real_time():
@@ -675,7 +675,7 @@ class ControlNav(InteractiveNavigationController):
         self.controller = controller
 
     def register_events(self, event_ctrl):
-        self.keyMap = {
+        self.key_map = {
             "left": 0,
             "right": 0,
             "up": 0,
@@ -683,18 +683,18 @@ class ControlNav(InteractiveNavigationController):
             "home": 0,
             "end": 0,
         }
-        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
-        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0])
-        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
-        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0])
-        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
-        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0])
-        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
-        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0])
-        event_ctrl.accept("home", self.setKey, ['home', 1])
-        event_ctrl.accept("home-up", self.setKey, ['home', 0])
-        event_ctrl.accept("end", self.setKey, ['end', 1])
-        event_ctrl.accept("end-up", self.setKey, ['end', 0])
+        event_ctrl.accept("arrow_up", self.set_key, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.set_key, ['up', 0])
+        event_ctrl.accept("arrow_down", self.set_key, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.set_key, ['down', 0])
+        event_ctrl.accept("arrow_left", self.set_key, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.set_key, ['left', 0])
+        event_ctrl.accept("arrow_right", self.set_key, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.set_key, ['right', 0])
+        event_ctrl.accept("home", self.set_key, ['home', 1])
+        event_ctrl.accept("home-up", self.set_key, ['home', 0])
+        event_ctrl.accept("end", self.set_key, ['end', 1])
+        event_ctrl.accept("end-up", self.set_key, ['end', 0])
 
         self.register_wheel_events(event_ctrl)
 
@@ -728,24 +728,24 @@ class ControlNav(InteractiveNavigationController):
 
     def update(self, time, dt):
         is_moving = False
-        if self.keyMap['up']:
+        if self.key_map['up']:
             self.step(self.speed * self.speed_factor * dt)
             is_moving = True
 
-        if self.keyMap['down']:
+        if self.key_map['down']:
             self.step(-self.speed * self.speed_factor * dt)
             is_moving = True
 
-        if self.keyMap['left']:
+        if self.key_map['left']:
             self.turn(self.rot_step_per_sec * dt)
 
-        if self.keyMap['right']:
+        if self.key_map['right']:
             self.turn(-self.rot_step_per_sec * dt)
 
-        if self.keyMap['home']:
+        if self.key_map['home']:
             self.change_altitude(self.distance_speed * dt)
 
-        if self.keyMap['end']:
+        if self.key_map['end']:
             self.change_altitude(-self.distance_speed * dt)
 
         if self.wheel_event_time + self.wheel_event_duration > globalClock.get_real_time():
@@ -791,17 +791,17 @@ class KineticNav(InteractiveNavigationController):
         self.controller = controller
 
     def register_events(self, event_ctrl):
-        self.keyMap = {"left": 0, "right": 0, "up": 0, "down": 0, "home": 0, "end": 0, "jump": 0}
-        event_ctrl.accept("arrow_up", self.setKey, ['up', 1])
-        event_ctrl.accept("arrow_up-up", self.setKey, ['up', 0])
-        event_ctrl.accept("arrow_down", self.setKey, ['down', 1])
-        event_ctrl.accept("arrow_down-up", self.setKey, ['down', 0])
-        event_ctrl.accept("arrow_left", self.setKey, ['left', 1])
-        event_ctrl.accept("arrow_left-up", self.setKey, ['left', 0])
-        event_ctrl.accept("arrow_right", self.setKey, ['right', 1])
-        event_ctrl.accept("arrow_right-up", self.setKey, ['right', 0])
-        event_ctrl.accept(" ", self.setKey, ['jump', 1])
-        event_ctrl.accept(" -up", self.setKey, ['jump', 0])
+        self.key_map = {"left": 0, "right": 0, "up": 0, "down": 0, "home": 0, "end": 0, "jump": 0}
+        event_ctrl.accept("arrow_up", self.set_key, ['up', 1])
+        event_ctrl.accept("arrow_up-up", self.set_key, ['up', 0])
+        event_ctrl.accept("arrow_down", self.set_key, ['down', 1])
+        event_ctrl.accept("arrow_down-up", self.set_key, ['down', 0])
+        event_ctrl.accept("arrow_left", self.set_key, ['left', 1])
+        event_ctrl.accept("arrow_left-up", self.set_key, ['left', 0])
+        event_ctrl.accept("arrow_right", self.set_key, ['right', 1])
+        event_ctrl.accept("arrow_right-up", self.set_key, ['right', 0])
+        event_ctrl.accept(" ", self.set_key, ['jump', 1])
+        event_ctrl.accept(" -up", self.set_key, ['jump', 0])
 
     def remove_events(self, event_ctrl):
         event_ctrl.ignore("arrow_up")
@@ -818,15 +818,15 @@ class KineticNav(InteractiveNavigationController):
     def update(self, time, dt):
         is_moving = False
         speed = LVector3(0, 0, 0)
-        y = self.keyMap['up'] - self.keyMap['down']
+        y = self.key_map['up'] - self.key_map['down']
         if y:
             speed.set_y(y * self.speed * self.speed_factor)
             is_moving = True
 
-        if self.keyMap['left']:
+        if self.key_map['left']:
             self.turn(self.rot_step_per_sec * dt)
 
-        if self.keyMap['right']:
+        if self.key_map['right']:
             self.turn(-self.rot_step_per_sec * dt)
 
         self.set_speed_relative(speed)
