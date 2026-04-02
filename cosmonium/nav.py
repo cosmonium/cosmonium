@@ -134,21 +134,26 @@ class InteractiveNavigationController(NavigationController):
             self.orbit_orientation = self.controller.get_frame_orientation()
 
     def do_orbit(self, z_angle, x_angle):
-        z_rotation = LQuaterniond()
-        x_rotation = LQuaterniond()
+        # --- Orientation update ---
+        orient_z_rot = LQuaterniond()
+        orient_x_rot = LQuaterniond()
         try:
             orbit_z_axis = self.orbit_orientation.xform(LVector3d.up())
             orbit_x_axis = self.orbit_orientation.xform(LVector3d.right())
-            z_rotation.set_from_axis_angle_rad(z_angle, orbit_z_axis)
-            x_rotation.set_from_axis_angle_rad(x_angle, orbit_x_axis)
+            orient_z_rot.set_from_axis_angle_rad(z_angle, orbit_z_axis)
+            orient_x_rot.set_from_axis_angle_rad(x_angle, orbit_x_axis)
         except AssertionError as e:
             print("Wrong orbit axis :", e)
-        combined = x_rotation * z_rotation
-        new_rot = self.orbit_orientation * combined
+        combined_orient = orient_x_rot * orient_z_rot
+        new_rot = self.orbit_orientation * combined_orient
         if self.controller.orbit_rot_camera:
             self.camera_controller.set_local_orientation(new_rot)
         else:
             self.controller.set_frame_orientation(new_rot)
+
+        # --- Position update (independent rotation computation) ---
+        pos_z_rot = LQuaterniond()
+        pos_x_rot = LQuaterniond()
         try:
             if self.controller.orbit_rot_camera:
                 orbit_orientation = self.controller.anchor.calc_frame_orientation_of(self.orbit_orientation)
@@ -156,12 +161,12 @@ class InteractiveNavigationController(NavigationController):
                 orbit_orientation = self.orbit_orientation
             orbit_z_axis = orbit_orientation.xform(LVector3d.up())
             orbit_x_axis = orbit_orientation.xform(LVector3d.right())
-            z_rotation.set_from_axis_angle_rad(z_angle, orbit_z_axis)
-            x_rotation.set_from_axis_angle_rad(x_angle, orbit_x_axis)
+            pos_z_rot.set_from_axis_angle_rad(z_angle, orbit_z_axis)
+            pos_x_rot.set_from_axis_angle_rad(x_angle, orbit_x_axis)
         except AssertionError as e:
             print("Wrong orbit axis :", e)
-        combined = x_rotation * z_rotation
-        delta = combined.xform(self.orbit_start)
+        combined_pos = pos_x_rot * pos_z_rot
+        delta = combined_pos.xform(self.orbit_start)
         self.controller.set_frame_position(delta + self.orbit_center)
 
 
