@@ -176,8 +176,8 @@ class FreeNav(InteractiveNavigationController):
         self.rot_speed = LVector3d()
         self.mouse_orbit = False
         self.keyboardTrack = False
-        self.startX = None
-        self.startY = None
+        self.start_x = 0.0
+        self.start_y = 0.0
         self.orbit_coef = 0.0
         self.orbit_x = 0.0
         self.orbit_z = 0.0
@@ -476,6 +476,7 @@ class WalkNav(InteractiveNavigationController):
 
     def __init__(self):
         InteractiveNavigationController.__init__(self)
+        self.body = None
         self.speed_factor = 1.0
 
     def get_name(self):
