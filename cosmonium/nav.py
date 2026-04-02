@@ -18,6 +18,8 @@
 #
 
 
+import logging
+
 from direct.showbase.ShowBaseGlobal import globalClock
 from math import pi, exp
 from panda3d.core import LVector3, LVector3d, LPoint3d, LQuaterniond
@@ -25,6 +27,9 @@ import sys
 
 from . import settings
 from .astro import units
+
+
+logger = logging.getLogger("nav")
 
 
 class NavigationController:
@@ -143,7 +148,7 @@ class InteractiveNavigationController(NavigationController):
             orient_z_rot.set_from_axis_angle_rad(z_angle, orbit_z_axis)
             orient_x_rot.set_from_axis_angle_rad(x_angle, orbit_x_axis)
         except AssertionError as e:
-            print("Wrong orbit axis :", e)
+            logger.warning("do_orbit: invalid orientation axis: %s", e)
         combined_orient = orient_x_rot * orient_z_rot
         new_rot = self.orbit_orientation * combined_orient
         if self.controller.orbit_rot_camera:
@@ -164,7 +169,7 @@ class InteractiveNavigationController(NavigationController):
             pos_z_rot.set_from_axis_angle_rad(z_angle, orbit_z_axis)
             pos_x_rot.set_from_axis_angle_rad(x_angle, orbit_x_axis)
         except AssertionError as e:
-            print("Wrong orbit axis :", e)
+            logger.warning("do_orbit: invalid position axis: %s", e)
         combined_pos = pos_x_rot * pos_z_rot
         delta = combined_pos.xform(self.orbit_start)
         self.controller.set_frame_position(delta + self.orbit_center)
