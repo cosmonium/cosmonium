@@ -108,7 +108,7 @@ def changedistance(command_name, sequence, base, parameters):
     """
     rate = float(parameters.get('rate', '0.0'))
     duration = float(parameters.get('duration', '0.0'))
-    sequence.append(Func(base.autopilot.change_distance, rate, duration))
+    sequence.append(Func(base.autopilot.continuous.change_distance, rate, duration))
     sequence.append(Wait(duration))
 
 
@@ -184,7 +184,7 @@ def goto(command_name, sequence, base, parameters):
 
     def goto_func():
         global_up = base.camera_controller.get_local_orientation().xform(up)
-        base.autopilot.go_to_object(duration, distance, global_up, 0.25, 0.75)
+        base.autopilot.navigation.go_to_object(duration, distance, global_up, 0.25, 0.75)
 
     sequence.append(Func(goto_func))
 
@@ -251,7 +251,7 @@ def gotolonglat(command_name, sequence, base, parameters):
     latitude = float(parameters.get('latitude', '0.0'))
     sequence.append(
         Func(
-            base.autopilot.go_to_object_long_lat,
+            base.autopilot.navigation.go_to_object_long_lat,
             longitude * pi / 180,
             latitude * pi / 180,
             duration,
@@ -324,7 +324,7 @@ def orbit(command_name, sequence, base, parameters):
     axis = LVector3d(axis[0], -axis[2], axis[1])
     length = axis.length()
     axis.normalize()
-    sequence.append(Func(base.autopilot.orbit, axis, rate * length, duration))
+    sequence.append(Func(base.autopilot.continuous.orbit, axis, rate * length, duration))
     sequence.append(Wait(duration))
 
 
@@ -462,7 +462,7 @@ def rotate(command_name, sequence, base, parameters):
     axis = LVector3d(axis[0], -axis[2], axis[1])
     length = axis.length()
     axis.normalize()
-    sequence.append(Func(base.autopilot.rotate, axis, -rate * length, duration))
+    sequence.append(Func(base.autopilot.continuous.rotate, axis, -rate * length, duration))
     sequence.append(Wait(duration))
 
 

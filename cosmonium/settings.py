@@ -217,6 +217,18 @@ fast_move = 2.0
 slow_move = 5.0
 default_distance = 5.0
 
+# Autopilot rotation-timing fractions for goto commands (Celestia-inspired defaults).
+# These control when, as a fraction of the total animation duration, the camera
+# begins and finishes rotating to face its destination.
+goto_rotation_start = 0.0
+goto_rotation_end = 0.5
+goto_longlat_rotation_start = 0.25
+goto_longlat_rotation_end = 0.75
+
+# Multiplier applied to the object's minimum-approach distance to define the
+# "natural" zoom distance used by the exponential distance-change formula.
+goto_natural_distance_multiplier = 4.0
+
 ui_scale_dpi_aware = True
 custom_ui_scale = 1.0
 ui_scale = 1.0

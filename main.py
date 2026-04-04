@@ -290,7 +290,7 @@ class CosmoniumApp(Cosmonium):
             anchor = self.universe.find_by_path(self.app_config.default_target)
             if anchor:
                 self.select_body(anchor.body)
-                self.autopilot.go_to_front(duration=0.0)
+                self.autopilot.navigation.go_to_front(duration=0.0)
             self.gui.update_info(_("Welcome to Cosmonium!"))
 
 

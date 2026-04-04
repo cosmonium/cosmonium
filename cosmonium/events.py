@@ -84,20 +84,20 @@ class EventsDispatcher(DirectObject):
         self.accept('debug-toggle-shader-raymarching-canvas', self.debug.toggle_shader_debug_raymarching_canvas)
         self.accept('debug-toggle-shader-debug-raymarching_slice', self.debug.toggle_shader_debug_raymarching_slice)
 
-        self.accept('goto-front', self.autopilot.go_to_front, [None, None, None, False])
-        self.accept('goto-illuminated-front', self.autopilot.go_to_front, [None, None, None, True])
-        self.accept('goto-selected', self.autopilot.go_to_object)
+        self.accept('goto-front', self.autopilot.navigation.go_to_front, [None, None, None, False])
+        self.accept('goto-illuminated-front', self.autopilot.navigation.go_to_front, [None, None, None, True])
+        self.accept('goto-selected', self.autopilot.navigation.go_to_object)
         self.accept('center-selected', self.engine.center_on_object)
         self.accept('debug-toggle-jump', self.debug.toggle_jump)
 
-        self.accept('goto-north', self.autopilot.go_north)
-        self.accept('goto-south', self.autopilot.go_south)
-        self.accept('goto-meridian', self.autopilot.go_meridian)
+        self.accept('goto-north', self.autopilot.navigation.go_north)
+        self.accept('goto-south', self.autopilot.navigation.go_south)
+        self.accept('goto-meridian', self.autopilot.navigation.go_meridian)
 
-        self.accept('align-ecliptic', self.autopilot.align_on_ecliptic)
-        self.accept('align-equatorial', self.autopilot.align_on_equatorial)
+        self.accept('align-ecliptic', self.autopilot.alignment.align_on_ecliptic)
+        self.accept('align-equatorial', self.autopilot.alignment.align_on_equatorial)
 
-        self.accept('goto-surface', self.autopilot.go_to_surface)
+        self.accept('goto-surface', self.autopilot.navigation.go_to_surface)
 
         self.accept('select-home', self.engine.go_home)
 
