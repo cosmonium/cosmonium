@@ -394,14 +394,27 @@ class SquarePatchBase(PatchBase):
     def face_to_string(face):
         return ['Right', 'Left', 'Back', 'Front', 'Top', 'Bottom'][face]
 
+    # Face rotations mapping the base z=1 patch plane to each cube face.
+    # Convention: all side faces have v pointing up (+Z), u going right when
+    # viewed from outside the sphere. Top/bottom: u=+X, v=±Y.
+    # This matches the OpenGL cubemap s,t convention (with t negated).
+    #
+    # Face       | Normal | u      | v
+    # -----------|--------|--------|--------
+    # 0 / Right  | +X     | +Y     | +Z
+    # 1 / Left   | -X     | -Y     | +Z
+    # 2 / Back   | -Y     | +X     | +Z
+    # 3 / Front  | +Y     | -X     | +Z
+    # 4 / Top    | +Z     | +X     | +Y
+    # 5 / Bottom | -Z     | +X     | -Y
     rotations = [LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond(), LQuaterniond()]
     rotations_mat = [LMatrix3d(), LMatrix3d(), LMatrix3d(), LMatrix3d(), LMatrix3d(), LMatrix3d()]
-    rotations[0].setHpr(LVector3d(0, 0, 90))  # right
-    rotations[1].setHpr(LVector3d(0, 0, -90))  # left
-    rotations[2].setHpr(LVector3d(0, 90, 0))  # back
-    rotations[3].setHpr(LVector3d(0, -90, 0))  # face
-    rotations[4].setHpr(LVector3d(0, 0, 0))  # top
-    rotations[5].setHpr(LVector3d(0, 180, 0))  # bottom
+    rotations[0].setHpr(LVector3d(90, 90, 0))
+    rotations[1].setHpr(LVector3d(-90, 90, 0))
+    rotations[2].setHpr(LVector3d(0, 90, 0))
+    rotations[3].setHpr(LVector3d(180, 90, 0))
+    rotations[4].setHpr(LVector3d(0, 0, 0))
+    rotations[5].setHpr(LVector3d(180, 0, 180))
     for i in range(6):
         rotations[i].extract_to_matrix(rotations_mat[i])
 
@@ -1194,33 +1207,31 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         ax = abs(x)
         ay = abs(y)
         az = abs(z)
+        # Each face's inverse rotation maps world (x,y,z) to local (u_dir, v_dir, face_normal).
+        # The local coordinates are passed to xyz_to_uv which extracts (u, v) from the
+        # first two components and uses the third as the face normal (dominant axis).
+        # See SquarePatchBase for the face definitions.
         if ax >= ay and ax >= az:
             if x >= 0.0:
                 face = SquarePatchBase.RIGHT
-                (u, v) = self.xyz_to_uv(-z, y, x)
-                (u, v) = (u, v)
+                (u, v) = self.xyz_to_uv(y, z, x)
             else:
                 face = SquarePatchBase.LEFT
-                (u, v) = self.xyz_to_uv(z, y, -x)
-                (u, v) = (u, v)
+                (u, v) = self.xyz_to_uv(-y, z, -x)
         elif ay >= ax and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
-                (u, v) = self.xyz_to_uv(x, z, -y)
-                (u, v) = (u, 1.0 - v)
+                (u, v) = self.xyz_to_uv(-x, z, y)
             else:
                 face = SquarePatchBase.BACK
-                (u, v) = self.xyz_to_uv(x, -z, y)
-                (u, v) = (u, 1.0 - v)
+                (u, v) = self.xyz_to_uv(x, z, -y)
         elif az >= ax and az >= ay:
             if z >= 0.0:
                 face = SquarePatchBase.TOP
                 (u, v) = self.xyz_to_uv(x, y, z)
-                (u, v) = (u, v)
             else:
                 face = SquarePatchBase.BOTTOM
                 (u, v) = self.xyz_to_uv(x, -y, -z)
-                (u, v) = (u, v)
         return (face, u, v)
 
     def parametric_to_shape_coord(self, x, y):

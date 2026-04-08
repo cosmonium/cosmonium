@@ -36,3 +36,11 @@ Tests the quadtree node structure used for hierarchical terrain patch management
 - **Split Decisions**: Validates when patches should split into children
 - **Merge Decisions**: Validates when child patches should merge back to parent
 - **LOD Traversal**: Tests recursive LOD checks through the tree
+
+
+### 4. Patch face rotation Tests (`test_face_rotation.py`)
+
+Tests for cube face rotation convention and xyz_to_face_xy inverse mappings.
+
+- **TestFaceRotationConvention**: Verify face rotations produce correct normals and UV orientations
+- **TestEdgeAdjacency**: Verify that adjacent faces share edge vertices correctly
