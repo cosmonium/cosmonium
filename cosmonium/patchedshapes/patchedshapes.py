@@ -1206,7 +1206,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
                 # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(z, y, -x)
                 (u, v) = (u, v)
-        elif ay >= x and ay >= az:
+        elif ay >= ax and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
                 # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
