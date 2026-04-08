@@ -1194,38 +1194,31 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         ax = abs(x)
         ay = abs(y)
         az = abs(z)
-        # p = LPoint3d(x, y, z)
         if ax >= ay and ax >= az:
             if x >= 0.0:
                 face = SquarePatchBase.RIGHT
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(-z, y, x)
                 (u, v) = (u, v)
             else:
                 face = SquarePatchBase.LEFT
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(z, y, -x)
                 (u, v) = (u, v)
         elif ay >= ax and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, z, -y)
                 (u, v) = (u, 1.0 - v)
             else:
                 face = SquarePatchBase.BACK
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -z, y)
                 (u, v) = (u, 1.0 - v)
         elif az >= ax and az >= ay:
             if z >= 0.0:
                 face = SquarePatchBase.TOP
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, y, z)
                 (u, v) = (u, v)
             else:
                 face = SquarePatchBase.BOTTOM
-                # (u, v) = self.xyz_to_uv(*SquarePatchBase.rotations[face].conjugate().xform(p))
                 (u, v) = self.xyz_to_uv(x, -y, -z)
                 (u, v) = (u, v)
         return (face, u, v)
@@ -1236,11 +1229,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         xp = cos(theta) * cos(phi)
         yp = cos(theta) * sin(phi)
         zp = sin(theta)
-        # xp = sin(theta) * cos(phi)
-        # yp = sin(theta) * sin(phi)
-        # zp = -cos(theta)
         (face, x, y) = self.xyz_to_face_xy(xp, yp, zp)
-        # print(face, x, y)
         return (face, x, y)
 
     def find_patch_at(self, coord):
