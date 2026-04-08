@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,21 +20,13 @@
 
 from panda3d.core import LQuaternion, LVector3d
 
-from ..patchedshapes.boundingbox import PatchBoundingBox
-from ..patchedshapes.patchedshapes import PatchFactory, PatchLayer, SquarePatchBase, NormalizedSquareShape
-from ..geometry import geometry
 from .. import settings
+from ..geometry import geometry
+from ..patchedshapes.boundingbox import PatchBoundingBox
+from ..patchedshapes.patchedshapes import NormalizedSquareShape, PatchFactory, PatchLayer, SquarePatchBase
 
 
 class SpaceEngineTextureSquarePatch(SquarePatchBase):
-    xy_params = [
-        {'x_inverted': True, 'y_inverted': False, 'xy_swap': True},  # Right  # Africa
-        {'x_inverted': False, 'y_inverted': True, 'xy_swap': True},  # Left   # Pacific
-        {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Back   # America
-        {'x_inverted': True, 'y_inverted': True, 'xy_swap': False},  # Face   # Asia
-        {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Top    # Arctic
-        {'x_inverted': False, 'y_inverted': False, 'xy_swap': False},  # Bottom # Antartic
-    ]
 
     def face_offset_vector(self, axes):
         (x0, y0, x1, y1) = self.calc_xy()
@@ -54,18 +46,10 @@ class SpaceEngineTextureSquarePatch(SquarePatchBase):
 
     def calc_xy(self):
         div = 1 << self.lod
-        x = self.x
-        y = self.y
-        if self.xy_params[self.face]['xy_swap']:
-            x, y = y, x
-        if self.xy_params[self.face]['x_inverted']:
-            x = div - x - 1
-        if self.xy_params[self.face]['y_inverted']:
-            y = div - y - 1
-        x0 = float(x) / div
-        y0 = float(y) / div
-        x1 = float(x + 1) / div
-        y1 = float(y + 1) / div
+        x0 = float(self.x) / div
+        y0 = float(self.y) / div
+        x1 = float(self.x + 1) / div
+        y1 = float(self.y + 1) / div
         return (x0, y0, x1, y1)
 
 
@@ -85,9 +69,6 @@ class SpaceEngineTextureSquareLayer(PatchLayer):
             y1,
             has_offset=patch.offset is not None,
             offset=patch.offset if patch.offset is not None else 0.0,
-            inv_u=patch.xy_params[patch.face]['x_inverted'],
-            inv_v=patch.xy_params[patch.face]['y_inverted'],
-            swap_uv=patch.xy_params[patch.face]['xy_swap'],
             use_patch_adaptation=settings.use_patch_adaptation,
             use_patch_skirts=settings.use_patch_skirts,
         )

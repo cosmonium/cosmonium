@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,22 +19,22 @@
 
 import os
 
-from ..textures import VirtualTextureSource, TextureSourceFactory, AutoTextureSource
 from ..dircontext import defaultDirContext
+from ..textures import AutoTextureSource, TextureSourceFactory, VirtualTextureSource
 
 
 class SpaceEngineVirtualTextureSource(VirtualTextureSource):
     face_str = [
-        # SE Axis :
-        # X : Right -> X
-        # Y : Up -> Z
-        # Z : Forward -> -Y
-        'pos_x',
-        'neg_x',
-        'pos_z',
-        'neg_z',
-        'pos_y',
-        'neg_y',
+        # Cosmonium (Z-up) to SpaceEngine (Y-up) axis mapping:
+        # Cosmonium X (right) -> SE X
+        # Cosmonium Y (forward) -> SE -Z
+        # Cosmonium Z (up) -> SE Y
+        'pos_x',  # face 0 RIGHT (+X)
+        'neg_x',  # face 1 LEFT (-X)
+        'pos_z',  # face 2 BACK (-Y) -> SE +Z
+        'neg_z',  # face 3 FRONT (+Y) -> SE -Z
+        'pos_y',  # face 4 TOP (+Z) -> SE +Y
+        'neg_y',  # face 5 BOTTOM (-Z) -> SE -Y
     ]
 
     def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=defaultDirContext):
