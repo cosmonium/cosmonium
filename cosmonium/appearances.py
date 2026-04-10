@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -402,9 +402,18 @@ class Appearance(AppearanceBase):
 
     def add_as_source(self, shape):
         AppearanceBase.add_as_source(self, shape)
-        # TODO: other textures should be added here (as a list to be more effective)
         if self.texture:
             self.texture.add_as_source(shape)
+        if self.normal_map:
+            self.normal_map.add_as_source(shape)
+        if self.bump_map:
+            self.bump_map.add_as_source(shape)
+        if self.specular_map:
+            self.specular_map.add_as_source(shape)
+        if self.emission_texture:
+            self.emission_texture.add_as_source(shape)
+        if self.occlusion_map:
+            self.occlusion_map.add_as_source(shape)
 
     def apply(self, shape, instance):
         # Override any material present on the shape (use ModelAppearance to keep it)

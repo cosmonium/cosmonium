@@ -87,18 +87,21 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
         if data.night_texture is not None:
             texture_source, texture_offset = source_parser.decode(data.night_texture, patched_shape=patched_shape)
             emission_texture = EmissionTexture(texture_source)
-            # TODO: missing texture offset
+            if texture_offset is not None:
+                emission_texture.offset = texture_offset
             appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
             appearance.set_nightscale(data.nightscale)
         elif data.emission_texture is not None:
             texture_source, texture_offset = source_parser.decode(data.emission_texture, patched_shape=patched_shape)
             emission_texture = EmissionTexture(texture_source)
-            # TODO: missing texture offset
+            if texture_offset is not None:
+                emission_texture.offset = texture_offset
             appearance.set_emission_texture(emission_texture, context=YamlModuleParser.context)
         if data.normalmap is not None:
             texture_source, texture_offset = source_parser.decode(data.normalmap, patched_shape=patched_shape)
             normal_map = NormalMapTexture(texture_source)
-            # TODO: missing texture offset
+            if texture_offset is not None:
+                normal_map.offset = texture_offset
             appearance.set_normal_map(normal_map, context=YamlModuleParser.context)
         if data.specular_color is not None:
             appearance.specularColor = data.specular_color
@@ -106,12 +109,14 @@ class TexturesAppearanceYamlParser(YamlModuleParser):
             if data.specularmap is not None:
                 texture_source, texture_offset = source_parser.decode(data.specularmap, patched_shape=patched_shape)
                 specular_map = SpecularMapTexture(texture_source)
-                # TODO: missing texture offset
+                if texture_offset is not None:
+                    specular_map.offset = texture_offset
                 appearance.set_specular_map(specular_map, context=YamlModuleParser.context)
         if data.bumpmap is not None:
             texture_source, texture_offset = source_parser.decode(data.bumpmap, patched_shape=patched_shape)
             bump_map = BumpMapTexture(texture_source)
-            # TODO: missing texture offset
+            if texture_offset is not None:
+                bump_map.offset = texture_offset
             appearance.set_bump_map(bump_map, data.bump_height, context=YamlModuleParser.context)
         if data.diffuse_color is not None:
             appearance.diffuseColor = data.diffuse_color
