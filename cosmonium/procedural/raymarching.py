@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -204,7 +204,7 @@ class BulgeRayMarchingAppearance(RayMarchingAppearanceBase):
     def get_shader_appearance(self):
         return BulgeRayMarchingShader()
 
-    def appy(self, shape, instance):
+    def apply(self, shape, instance):
         RayMarchingAppearanceBase.apply(self, shape, instance)
         instance.setShaderInput("effective_intensity", self.effective_intensity)
         instance.setShaderInput("effective_radius", self.effective_radius)
