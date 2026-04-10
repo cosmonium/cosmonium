@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,17 +18,16 @@
 #
 
 
-from direct.task.Task import gather, shield
-from direct.task.TaskManagerGlobal import taskMgr
 from math import pi
 
-from ..appearances import AppearanceBase, TexturesBlock
-from ..textures import TextureArray
-from ..astro import units
-from ..dircontext import defaultDirContext
-from .. import settings
+from direct.task.Task import gather, shield
+from direct.task.TaskManagerGlobal import taskMgr
 
-from .shaders import TextureDictionaryShaderDataSource, DetailMap
+from .. import settings
+from ..appearances import AppearanceBase, TexturesBlock
+from ..astro import units
+from ..textures import TextureArray
+from .shaders import DetailMap, TextureDictionaryShaderDataSource
 
 
 # TODO: TexturesDictionary should be a DataSource, not an Appearance
@@ -40,7 +39,6 @@ class TexturesDictionary(AppearanceBase):
         tiling=None,
         srgb=None,
         array=True,
-        context=defaultDirContext,
     ):
         AppearanceBase.__init__(self)
         self.name = 'tex-dict'
@@ -61,14 +59,14 @@ class TexturesDictionary(AppearanceBase):
         if settings.use_texture_array and array:
             self.texture_array = True
         else:
-            self.texture_array = True
+            self.texture_array = False
         self.textures = []
         self.texture_categories = {}
         for name, entry in textures.items():
             if not isinstance(entry, TexturesBlock):
                 albedo = entry
                 entry = TexturesBlock()
-                entry.set_albedo(albedo, context)
+                entry.set_albedo(albedo)
             self.blocks[name] = entry
             self.blocks_index[name] = self.nb_blocks
             self.textures += entry.textures

@@ -100,4 +100,4 @@ class TextureDictionaryYamlParser(YamlModuleParser):
             entries[name] = cls.decode_textures_dictionary_entry(entry, srgb)
         scale = config.scale
         tiling = TextureTilingYamlParser.decode(config.tiling)
-        return TexturesDictionary(entries, scale, tiling, context=YamlModuleParser.context)
+        return TexturesDictionary(entries, scale, tiling)
