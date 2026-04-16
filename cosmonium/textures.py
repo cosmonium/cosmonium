@@ -17,6 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import logging
 import os
 from panda3d.core import TextureStage, Texture, LColor, PNMImage
 
@@ -24,6 +25,9 @@ from .dircontext import defaultDirContext
 from .utils import TransparencyBlend
 from . import workers
 from . import settings
+
+
+logger = logging.getLogger("textures")
 
 
 class TexCoord(object):
@@ -233,7 +237,7 @@ class AutoTextureSource(TextureSource):
         if filename.endswith('.*'):
             filename = self.context.find_texture(filename)
             if filename is None:
-                print("Could not find", self.filename)
+                logger.error(f"Could not find {self.filename}")
                 self.source = InvalidTextureSource()
                 return
         base, extension = os.path.splitext(filename)
@@ -246,7 +250,7 @@ class AutoTextureSource(TextureSource):
                     self.cached = self.source.cached
                     self.texture_size = self.source.texture_size
                     return
-        print("Could not find loader for", self.filename)
+        logger.error(f"Could not find loader for {self.filename}")
         self.source = InvalidTextureSource()
 
     def is_patched(self):
@@ -322,7 +326,7 @@ class TextureFileSource(TextureSource):
     async def load(self, tasks_tree, patch, texture_config=None):
         if not self.loaded:
             if settings.debug_tex_loading:
-                print("LOAD", self.filename)
+                logger.debug(f"Loading {self.filename}")
             filename = self.context.find_texture(self.filename)
             if filename is not None:
                 if settings.sync_texture_load:
@@ -335,7 +339,7 @@ class TextureFileSource(TextureSource):
                     self.texture = texture
                     self.loaded = True
             else:
-                print("File", self.filename, "not found")
+                logger.error(f"File {self.filename} not found")
         return (self.texture, 0, 0)
 
     def clear(self, patch):
@@ -444,10 +448,11 @@ class SimpleTexture(TextureBase):
 
     def apply(self, shape, instance):
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
-        # TODO: not really apply but we need a place to detected the alpha channel
         if texture is None:
-            # print("USE DEFAULT", shape.str_id())
+            if settings.debug_tex_loading:
+                logger.debug(f"Use default texture for {shape.str_id()}")
             (texture, texture_size, texture_lod) = self.get_default_texture()
+        # TODO: not really apply but we need a place to detected the alpha channel
         self.has_alpha_channel = texture.get_format() in (
             Texture.F_rgba,
             Texture.F_srgb_alpha,
@@ -715,7 +720,7 @@ class VirtualTextureSource(TextureSource):
         if not patch.str_id() in self.map_patch:
             tex_name = self.texture_name(patch)
             if settings.debug_tex_loading:
-                print("LOAD", tex_name)
+                logger.debug(f"Load {tex_name}")
             filename = self.context.find_texture(tex_name)
             alpha_tex_name = self.alpha_texture_name(patch)
             alpha_filename = self.context.find_texture(alpha_tex_name)
@@ -730,7 +735,8 @@ class VirtualTextureSource(TextureSource):
                     texture_info = (texture, self.texture_size, patch.lod)
                     self.map_patch[patch.str_id()] = texture_info
             else:
-                pass  # print("File", tex_name, "not found")
+                if settings.debug_tex_loading:
+                    logger.warning(f"File {tex_name} not found")
             if texture_info is None:
                 texture_info = self.find_parent_texture_for(patch)
         else:

@@ -18,6 +18,8 @@
 #
 
 
+import logging
+from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.Task import shield
 
 from .shaders import DeferredDetailMapShader, TextureDictionaryShaderDataSource
@@ -29,6 +31,9 @@ from ..pipeline.factory import PipelineFactory
 from ..pipeline.generator import GeneratorPool
 from ..textures import TextureSource
 from .. import settings
+
+
+logger = logging.getLogger("textures")
 
 
 class TextureGenerationStage(ProcessStage):
@@ -156,7 +161,8 @@ class NoiseTextureGenerator:
             self.create(patch.coord if patch else shape.coord)
         data = {'prepare': {'texture': {'color': texture_config}}, 'shader': {}}
         self.texture_stage.configure_data(data, shape, patch)
-        # print("GEN", patch.str_id())
+        if settings.debug_tex_loading:
+            logger.debug(f"Generating texture for {patch.str_id()}")
         result = await self.tex_generator.generate(tasks_tree, data)
         texture = result[self.texture_stage.name].get('color')
         return texture
@@ -204,11 +210,13 @@ class DetailMapTextureGenerator:
             if source_name in tasks_tree.named_tasks:
                 await tasks_tree.named_tasks[source_name]
         self.texture_stage.configure_data(data, shape, patch)
-        # print(globalClock.get_frame_count(), "*** GEN TEX", patch.str_id())
+        if settings.debug_tex_loading:
+            logger.debug(f"{globalClock.get_frame_count()} Generating detail map texture for {patch.str_id()}")
         result = await self.tex_generator.generate("tex - " + patch.str_id(), data)
         texture = result[self.texture_stage.name].get('color')
         texture.set_name("tex - " + patch.str_id())
-        # print(globalClock.get_frame_count(), "*** DONE TEX", patch.str_id())
+        if settings.debug_tex_loading:
+            logger.debug(f"{globalClock.get_frame_count()} Detail map texture generated for {patch.str_id()}")
         return texture
 
 
@@ -260,11 +268,13 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         return True
 
     async def load(self, tasks_tree, patch, texture_config):
-        # print("LOAD TEX", patch.str_id())
+        if settings.debug_tex_loading:
+            logger.debug(f"{globalClock.get_frame_count()} Loading texture for {patch.str_id()}")
         texture_info = None
         if not patch.str_id() in self.map_patch:
             texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch, texture_config)
-            # print("READY TEX", patch.str_id())
+            if settings.debug_tex_loading:
+                logger.debug(f"{globalClock.get_frame_count()} Texture ready for {patch.str_id()}")
             texture_info = (texture, self.texture_size, patch.lod)
             self.map_patch[patch.str_id()] = texture_info
         else:
@@ -289,10 +299,15 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
             while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
                 parent_patch = parent_patch.parent
             if parent_patch is not None:
-                # print(globalClock.getFrameCount(), "USE PARENT", patch.str_id(), parent_patch.str_id())
+                if settings.debug_tex_loading:
+                    logger.debug(
+                        f"{globalClock.get_frame_count()} Using parent texture for {patch.str_id()},"
+                        f" parent: {parent_patch.str_id()}"
+                    )
                 return self.map_patch[parent_patch.str_id()]
             else:
-                # print(globalClock.getFrameCount(), "NONE")
+                if settings.debug_tex_loading:
+                    logger.debug(f"{globalClock.get_frame_count()} No texture found for {patch.str_id()}")
                 return (None, self.texture_size, patch.lod)
         else:
             return (None, self.texture_size, patch.lod)
