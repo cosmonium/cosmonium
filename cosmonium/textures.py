@@ -750,12 +750,7 @@ class VirtualTextureSource(TextureSource):
         if patch.str_id() in self.map_patch:
             return self.map_patch[patch.str_id()]
         elif not strict:
-            parent_patch = patch.parent
-            while parent_patch is not None and parent_patch.str_id() not in self.map_patch:
-                parent_patch = parent_patch.parent
-            if parent_patch is not None:
-                return self.map_patch[parent_patch.str_id()]
-            else:
-                return (None, self.texture_size, patch.lod)
-        else:
-            return (None, self.texture_size, patch.lod)
+            texture_info = self.find_parent_texture_for(patch)
+            if texture_info is not None:
+                return texture_info
+        return (None, self.texture_size, patch.lod)
