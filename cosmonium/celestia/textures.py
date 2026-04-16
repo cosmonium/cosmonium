@@ -48,6 +48,10 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
     def texture_name(self, patch):
         return os.path.join(self.root, 'level%d' % patch.lod, self.get_patch_name(patch))
 
+    def alpha_texture_name(self, patch) -> str | None:
+        # Separate alpha textures are not supported by Celestia.
+        return None
+
     def get_recommended_shape(self):
         return 'patched-sphere'
 

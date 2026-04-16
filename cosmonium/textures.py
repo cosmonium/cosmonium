@@ -689,14 +689,14 @@ class VirtualTextureSource(TextureSource):
     def is_patched(self):
         return True
 
-    def child_texture_name(self, patch):
-        return None
+    def child_texture_name(self, patch) -> str:
+        raise NotImplementedError()
 
-    def texture_name(self, patch):
-        return None
+    def texture_name(self, patch) -> str:
+        raise NotImplementedError()
 
-    def alpha_texture_name(self, patch):
-        return None
+    def alpha_texture_name(self, patch) -> str | None:
+        raise NotImplementedError()
 
     def can_split(self, patch):
         tex_name = self.child_texture_name(patch)
