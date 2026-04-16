@@ -923,16 +923,16 @@ class Cosmonium(CosmoniumBase):
                 if order > 0:
                     to_select = self.nearest_system.find_nth_child(order)
                 else:
-                    to_select = self.nearest_system
+                    to_select = self.nearest_system.anchor
             elif isinstance(self.nearest_system, StellarSystem):
                 if order > 0:
                     order -= 1
                     to_select = self.nearest_system.find_nth_child(order)
                 else:
-                    to_select = self.nearest_system
+                    to_select = self.nearest_system.anchor
             else:
                 if order == 0:
-                    to_select = self.nearest_system
+                    to_select = self.nearest_system.anchor
         if to_select is not None:
             to_select = to_select.body
             if isinstance(to_select, StellarSystem) and to_select.primary is not None:
