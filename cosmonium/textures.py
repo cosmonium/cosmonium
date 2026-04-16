@@ -536,15 +536,12 @@ class SurfaceTexture(VisibleTexture):
 
     def __init__(self, source, tint=None, srgb=None):
         VisibleTexture.__init__(self, source, tint, srgb=srgb)
-        self.check_transparency = False
         self.transparent = False
 
     def init_texture_stage(self, texture_stage, texture):
         VisibleTexture.init_texture_stage(self, texture_stage, texture)
         if self.has_specular_mask:
             texture_stage.setMode(TextureStage.MModulateGloss)
-        if self.check_transparency and self.texture_has_transparency(texture):
-            self.transparent = True
 
     def get_default_color(self):
         return (1, 1, 1, 1)

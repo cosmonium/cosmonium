@@ -233,10 +233,6 @@ class Appearance(AppearanceBase):
     def set_backlit(self, backlit):
         self.backlit = backlit
 
-    def check_transparency(self):
-        if self.texture is not None:
-            self.texture.check_transparency = True
-
     def bake(self):
         self.material = Material()
         if self.emissionColor is not None:
