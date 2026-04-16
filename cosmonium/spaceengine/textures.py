@@ -89,9 +89,9 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
             if all_faces:
                 channel = None
                 alpha_channel = None
-                if os.path.exists(os.path.join(filename, 'base.jpg')):
-                    channel = None
-                else:
+                # Check if textures are in separate channels or not.
+                # If not, the alpha channel is assumed to be in the same file as the color channel.
+                if not os.path.exists(os.path.join(filename, 'base.jpg')):
                     if os.path.exists(os.path.join(filename, 'base_c.jpg')):
                         channel = 'c'
                     if os.path.exists(os.path.join(filename, 'base_a.jpg')):
