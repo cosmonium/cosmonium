@@ -158,11 +158,6 @@ class TextureBase(object):
             self.default_texture = self.create_default_texture()
         return self.default_texture
 
-    def debug_borders(self, texture):
-        texture.setWrapU(Texture.WM_border_color)
-        texture.setWrapV(Texture.WM_border_color)
-        texture.setBorderColor(LColor(1, 0, 0, 1))
-
 
 class TextureSource(object):
     cached = True
@@ -534,11 +529,6 @@ class VisibleTexture(SimpleTexture):
                 TextureStage.CSConstant,
                 TextureStage.COSrcColor,
             )
-
-    def apply(self, shape, instance):
-        SimpleTexture.apply(self, shape, instance)
-        if self.source.is_patched() and settings.debug_vt:
-            self.debug_borders()
 
 
 class SurfaceTexture(VisibleTexture):
