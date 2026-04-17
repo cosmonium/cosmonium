@@ -33,7 +33,6 @@ from ..patchedshapes.tiles import TiledShape
 from ..shapes.billboard import BillboardShape
 from ..shapes.mesh import MeshShape
 from ..shapes.spheres import IcoSphereShape, SphereShape
-from ..spaceengine.shapes import SpaceEnginePatchedSquareShape, SpaceEngineTextureSquarePatchFactory
 from .schemas.shape import (
     BillboardShapeConfig,
     IcoSphereShapeConfig,
@@ -81,14 +80,6 @@ class CubeSphereYamlParser(YamlModuleParser):
     def decode(cls, data, use_skirt=True, **kwargs):
         factory = SquaredDistanceSquarePatchFactory(use_skirt)
         shape = SquaredDistanceSquareShape(factory)
-        return (shape, {})
-
-
-class SeSphereYamlParser(YamlModuleParser):
-    @classmethod
-    def decode(cls, data, use_skirt=True, **kwargs):
-        factory = SpaceEngineTextureSquarePatchFactory(use_skirt)
-        shape = SpaceEnginePatchedSquareShape(factory)
         return (shape, {})
 
 
@@ -157,7 +148,6 @@ def register_shape_parsers():
     ShapeYamlParser.register_parser('patched-sphere', PatchedSphereYamlParser, PatchedShapeConfig)
     ShapeYamlParser.register_parser('sqrt-sphere', SqrtSphereYamlParser, PatchedShapeConfig)
     ShapeYamlParser.register_parser('cube-sphere', CubeSphereYamlParser, PatchedShapeConfig)
-    ShapeYamlParser.register_parser('se-sphere', SeSphereYamlParser, PatchedShapeConfig)
     ShapeYamlParser.register_parser('sphere', SphereYamlParser, SphereShapeConfig)
     ShapeYamlParser.register_parser('icosphere', IcoSphereYamlParser, IcoSphereShapeConfig)
     ShapeYamlParser.register_parser('mesh', MeshYamlParser, MeshShapeConfig)
