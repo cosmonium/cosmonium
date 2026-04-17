@@ -17,6 +17,14 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""SpaceEngine virtual texture source and factory for cubemap-based textures.
+
+Provides support for SpaceEngine's cubemap texture format, which stores textures
+in per-face directories (pos_x, neg_x, pos_y, neg_y, pos_z, neg_z) with texture
+files named using a ``LOD_Y_X[_channel].ext`` convention. Includes coordinate
+mapping from Cosmonium's Z-up system to SpaceEngine's Y-up system.
+"""
+
 import os
 
 from ..dircontext import defaultDirContext
@@ -24,6 +32,14 @@ from ..textures import AutoTextureSource, TextureSourceFactory, VirtualTextureSo
 
 
 class SpaceEngineVirtualTextureSource(VirtualTextureSource):
+    """Virtual texture source for SpaceEngine's cubemap texture format.
+
+    Loads textures from per-face directories (pos_x, neg_x, pos_y, neg_y, pos_z,
+    neg_z) where each texture is named ``{LOD}_{Y}_{X}[_{channel}].{ext}``.
+    Supports separate color and alpha channels. Face indices are mapped from
+    Cosmonium's Z-up coordinate system to SpaceEngine's Y-up coordinate system.
+    """
+
     face_str = [
         # Cosmonium (Z-up) to SpaceEngine (Y-up) axis mapping:
         # Cosmonium X (right) -> SE X
@@ -51,6 +67,14 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
             self.alpha_channel_text = '_' + alpha_channel
 
     def child_texture_name(self, patch):
+        """Return the file path for any next-higher-resolution child texture.
+
+        Args:
+            patch: The texture patch.
+
+        Returns:
+            Full path to a child texture at LOD+1 in the face directory.
+        """
         dir_name = self.face_str[patch.face]
         x = patch.x
         y = (1 << patch.lod) - patch.y - 1
@@ -59,12 +83,28 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
         )
 
     def texture_name(self, patch):
+        """Return the file path for the texture at the patch's current LOD.
+
+        Args:
+            patch: The texture patch.
+
+        Returns:
+            Full path to the texture in the face directory.
+        """
         dir_name = self.face_str[patch.face]
         x = patch.x
         y = (1 << patch.lod) - patch.y - 1
         return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, y, x, self.channel_text, self.ext)
 
     def alpha_texture_name(self, patch):
+        """Return the file path for the alpha channel texture, if configured.
+
+        Args:
+            patch: The texture patch containing face, x, y, and lod attributes.
+
+        Returns:
+            Full path to the alpha texture, or ``None`` if no alpha channel.
+        """
         if self.alpha_channel is not None:
             dir_name = self.face_str[patch.face]
             x = patch.x
@@ -72,12 +112,37 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
             return self.root + '/' + dir_name + "/%d_%d_%d%s.%s" % (patch.lod, y, x, self.alpha_channel_text, self.ext)
 
     def get_recommended_shape(self):
-        return 'se-sphere'
+        """Return the recommended geometry shape for this texture source.
+
+        Returns:
+            The id of supported geometry shape: ``'sqrt-sphere'``.
+        """
+        return 'sqrt-sphere'
 
 
 class SpaceEngineTextureSourceFactory(TextureSourceFactory):
+    """Factory that creates virtual texture sources from SpaceEngine directories.
+
+    Auto-detects SpaceEngine cubemap directory structures by checking for the
+    presence of all six face subdirectories. Also detects channel configurations
+    (color ``_c`` and alpha ``_a`` suffixes) from base texture naming conventions.
+    """
 
     def create_source(self, filename, context=defaultDirContext):
+        """Detect and create a SpaceEngine virtual texture source.
+
+        Resolves the filename via the directory context, verifies that all six
+        cubemap face subdirectories exist, and detects channel suffixes from
+        the base texture files.
+
+        Args:
+            filename: Path to the SpaceEngine texture directory.
+            context: Directory context for resolving file paths.
+
+        Returns:
+            A ``SpaceEngineVirtualTextureSource`` if the directory is a valid
+            SpaceEngine cubemap, or ``None`` otherwise.
+        """
         filename = context.find_texture(filename)
         if filename is None:
             return None

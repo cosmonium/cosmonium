@@ -17,23 +17,52 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia virtual texture source and factory for .ctx virtual texture files.
+
+Provides support for Celestia's virtual texture format, which organizes textures
+in a level-based directory hierarchy (level0/, level1/, etc.) with texture files
+named using a ``tx_X_Y.ext`` convention.
+"""
 
 import os
 
-from ..textures import VirtualTextureSource, TextureSourceFactory, AutoTextureSource
 from ..dircontext import defaultDirContext
+from ..textures import AutoTextureSource, TextureSourceFactory, VirtualTextureSource
 
 
 class CelestiaVirtualTextureSource(VirtualTextureSource):
+    """Virtual texture source for Celestia's .ctx virtual texture format.
+
+    Loads textures from a level-based directory hierarchy where each LOD level
+    is stored in a separate directory (level0/, level1/, etc.) and textures are
+    named ``{prefix}{X}_{Y}.{ext}``. Supports an optional longitude offset
+    for repositioning the texture origin.
+    """
+
     def __init__(self, root, ext, size, prefix='tx_', offset=0, attribution=None, context=defaultDirContext):
         VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.prefix = prefix
         self.offset = offset
 
     def set_offset(self, offset):
+        """Set the longitude offset for texture coordinates.
+
+        Args:
+            offset: Longitude offset value. When non-zero, texture X coordinates
+                are shifted by half the subdivision count at the current LOD.
+                Y offset is ignored as not supported by Celestia's texture format.
+        """
         self.offset = offset
 
     def get_patch_name(self, patch, scale=1):
+        """Build the texture filename for a given patch.
+
+        Args:
+            patch: The texture patch containing x, y, and lod attributes.
+            scale: Coordinate multiplier, typically 2 for child textures.
+        Returns:
+            Texture filename string in the format ``{prefix}{X}_{Y}.{ext}``.
+        """
         x = patch.x
         y = (1 << patch.lod) - patch.y - 1
         if self.offset != 0:
@@ -43,9 +72,25 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
         return "%s%d_%d.%s" % (self.prefix, x * scale, y * scale, self.ext)
 
     def child_texture_name(self, patch):
+        """Return the file path for the next-higher-resolution child texture.
+
+        Args:
+            patch: The texture patch to resolve.
+
+        Returns:
+            Full path to the child texture at ``level{lod+1}/``.
+        """
         return os.path.join(self.root, 'level%d' % (patch.lod + 1), self.get_patch_name(patch, 2))
 
     def texture_name(self, patch):
+        """Return the file path for the texture at the patch's current LOD.
+
+        Args:
+            patch: The texture patch to resolve.
+
+        Returns:
+            Full path to the tile at ``level{lod}/``.
+        """
         return os.path.join(self.root, 'level%d' % patch.lod, self.get_patch_name(patch))
 
     def alpha_texture_name(self, patch) -> str | None:
@@ -53,14 +98,35 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
         return None
 
     def get_recommended_shape(self):
+        """Return the recommended geometry shape for this texture source.
+
+        Returns:
+            Celestia virtual textures supports only ``'patched-sphere'`` (UV Sphere).
+        """
         return 'patched-sphere'
 
 
 class CelestiaVirtualTextureSourceFactory(TextureSourceFactory):
+    """Factory that creates virtual texture sources from Celestia .ctx files.
+
+    Delegates parsing of ``.ctx`` files to the ``ctx_parser`` module to produce
+    a configured ``CelestiaVirtualTextureSource`` instance.
+    """
+
     def create_source(self, filename, context=defaultDirContext):
+        """Parse a .ctx file and return the corresponding texture source.
+
+        Args:
+            filename: Path to the ``.ctx`` virtual texture definition file.
+            context: Directory context for resolving file paths.
+
+        Returns:
+            A ``CelestiaVirtualTextureSource`` configured from the .ctx file.
+        """
         return ctx_parser.parse_file(filename, context)
 
 
 # TODO: Should be done in Cosmonium main class
 from . import ctx_parser  # noqa: E402
+
 AutoTextureSource.register_source_factory(CelestiaVirtualTextureSourceFactory(), ['ctx'], 0)

@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,14 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Procedural texture generation framework using GPU shader pipelines.
+
+This module provides pipeline stages and generators for creating textures
+procedurally via noise-based shaders and detail map composition. It supports
+both single-shot texture generation for non-patched bodies and per-patch
+level-of-detail generation for patched terrain surfaces. Textures are
+rendered off-screen using process pipelines.
+"""
 
 import logging
 from direct.showbase.ShowBaseGlobal import globalClock
@@ -37,7 +45,26 @@ logger = logging.getLogger("textures")
 
 
 class TextureGenerationStage(ProcessStage):
+    """Pipeline stage that generates a texture from a noise shader.
+
+    Renders a noise function into an off-screen color target to produce a
+    procedural texture. Supports configurable coordinate systems, alpha
+    channels, and sRGB output. Patch offset and scale are passed as shader
+    uniforms so the same stage can render any patch region.
+    """
+
     def __init__(self, coord, width, height, noise_source, noise_target, alpha, srgb):
+        """Initialize the texture generation stage.
+
+        Args:
+            coord: Coordinate system used for noise evaluation.
+            width: Width of the output texture in pixels.
+            height: Height of the output texture in pixels.
+            noise_source: Noise source definition for the shader.
+            noise_target: Noise target definition for the shader.
+            alpha: Whether the output texture includes an alpha channel.
+            srgb: Whether the output texture uses sRGB color space.
+        """
         ProcessStage.__init__(self, "texture")
         self.coord = coord
         self.size = (width, height)
@@ -50,6 +77,11 @@ class TextureGenerationStage(ProcessStage):
         return {'texture': 'color'}
 
     def create_shader(self):
+        """Create and register the noise shader for this stage.
+
+        Returns:
+            NoiseShader: The compiled noise shader instance.
+        """
         shader = NoiseShader(
             self.size,
             coord=self.coord,
@@ -60,6 +92,11 @@ class TextureGenerationStage(ProcessStage):
         return shader
 
     def create(self, pipeline):
+        """Create the render target and configure the shader for this stage.
+
+        Args:
+            pipeline: The process pipeline that owns this stage.
+        """
         target = ProcessTarget(self.name)
         target.set_one_shot(True)
         self.add_target(target)
@@ -73,6 +110,13 @@ class TextureGenerationStage(ProcessStage):
         target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
+        """Configure shader data with patch offset, scale, face, and LOD.
+
+        Args:
+            data: Mutable data dictionary passed through the pipeline.
+            shape: The shape object that owns the texture.
+            patch: The patch to generate for, or None for the whole surface.
+        """
         if patch is not None:
             data['shader'][self.name] = {
                 'offset': (patch.x0, patch.y0, 0.0),
@@ -90,7 +134,23 @@ class TextureGenerationStage(ProcessStage):
 
 
 class DetailTextureGenerationStage(ProcessStage):
+    """Pipeline stage that generates a detail map from a heightmap.
+
+    Composites multiple detail textures based on terrain height and slope
+    information using a deferred detail map shader. The texture control
+    and texture source define which detail textures are blended together.
+    """
+
     def __init__(self, width, height, heightmap, texture_control, texture_source):
+        """Initialize the detail texture generation stage.
+
+        Args:
+            width: Width of the output texture in pixels.
+            height: Height of the output texture in pixels.
+            heightmap: Heightmap data source for terrain sampling.
+            texture_control: Controls detail texture selection and blending.
+            texture_source: Source providing the detail texture dictionary.
+        """
         ProcessStage.__init__(self, "texture")
         self.size = (width, height)
         self.heightmap = heightmap
@@ -98,6 +158,11 @@ class DetailTextureGenerationStage(ProcessStage):
         self.texture_source = texture_source
 
     def create_shader(self):
+        """Create and register the deferred detail map shader.
+
+        Returns:
+            DeferredDetailMapShader: The compiled detail map shader instance.
+        """
         shader = DeferredDetailMapShader(self.heightmap, self.texture_control, self.texture_source)
         shader.data_source.add_source(TextureDictionaryShaderDataSource(self.texture_source))
         shader.data_source.add_source(self.heightmap.get_data_source(False))
@@ -105,6 +170,11 @@ class DetailTextureGenerationStage(ProcessStage):
         return shader
 
     def create(self, pipeline):
+        """Create the render target and configure the detail map shader.
+
+        Args:
+            pipeline: The process pipeline that owns this stage.
+        """
         target = ProcessTarget(self.name)
         target.set_one_shot(True)
         self.add_target(target)
@@ -116,6 +186,13 @@ class DetailTextureGenerationStage(ProcessStage):
         target.set_shader(self.create_shader())
 
     def configure_data(self, data, shape, patch):
+        """Configure shader data with shape, patch, and LOD information.
+
+        Args:
+            data: Mutable data dictionary passed through the pipeline.
+            shape: The shape object that owns the texture.
+            patch: The patch to generate the detail map for.
+        """
         data['shader'][self.name] = {
             'shape': shape,
             'patch': patch,
@@ -125,7 +202,23 @@ class DetailTextureGenerationStage(ProcessStage):
 
 
 class NoiseTextureGenerator:
+    """Generator that produces procedural textures from noise functions.
+
+    Wraps a ``TextureGenerationStage`` inside a single process pipeline.
+    The pipeline is created lazily on the first call to ``generate`` and
+    reused for subsequent calls.
+    """
+
     def __init__(self, size, noise, target, alpha=False, srgb=False):
+        """Initialize the noise texture generator.
+
+        Args:
+            size: Square texture size in pixels (width and height).
+            noise: Noise source definition for the shader.
+            target: Noise target definition for the shader.
+            alpha: Whether the output texture includes an alpha channel.
+            srgb: Whether the output texture uses sRGB color space.
+        """
         self.texture_size = size
         self.noise = noise
         self.target = target
@@ -137,6 +230,11 @@ class NoiseTextureGenerator:
         pass
 
     def create(self, coord):
+        """Create the process pipeline with a texture generation stage.
+
+        Args:
+            coord: Coordinate system used for noise evaluation.
+        """
         self.tex_generator = PipelineFactory.instance().create_process_pipeline()
         self.texture_stage = TextureGenerationStage(
             coord,
@@ -151,11 +249,25 @@ class NoiseTextureGenerator:
         self.tex_generator.create()
 
     def clear_all(self):
+        """Remove and release the process pipeline and its resources."""
         if self.tex_generator is not None:
             self.tex_generator.remove()
             self.tex_generator = None
 
     async def generate(self, tasks_tree, shape, patch, texture_config):
+        """Generate a procedural texture asynchronously.
+
+        Creates the pipeline on first invocation if it does not yet exist.
+
+        Args:
+            tasks_tree: Task tree for managing asynchronous dependencies.
+            shape: The shape object that owns the texture.
+            patch: The patch to generate for, or None for the whole surface.
+            texture_config: Configuration for the output color texture.
+
+        Returns:
+            The generated texture.
+        """
         if self.tex_generator is None:
             # TODO: This condition is needed for unpatched procedural ring, to be corrected
             self.create(patch.coord if patch else shape.coord)
@@ -169,7 +281,22 @@ class NoiseTextureGenerator:
 
 
 class DetailMapTextureGenerator:
+    """Generator that produces detail map textures from heightmap data.
+
+    Maintains a ``GeneratorPool`` of process pipelines, each containing a
+    ``DetailTextureGenerationStage``, to allow parallel generation of detail
+    maps for multiple patches. The pool is created lazily on first use.
+    """
+
     def __init__(self, size, heightmap, texture_control, texture_source):
+        """Initialize the detail map texture generator.
+
+        Args:
+            size: Square texture size in pixels (width and height).
+            heightmap: Heightmap data source for terrain sampling.
+            texture_control: Controls detail texture selection and blending.
+            texture_source: Source providing the detail texture dictionary.
+        """
         self.texture_size = size
         self.heightmap = heightmap
         self.texture_control = texture_control
@@ -178,9 +305,18 @@ class DetailMapTextureGenerator:
         self.texture_stage = None
 
     def add_as_source(self, shape):
+        """Register the texture source on the given shape.
+
+        Args:
+            shape: The shape to add the texture source to.
+        """
         shape.add_source(self.texture_source)
 
     def create(self):
+        """Create the generator pool with multiple process pipelines.
+
+        The pool size is determined by ``settings.patch_pool_size``.
+        """
         self.tex_generator = GeneratorPool([])
         for i in range(settings.patch_pool_size):
             chain = PipelineFactory.instance().create_process_pipeline()
@@ -196,11 +332,27 @@ class DetailMapTextureGenerator:
         self.tex_generator.create()
 
     def clear_all(self):
+        """Remove and release the generator pool and its resources."""
         if self.tex_generator is not None:
             self.tex_generator.remove()
             self.tex_generator = None
 
     async def generate(self, tasks_tree, shape, patch, texture_config):
+        """Generate a detail map texture asynchronously.
+
+        Creates the generator pool on first invocation. Waits for the
+        texture source to finish loading and for any dependent heightmap
+        sources before rendering.
+
+        Args:
+            tasks_tree: Task tree for managing asynchronous dependencies.
+            shape: The shape object that owns the texture.
+            patch: The patch to generate the detail map for.
+            texture_config: Configuration for the output color texture.
+
+        Returns:
+            The generated texture.
+        """
         if self.tex_generator is None:
             self.create()
         if not self.texture_source.loaded:
@@ -221,31 +373,78 @@ class DetailMapTextureGenerator:
 
 
 class ProceduralVirtualTextureSource(TextureSource):
+    """Texture source that generates a single procedural texture.
+
+    Produces one texture for the entire surface on first load and caches the
+    result. Suitable for non-patched bodies where a single texture covers
+    the whole object.
+    """
+
     cached = True
     procedural = True
 
     def __init__(self, tex_generator, size):
+        """Initialize the procedural virtual texture source.
+
+        Args:
+            tex_generator: Generator used to produce the procedural texture.
+            size: Square texture size in pixels (width and height).
+        """
         TextureSource.__init__(self)
         self.texture_size = size
         self.tex_generator = tex_generator
 
     async def load(self, tasks_tree, shape, texture_config):
+        """Load the procedural texture, generating it if not yet cached.
+
+        Args:
+            tasks_tree: Task tree for managing asynchronous dependencies.
+            shape: The shape object that owns the texture.
+            texture_config: Configuration for the output color texture.
+
+        Returns:
+            tuple: (texture, texture_size, lod) where lod is always 0.
+        """
         if self.texture is None:
             self.texture = await self.tex_generator.generate(tasks_tree, shape, None, texture_config)
         return (self.texture, self.texture_size, 0)
 
     def get_texture(self, shape, strict=False):
+        """Return the cached texture tuple.
+
+        Args:
+            shape: The shape requesting the texture.
+            strict: Unused; present for interface compatibility.
+
+        Returns:
+            tuple: (texture, texture_size, lod) where lod is always 0.
+        """
         return (self.texture, self.texture_size, 0)
 
     def clear_all(self):
+        """Release the cached texture and the underlying generator."""
         self.texture = None
         self.tex_generator.clear_all()
 
 
 class PatchedProceduralVirtualTextureSource(TextureSource):
+    """Patched texture source that generates a procedural texture per patch.
+
+    Maintains a cache of generated textures keyed by patch ID. Each patch
+    gets its own texture at the appropriate level of detail. When a patch
+    texture is not yet available, the nearest ancestor texture is returned
+    as a fallback.
+    """
+
     cached = False
 
     def __init__(self, tex_generator, size):
+        """Initialize the patched procedural virtual texture source.
+
+        Args:
+            tex_generator: Generator used to produce per-patch textures.
+            size: Square texture size in pixels (width and height).
+        """
         TextureSource.__init__(self)
         self.texture_size = size
         self.map_patch = {}
@@ -253,6 +452,11 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         self.procedural = True
 
     def add_as_source(self, shape):
+        """Register the generator's texture source on the given shape.
+
+        Args:
+            shape: The shape to add the texture source to.
+        """
         self.tex_generator.add_as_source(shape)
 
     def is_patched(self):
@@ -268,6 +472,19 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         return True
 
     async def load(self, tasks_tree, patch, texture_config):
+        """Load or generate the texture for a specific patch.
+
+        Returns a cached result if the patch has already been generated,
+        otherwise triggers generation and caches the result.
+
+        Args:
+            tasks_tree: Task tree for managing asynchronous dependencies.
+            patch: The patch to generate the texture for.
+            texture_config: Configuration for the output color texture.
+
+        Returns:
+            tuple: (texture, texture_size, lod) for the requested patch.
+        """
         if settings.debug_tex_loading:
             logger.debug(f"{globalClock.get_frame_count()} Loading texture for {patch.str_id()}")
         texture_info = None
@@ -282,16 +499,34 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         return texture_info
 
     def clear(self, patch):
+        """Remove the cached texture for a specific patch.
+
+        Args:
+            patch: The patch whose cached texture should be removed.
+        """
         try:
             del self.map_patch[patch.str_id()]
         except KeyError:
             pass
 
     def clear_all(self):
+        """Release all cached patch textures and the underlying generator."""
         self.map_patch = {}
         self.tex_generator.clear_all()
 
     def get_texture(self, patch, strict=False):
+        """Retrieve the texture for a patch, with optional ancestor fallback.
+
+        Args:
+            patch: The patch to retrieve the texture for.
+            strict: If True, return None when the exact patch texture is
+                missing. If False, walk up the parent chain to find the
+                nearest available ancestor texture.
+
+        Returns:
+            tuple: (texture, texture_size, lod) for the patch or its nearest
+                ancestor, or (None, texture_size, lod) if unavailable.
+        """
         if patch.str_id() in self.map_patch:
             return self.map_patch[patch.str_id()]
         elif not strict:
