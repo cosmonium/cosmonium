@@ -28,9 +28,11 @@ except ImportError as e:
     print("\t", e)
     loaded = False
 
-orbit_elements_db.register_category('e5', 100)
-if loaded:
-    orbit_elements_db.register_element('e5', 'io',       LieskeE5Orbit(0,  1.769,  421800, 0.0041))
-    orbit_elements_db.register_element('e5', 'europa',   LieskeE5Orbit(1,  3.551,  671100, 0.0094))
-    orbit_elements_db.register_element('e5', 'ganymede', LieskeE5Orbit(2,  7.155, 1070400, 0.0013))
-    orbit_elements_db.register_element('e5', 'callisto', LieskeE5Orbit(3, 16.69,  1882700, 0.0074))
+
+def init():
+    orbit_elements_db.register_category('e5', 100)
+    if loaded:
+        orbit_elements_db.register_element('e5', 'io',       LieskeE5Orbit(0,  1.769,  421800, 0.0041))
+        orbit_elements_db.register_element('e5', 'europa',   LieskeE5Orbit(1,  3.551,  671100, 0.0094))
+        orbit_elements_db.register_element('e5', 'ganymede', LieskeE5Orbit(2,  7.155, 1070400, 0.0013))
+        orbit_elements_db.register_element('e5', 'callisto', LieskeE5Orbit(3, 16.69,  1882700, 0.0074))

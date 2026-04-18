@@ -28,8 +28,10 @@ except ImportError as e:
     print("\t", e)
     loaded = False
 
-orbit_elements_db.register_category('htc20', 100)
-if loaded:
-    orbit_elements_db.register_element('htc20', 'helene',  HTC20Orbit(0, 2.737, 377444, 0.0000))
-    orbit_elements_db.register_element('htc20', 'telesto', HTC20Orbit(1, 1.888, 294720, 0.0002))
-    orbit_elements_db.register_element('htc20', 'calypso', HTC20Orbit(2, 1.888, 294721, 0.0005))
+
+def init():
+    orbit_elements_db.register_category('htc20', 100)
+    if loaded:
+        orbit_elements_db.register_element('htc20', 'helene',  HTC20Orbit(0, 2.737, 377444, 0.0000))
+        orbit_elements_db.register_element('htc20', 'telesto', HTC20Orbit(1, 1.888, 294720, 0.0002))
+        orbit_elements_db.register_element('htc20', 'calypso', HTC20Orbit(2, 1.888, 294721, 0.0005))

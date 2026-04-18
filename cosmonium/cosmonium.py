@@ -34,6 +34,7 @@ import os
 import platform
 
 from .appstate import AppState
+from .astro import tables as astro_tables
 from .astro.astro import abs_mag_to_lum
 from .astro.frame import AnchorReferenceFrame, BodyReferenceFrames
 from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
@@ -48,6 +49,7 @@ from .camera.lookaround_controller import LookAroundCameraController
 from .camera.track_controller import TrackCameraController
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
+from .celestia import textures as celestia_textures
 from .components.annotations.grid import Grid
 from .controllers.base import MovementController
 from .controllers.position import CartesianMovementController, SurfaceMovementController
@@ -83,6 +85,7 @@ from .scene.scenemanager import C_CameraHolder, remove_main_region
 from .scene.sceneanchor import SceneAnchorCollection
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .ships import NoShip
+from .spaceengine import textures as spaceengine_textures
 from .sprites import GaussianPointSprite, ExpPointSprite
 from .support.lang import LangManager
 from .support.window_manager import WindowManager
@@ -349,6 +352,12 @@ class Cosmonium(CosmoniumBase):
             self.near_cam = None
 
         self.init_c_settings()
+
+        # initialize texture parsers
+        celestia_textures.init()
+        spaceengine_textures.init()
+        # initialize orbits and rotations elements DB
+        astro_tables.init()
 
         self.worlds = Worlds()
         self.universe = Universe(100 * units.GLy)

@@ -59,14 +59,6 @@ from cosmonium.parsers.yamlparser import YamlLoader, YamlParser, YamlModuleParse
 from cosmonium.parsers.objectparser import ObjectYamlParser, universeYamlParser  # noqa: E402
 from cosmonium import settings  # noqa: E402
 
-# import textures to register celestia texture parser
-from cosmonium.celestia import textures  # noqa: E402
-from cosmonium.spaceengine import textures  # noqa: E402, F811, F401
-
-# import orbits and rotations elements to add them to the DB
-from cosmonium.astro.tables import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87  # noqa: E402, F401
-from cosmonium.astro.tables import uniform, wgccre  # noqa: E402, F401
-
 
 class CosmoniumConfig(object):
     def __init__(self):

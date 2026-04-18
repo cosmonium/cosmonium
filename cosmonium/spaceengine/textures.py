@@ -165,5 +165,5 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
         return None
 
 
-# TODO: Should be done in Cosmonium main class
-AutoTextureSource.register_source_factory(SpaceEngineTextureSourceFactory(), [], 1)
+def init():
+    AutoTextureSource.register_source_factory(SpaceEngineTextureSourceFactory(), [], 1)

@@ -17,19 +17,19 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia virtual texture source and factory for .ctx virtual texture files.
 
-from ..elementsdb import orbit_elements_db
+Provides support for Celestia's virtual texture format, which organizes textures
+in a level-based directory hierarchy (level0/, level1/, etc.) with texture files
+named using a ``tx_X_Y.ext`` convention.
+"""
 
-try:
-    from cosmonium_engine import MeeusPlutoOrbit
-    loaded = True
-except ImportError as e:
-    print("WARNING: Could not load Meeus C implementation")
-    print("\t", e)
-    loaded = False
+from ...textures import AutoTextureSource
+from .factory import CelestiaVirtualTextureSourceFactory
+from .source import CelestiaVirtualTextureSource
+
+__all__ = ['CelestiaVirtualTextureSource', 'CelestiaVirtualTextureSourceFactory']
 
 
 def init():
-    orbit_elements_db.register_category('meeus', 100)
-    if loaded:
-        orbit_elements_db.register_element('meeus', 'pluto-system', MeeusPlutoOrbit(247.736916416,  39.4450697, 0.25024871))  # noqa: E501
+    AutoTextureSource.register_source_factory(CelestiaVirtualTextureSourceFactory(), ['ctx'], 0)

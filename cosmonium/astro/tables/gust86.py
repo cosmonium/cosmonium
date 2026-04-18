@@ -28,10 +28,12 @@ except ImportError as e:
     print("\t", e)
     loaded = False
 
-orbit_elements_db.register_category('gust86', 100)
-if loaded:
-    orbit_elements_db.register_element('gust86', 'ariel',   Gust86Orbit(0,  2.520, 190900, 0.0012))
-    orbit_elements_db.register_element('gust86', 'umbriel', Gust86Orbit(1,  4.144, 266000, 0.0039))
-    orbit_elements_db.register_element('gust86', 'titania', Gust86Orbit(2,  8.706, 436300, 0.0011))
-    orbit_elements_db.register_element('gust86', 'oberon',  Gust86Orbit(3, 13.46,  583500, 0.0014))
-    orbit_elements_db.register_element('gust86', 'miranda', Gust86Orbit(4,  1.413, 129900, 0.0013))
+
+def init():
+    orbit_elements_db.register_category('gust86', 100)
+    if loaded:
+        orbit_elements_db.register_element('gust86', 'ariel',   Gust86Orbit(0,  2.520, 190900, 0.0012))
+        orbit_elements_db.register_element('gust86', 'umbriel', Gust86Orbit(1,  4.144, 266000, 0.0039))
+        orbit_elements_db.register_element('gust86', 'titania', Gust86Orbit(2,  8.706, 436300, 0.0011))
+        orbit_elements_db.register_element('gust86', 'oberon',  Gust86Orbit(3, 13.46,  583500, 0.0014))
+        orbit_elements_db.register_element('gust86', 'miranda', Gust86Orbit(4,  1.413, 129900, 0.0013))

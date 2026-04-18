@@ -17,17 +17,17 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-"""Celestia virtual texture source and factory for .ctx virtual texture files.
+"""Celestia virtual texture source for .ctx virtual texture files.
 
-Provides support for Celestia's virtual texture format, which organizes textures
-in a level-based directory hierarchy (level0/, level1/, etc.) with texture files
+Provides the ``CelestiaVirtualTextureSource`` class which handles the
+level-based directory hierarchy (level0/, level1/, etc.) with texture files
 named using a ``tx_X_Y.ext`` convention.
 """
 
 import os
 
-from ..dircontext import defaultDirContext
-from ..textures import AutoTextureSource, TextureSourceFactory, VirtualTextureSource
+from ...dircontext import defaultDirContext
+from ...textures import VirtualTextureSource
 
 
 class CelestiaVirtualTextureSource(VirtualTextureSource):
@@ -104,29 +104,3 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
             Celestia virtual textures supports only ``'patched-sphere'`` (UV Sphere).
         """
         return 'patched-sphere'
-
-
-class CelestiaVirtualTextureSourceFactory(TextureSourceFactory):
-    """Factory that creates virtual texture sources from Celestia .ctx files.
-
-    Delegates parsing of ``.ctx`` files to the ``ctx_parser`` module to produce
-    a configured ``CelestiaVirtualTextureSource`` instance.
-    """
-
-    def create_source(self, filename, context=defaultDirContext):
-        """Parse a .ctx file and return the corresponding texture source.
-
-        Args:
-            filename: Path to the ``.ctx`` virtual texture definition file.
-            context: Directory context for resolving file paths.
-
-        Returns:
-            A ``CelestiaVirtualTextureSource`` configured from the .ctx file.
-        """
-        return ctx_parser.parse_file(filename, context)
-
-
-# TODO: Should be done in Cosmonium main class
-from . import ctx_parser  # noqa: E402
-
-AutoTextureSource.register_source_factory(CelestiaVirtualTextureSourceFactory(), ['ctx'], 0)

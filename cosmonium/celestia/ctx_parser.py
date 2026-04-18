@@ -24,7 +24,7 @@ import sys
 from ..dircontext import defaultDirContext
 from ..textures import InvalidTextureSource
 
-from .textures import CelestiaVirtualTextureSource
+from .textures.source import CelestiaVirtualTextureSource
 from . import config_parser
 
 

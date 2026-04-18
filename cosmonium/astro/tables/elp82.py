@@ -28,8 +28,10 @@ except ImportError as e:
     print("\t", e)
     loaded = False
 
-orbit_elements_db.register_category('elp82-trunc', 50)
-orbit_elements_db.register_category('elp82', 100)
 
-if loaded:
-    orbit_elements_db.register_element('elp82-trunc', 'moon', ELP82Orbit(27.322, 384400, 0.0554))
+def init():
+    orbit_elements_db.register_category('elp82-trunc', 50)
+    orbit_elements_db.register_category('elp82', 100)
+
+    if loaded:
+        orbit_elements_db.register_element('elp82-trunc', 'moon', ELP82Orbit(27.322, 384400, 0.0554))

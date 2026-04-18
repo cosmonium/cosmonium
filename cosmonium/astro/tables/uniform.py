@@ -40,6 +40,8 @@ uniform_rotations['hyperion'] = create_uniform_rotation(inclination=61.0, period
 
 uniform_rotations['eris'] = create_uniform_rotation(period=25.92, inclination=79.8, ascending_node=144)
 
-rotation_elements_db.register_category('uniform', 0)
-for element_name, element in uniform_rotations.items():
-    rotation_elements_db.register_element('uniform', element_name, element)
+
+def init():
+    rotation_elements_db.register_category('uniform', 0)
+    for element_name, element in uniform_rotations.items():
+        rotation_elements_db.register_element('uniform', element_name, element)
