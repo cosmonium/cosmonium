@@ -32,6 +32,7 @@ from panda3d.core import LColor, NodePath, PerspectiveLens
 from panda3d.core import Camera
 import os
 import platform
+import sys
 
 from .appstate import AppState
 from .astro import tables as astro_tables
@@ -50,6 +51,7 @@ from .camera.track_controller import TrackCameraController
 from .celestia.cel_url import CelUrl
 from .celestia import cel_parser, cel_engine
 from .celestia import textures as celestia_textures
+from .celestia import ssc_parser, stc_parser, star_parser, dsc_parser, asterisms_parser, boundaries_parser
 from .components.annotations.grid import Grid
 from .controllers.base import MovementController
 from .controllers.position import CartesianMovementController, SurfaceMovementController
@@ -70,7 +72,9 @@ from .objects.universe import Universe
 from .opengl import OpenGLConfig
 from .parsers.configparser import configParser
 from .parsers.parsers import register_parsers
-from .parsers.yamlparser import YamlModuleParser
+from .parsers.catalogsparser import load_catalogs
+from .parsers.yamlparser import YamlLoader, YamlModuleParser
+from .parsers.objectparser import ObjectYamlParser, universeYamlParser
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat
 from .rendering.axes import Axes
@@ -103,7 +107,8 @@ from . import version
 
 
 class CosmoniumBase(ShowBase):
-    def __init__(self):
+    def __init__(self, app_config):
+        self.app_config = app_config
         self.observer = None  # TODO: For window_event below
         self.debug = Debug(self)
         self.wireframe = False
@@ -179,6 +184,8 @@ class CosmoniumBase(ShowBase):
         data.append("transform-cache 0")
         data.append("state-cache 0")
         loadPrcFileData("", '\n'.join(data))
+        # TODO: Simplify prc file configuration
+        settings.prc_file = self.app_config.prc_file
         if settings.prc_file is not None:
             config_file = settings.prc_file
             if not os.path.isabs(config_file):
@@ -300,8 +307,8 @@ class Cosmonium(CosmoniumBase):
     WALK_NAV = 1
     CONTROL_NAV = 2
 
-    def __init__(self):
-        CosmoniumBase.__init__(self)
+    def __init__(self, app_config):
+        CosmoniumBase.__init__(self, app_config)
 
         fontsManager.register_fonts(defaultDirContext.find_font('dejavu'))
         fontsManager.register_fonts(defaultDirContext.find_font('fontawesome'))
@@ -551,6 +558,109 @@ class Cosmonium(CosmoniumBase):
         icon = defaultDirContext.find_texture('cosmonium.ico')
         data.append("icon-filename %s" % icon)
         data.append("window-title Cosmonium")
+
+    def find_celestia_data(self):
+        self.celestia_data = None
+        for path in self.app_config.celestia_data_list:
+            if os.path.isdir(path):
+                self.celestia_data = path
+                break
+        if self.celestia_data is None:
+            print("Could not find Celestia installation")
+            sys.exit(1)
+        else:
+            print("Celestia data found at", self.celestia_data)
+        defaultDirContext.add_path('textures', self.celestia_data + '/textures/lores')
+        defaultDirContext.add_path('textures', self.celestia_data + '/textures/medres')
+        defaultDirContext.add_path('textures', self.celestia_data + '/textures/hires')
+        defaultDirContext.add_path('models', self.celestia_data + '/models')
+        defaultDirContext.add_path('data', self.celestia_data + '/data')
+        defaultDirContext.add_path('scripts', self.celestia_data + '/scripts')
+        defaultDirContext.add_path('scripts', self.celestia_data)
+
+    def init_universe(self):
+        pass
+
+    def load_universe_celestia(self):
+        self.find_celestia_data()
+        if len(self.app_config.celestia_support) > 0:
+            parser = ObjectYamlParser()
+            universeYamlParser.set_universe(self.universe)
+            for support in self.app_config.celestia_support:
+                self.load_file(parser, support)
+        names = star_parser.load_names(self.app_config.celestia_stars_names)
+        if self.app_config.celestia_stars_catalog is not None:
+            if self.app_config.celestia_stars_catalog.endswith('.dat'):
+                star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
+            else:
+                star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
+        stc_parser.load(self.app_config.celestia_stc, self.universe)
+        ssc_parser.load(self.app_config.celestia_ssc, self.universe)
+        asterisms_parser.load(self.app_config.celestia_asterisms, self.background)
+        boundaries_parser.load(self.app_config.celestia_boundaries, self.background)
+        # dsc_parser.load(self.celestia_dsc, self.universe)
+
+    def load_file(self, parser, path):
+        lower = path.lower()
+        if lower.endswith('.yaml') or lower.endswith('.yml'):
+            parser.load_and_parse(path)
+        elif lower.endswith('.ssc'):
+            ssc_parser.load(path, self.universe)
+        elif lower.endswith('.stc'):
+            stc_parser.load(path, self.universe)
+        elif lower.endswith('.dsc'):
+            dsc_parser.load(path, self.universe)
+
+    def load_dir(self, parser, path):
+        for entry in os.listdir(path):
+            entry_path = os.path.join(path, entry)
+            if os.path.isdir(entry_path):
+                self.load_dir(parser, entry_path)
+            else:
+                self.load_file(parser, entry_path)
+
+    def load_universe_cosmonium(self):
+        locale = defaultDirContext.find_file('main', 'data/locale')
+        YamlModuleParser.set_translation(self.lang_manager.load_lang('main', locale))
+        universeYamlParser.set_universe(self.universe)
+        parser = ObjectYamlParser()
+        common_data = YamlLoader.load_file(self.app_config.common)
+        parser.decode_objects_list(common_data)
+        main_data = YamlLoader.load_file(self.app_config.main)
+        parser.decode_objects_list(main_data, parent=self.background)
+        for extra in self.app_config.extra:
+            if os.path.isdir(extra):
+                self.load_dir(parser, extra)
+            else:
+                self.load_file(parser, extra)
+
+    def load_universe(self):
+        load_catalogs(self.app_config.catalogs)
+        if self.app_config.celestia:
+            self.load_universe_celestia()
+        else:
+            self.load_universe_cosmonium()
+        if self.app_config.default_home is None:
+            self.app_config.default_home = _("Sol")
+
+    def start_universe(self):
+        running = False
+        if self.app_config.script is not None:
+            if self.app_config.script.startswith('cel://'):
+                self.load_cel_url(self.app_config.script)
+                running = True
+            else:
+                settings.debug_jump = False
+                print("Running", self.app_config.script)
+                running = self.load_and_run_script(self.app_config.script)
+        if not running:
+            if self.app_config.default_target is None:
+                self.app_config.default_target = _("Earth")
+            anchor = self.universe.find_by_path(self.app_config.default_target)
+            if anchor:
+                self.select_body(anchor.body)
+                self.autopilot.navigation.go_to_front(duration=0.0)
+            self.gui.update_info(_("Welcome to Cosmonium!"))
 
     def add_controller(self, controller):
         self.body_controllers.append(controller)
@@ -1612,12 +1722,3 @@ class Cosmonium(CosmoniumBase):
             self.update_markers()
             self.update_gui()
         return Task.cont
-
-    def init_universe(self):
-        pass
-
-    def load_universe(self):
-        pass
-
-    def start_universe(self):
-        pass

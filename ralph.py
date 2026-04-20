@@ -421,7 +421,13 @@ class SimpleShadowCaster(CustomShadowMapShadowCaster):
 
 class RalphAppConfig:
     def __init__(self):
+        self.config_file = "ralph-data/ralph.yaml"
+        self.prc_file = None
         self.test_start = False
+
+    def update_from_args(self, args):
+        if args.config is not None:
+            self.config_file = args.config
 
 
 class RoamingRalphDemo(CosmoniumBase):
@@ -501,9 +507,8 @@ class RoamingRalphDemo(CosmoniumBase):
     def get_min_radius(self):
         return 0
 
-    def __init__(self, args):
-        self.app_config = RalphAppConfig()
-        CosmoniumBase.__init__(self)
+    def __init__(self, app_config):
+        CosmoniumBase.__init__(self, app_config)
         SceneWorld.context = self
 
         self.update_id = 0
@@ -515,13 +520,9 @@ class RoamingRalphDemo(CosmoniumBase):
 
         self.worlds = FlatUniverse()
 
-        if args.config is not None:
-            self.config_file = args.config
-        else:
-            self.config_file = 'ralph-data/ralph.yaml'
         self.splash = NoSplash()
         self.ralph_config = RalphConfigParser(self.worlds)
-        if self.ralph_config.load_and_parse(self.config_file) is None:
+        if self.ralph_config.load_and_parse(self.app_config.config_file) is None:
             sys.exit(1)
 
         self.has_water = True
@@ -765,6 +766,8 @@ if sys.platform == "darwin":
     # Ignore -psn_<app_id> from MacOS
     parser.add_argument('-p', help=argparse.SUPPRESS)
 args = parser.parse_args()
+app_config = RalphAppConfig()
+app_config.update_from_args(args)
 
-demo = RoamingRalphDemo(args)
+demo = RoamingRalphDemo(app_config)
 demo.run()
