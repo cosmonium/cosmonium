@@ -24,8 +24,9 @@
 #
 
 
-import sys
+import logging
 import os
+import sys
 
 # Disable stdout block buffering
 sys.stdout.flush()
@@ -761,11 +762,17 @@ class RoamingRalphDemo(CosmoniumBase):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--debug", help="Set all loggers to DEBUG level", action='store_true', default=False)
 parser.add_argument("--config", help="Path to the file with the configuration", default=None)
 if sys.platform == "darwin":
     # Ignore -psn_<app_id> from MacOS
     parser.add_argument('-p', help=argparse.SUPPRESS)
 args = parser.parse_args()
+if args.debug:
+    # Ensure at least one handler exists so debug messages are visible
+    if not logging.root.handlers:
+        logging.basicConfig()
+    logging.root.setLevel(logging.DEBUG)
 app_config = RalphAppConfig()
 app_config.update_from_args(args)
 

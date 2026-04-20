@@ -18,6 +18,7 @@
 #
 
 
+import logging
 import os
 
 from .. import settings
@@ -28,6 +29,12 @@ from .config import CosmoniumConfigParser
 
 def main():
     args = parse_args()
+    if args.debug:
+        # Ensure at least one handler exists so debug messages are visible
+        if not logging.root.handlers:
+            logging.basicConfig()
+        logging.root.setLevel(logging.DEBUG)
+
     parser = CosmoniumConfigParser(os.path.join(settings.config_dir, 'cosmonium.yaml'))
     app_config = parser.load()
     app_config.update_from_args(args)

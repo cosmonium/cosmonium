@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--home", help="Default home system of body", default=None)
     parser.add_argument("--default", help="Default body to show when there is no start up script", default=None)
     parser.add_argument("--extra", help="Extra configuration files or directories to load", nargs='+', default=None)
+    parser.add_argument("--debug", help="Set all loggers to DEBUG level", action='store_true', default=False)
     parser.add_argument("--test-start", help=argparse.SUPPRESS, action='store_true', default=False)
     if sys.platform == "darwin":
         # Ignore -psn_<app_id> from MacOS
