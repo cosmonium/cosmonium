@@ -57,9 +57,6 @@ def SquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    inv_u: bool = False,
-    inv_v: bool = False,
-    swap_uv: bool = False,
     x_inverted: bool = False,
     y_inverted: bool = False,
     xy_swap: bool = False,
@@ -80,9 +77,6 @@ def SquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        inv_u: If True, invert U texture coordinates.
-        inv_v: If True, invert V texture coordinates.
-        swap_uv: If True, swap U and V texture coordinates.
         x_inverted: If True, invert X coordinates before mapping.
         y_inverted: If True, invert Y coordinates before mapping.
         xy_swap: If True, swap X and Y coordinates before mapping.
@@ -122,14 +116,7 @@ def SquarePatch(
             u = float(i) / inner
             v = float(j) / inner
 
-            if inv_u:
-                u = 1.0 - u
-            if inv_v:
-                v = 1.0 - v
-            if swap_uv:
-                gtw.add_data2(v, u)
-            else:
-                gtw.add_data2(u, v)
+            gtw.add_data2(u, v)
             gvw.add_data3(x * height, y * height, height)
             gnw.add_data3(0, 0, 1.0)
             gtanw.add_data3(1, 0, 0)
@@ -150,9 +137,6 @@ def SquaredDistanceSquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    inv_u: bool = False,
-    inv_v: bool = False,
-    swap_uv: bool = False,
     x_inverted: bool = False,
     y_inverted: bool = False,
     xy_swap: bool = False,
@@ -184,9 +168,6 @@ def SquaredDistanceSquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        inv_u: If True, invert U texture coordinates.
-        inv_v: If True, invert V texture coordinates.
-        swap_uv: If True, swap U and V texture coordinates.
         x_inverted: If True, invert X coordinates before mapping.
         y_inverted: If True, invert Y coordinates before mapping.
         xy_swap: If True, swap X and Y coordinates before mapping.
@@ -248,11 +229,7 @@ def SquaredDistanceSquarePatch(
         zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
         point = LPoint3d(xp, yp, zp)
         normal = LVector3d(point)
-        tu = 1.0 - u if inv_u else u
-        tv = 1.0 - v if inv_v else v
-        if swap_uv:
-            tu, tv = tv, tu
-        gtw.add_data2(tu, tv)
+        gtw.add_data2(u, v)
         point.componentwise_mult(point_axes)
         if has_offset:
             point -= offset_vector
@@ -268,12 +245,6 @@ def SquaredDistanceSquarePatch(
             tangent.normalize()
             binormal = normal.cross(tangent)
             binormal.normalize()
-            if inv_u:
-                tangent = -tangent
-            if inv_v:
-                binormal = -binormal
-            if swap_uv:
-                tangent, binormal = binormal, tangent
             gtanw.add_data3d(tangent)
             gbiw.add_data3d(binormal)
 
@@ -536,9 +507,6 @@ def NormalizedSquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    inv_u: bool = False,
-    inv_v: bool = False,
-    swap_uv: bool = False,
     x_inverted: bool = False,
     y_inverted: bool = False,
     xy_swap: bool = False,
@@ -566,9 +534,6 @@ def NormalizedSquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        inv_u: If True, invert U texture coordinates.
-        inv_v: If True, invert V texture coordinates.
-        swap_uv: If True, swap U and V texture coordinates.
         x_inverted: If True, invert X coordinates before mapping.
         y_inverted: If True, invert Y coordinates before mapping.
         xy_swap: If True, swap X and Y coordinates before mapping.
@@ -625,11 +590,7 @@ def NormalizedSquarePatch(
         point = LVector3d(x, y, 1.0)
         point.normalize()
         normal = LVector3d(point)
-        tu = 1.0 - u if inv_u else u
-        tv = 1.0 - v if inv_v else v
-        if swap_uv:
-            tu, tv = tv, tu
-        gtw.add_data2(tu, tv)
+        gtw.add_data2(u, v)
         point.componentwise_mult(point_axes)
         if has_offset:
             point -= offset_vector
@@ -646,12 +607,6 @@ def NormalizedSquarePatch(
             tangent.normalize()
             binormal.componentwise_mult(axes)
             binormal.normalize()
-            if inv_u:
-                tangent = -tangent
-            if inv_v:
-                binormal = -binormal
-            if swap_uv:
-                tangent, binormal = binormal, tangent
             gtanw.add_data3d(tangent)
             gbiw.add_data3d(binormal)
 

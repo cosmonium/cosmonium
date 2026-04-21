@@ -151,8 +151,6 @@ def UVPatch(
     x1: float,
     y1: float,
     global_texture: bool = False,
-    inv_texture_u: bool = False,
-    inv_texture_v: bool = False,
     offset: float = 0.0,
     use_patch_adaptation: bool = True,
     use_patch_skirts=True,
@@ -176,8 +174,6 @@ def UVPatch(
         global_texture: If True, texture coordinates map to global sphere (0-1).
             If False, texture coordinates map to patch only (0-1 within patch).
             Default is False.
-        inv_texture_u: If True, invert U texture coordinates. Default is False.
-        inv_texture_v: If True, invert V texture coordinates. Default is False.
         offset: Offset distance from surface.
             Default is 0.0.
         use_patch_adaptation: If True, use adaptive tessellation along edges when
@@ -270,10 +266,6 @@ def UVPatch(
             else:
                 u = s / sectors
                 v = r / rings
-                if inv_texture_v:
-                    v = 1.0 - v
-                if inv_texture_u:
-                    u = 1.0 - u
             _make_point(r, s, u, v, axes, apply_offset)
 
     # Generate skirt vertices if enabled
@@ -287,37 +279,25 @@ def UVPatch(
             (
                 r_rings,
                 lambda r_idx: (0, r_idx),
-                lambda r_idx: (
-                    -skirt_uv if not inv_texture_u else 1.0 + skirt_uv,
-                    (1.0 - r_idx / rings) if inv_texture_v else r_idx / rings,
-                ),
+                lambda r_idx: (-skirt_uv, r_idx / rings),
             ),
             # Right edge (s=sectors, varying r)
             (
                 r_rings,
                 lambda r_idx: (sectors, r_idx),
-                lambda r_idx: (
-                    1.0 + skirt_uv if not inv_texture_u else -skirt_uv,
-                    (1.0 - r_idx / rings) if inv_texture_v else r_idx / rings,
-                ),
+                lambda r_idx: (1.0 + skirt_uv, r_idx / rings),
             ),
             # Bottom edge (r=0, varying s)
             (
                 r_sectors,
                 lambda s_idx: (s_idx, 0),
-                lambda s_idx: (
-                    (1.0 - s_idx / sectors) if inv_texture_u else s_idx / sectors,
-                    -skirt_uv if not inv_texture_v else 1.0 + skirt_uv,
-                ),
+                lambda s_idx: (s_idx / sectors, -skirt_uv),
             ),
             # Top edge (r=rings, varying s)
             (
                 r_sectors,
                 lambda s_idx: (s_idx, rings),
-                lambda s_idx: (
-                    (1.0 - s_idx / sectors) if inv_texture_u else s_idx / sectors,
-                    1.0 + skirt_uv if not inv_texture_v else -skirt_uv,
-                ),
+                lambda s_idx: (s_idx / sectors, 1.0 + skirt_uv),
             ),
         ]
         for count, rs_func, uv_func in skirt_edges:

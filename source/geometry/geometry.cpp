@@ -183,8 +183,8 @@ UVPatchGenerator::make_point(unsigned int r, unsigned int s, double u, double v,
 NodePath
 UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
         double x0, double y0, double x1, double y1,
-        bool global_texture, bool inv_texture_u, bool inv_texture_v,
-        double offset, bool use_patch_adaptation, bool use_patch_skirts,
+        bool global_texture, double offset,
+        bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv, LVecBase4i outer)
 {
     _geom_collector.start();
@@ -260,12 +260,6 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
             } else {
                 u = double(s) / sectors;
                 v = double(r) / rings;
-                if (inv_texture_v) {
-                    v = 1.0 - v;
-                }
-                if (inv_texture_u) {
-                    u = 1.0 - u;
-                }
             }
             make_point(r, s, u, v, axes,
                     x0, y0, dx, dy, rings, sectors,
@@ -289,10 +283,10 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
             double v_skirt_base;
         };
         SkirtEdge edges[4] = {
-            {r_rings, true, 0, (!inv_texture_u) ? -skirt_uv : 1.0 + skirt_uv, 0},       // left
-            {r_rings, true, sectors, (!inv_texture_u) ? 1.0 + skirt_uv : -skirt_uv, 0},  // right
-            {r_sectors, false, 0, 0, (!inv_texture_v) ? -skirt_uv : 1.0 + skirt_uv},     // bottom
-            {r_sectors, false, rings, 0, (!inv_texture_v) ? 1.0 + skirt_uv : -skirt_uv}, // top
+            {r_rings, true, 0, -skirt_uv, 0},  // left
+            {r_rings, true, sectors, 1.0 + skirt_uv, 0},  // right
+            {r_sectors, false, 0, 0, -skirt_uv},  // bottom
+            {r_sectors, false, rings, 0, 1.0 + skirt_uv},  // top
         };
 
         for (unsigned int edge = 0; edge < 4; ++edge) {
@@ -308,9 +302,6 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
                     } else {
                         u = edges[edge].u_skirt_base;
                         v = double(r) / rings;
-                        if (inv_texture_v) {
-                            v = 1.0 - v;
-                        }
                     }
                 } else {
                     r = edges[edge].fixed_val;
@@ -320,9 +311,6 @@ UVPatchGenerator::make(LVector3d axes, unsigned int rings, unsigned int sectors,
                         v = y0 + r * dy / rings;
                     } else {
                         u = double(s) / sectors;
-                        if (inv_texture_u) {
-                            u = 1.0 - u;
-                        }
                         v = edges[edge].v_skirt_base;
                     }
                 }
@@ -909,7 +897,6 @@ void
 QCSPatchGenerator::make_point(LVector3d axes,
         double u, double v, double x0, double y0, double dx, double dy,
         LVector3d normal_coefs,
-        bool inv_u, bool inv_v, bool swap_uv,
         bool has_offset, LVector3d offset_vector,
         bool use_jacobian,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
@@ -923,15 +910,6 @@ QCSPatchGenerator::make_point(LVector3d axes,
     point.normalize();
     LVector3d normal = point;
 
-    if (inv_u) {
-        u = 1.0 - u;
-    }
-    if (inv_v) {
-        v = 1.0 - v;
-    }
-    if (swap_uv) {
-        std::swap(u, v);
-    }
     gtw.add_data2(u, v);
 
     point.componentwise_mult(axes);
@@ -950,13 +928,6 @@ QCSPatchGenerator::make_point(LVector3d axes,
         tangent.normalize();
         LVector3d binormal = normal.cross(tangent);
         binormal.normalize();
-        if (inv_u)
-            tangent = -tangent;
-        if (inv_v)
-            binormal = -binormal;
-        if (swap_uv) {
-            std::swap(tangent, binormal);
-        }
         gtanw.add_data3d(tangent);
         gbiw.add_data3d(binormal);
     }
@@ -979,7 +950,6 @@ QCSPatchGenerator::make_point(LVector3d axes,
 NodePath
 QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
-        bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
@@ -1063,7 +1033,6 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                     double(i) / tessellation.inner, double(j) / tessellation.inner,
                     x0, y0, dx, dy,
                     normal_coefs,
-                    inv_u, inv_v, swap_uv,
                     has_offset, offset_vector,
                     use_jacobian,
                     gvw, gtw, gnw, gtanw, gbiw,
@@ -1093,7 +1062,6 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                         double(i) / tessellation.inner, double(j) / tessellation.inner,
                         x0, y0, dx, dy,
                         normal_coefs,
-                        inv_u, inv_v, swap_uv,
                         has_offset, offset_vector,
                         use_jacobian,
                         gvw, gtw, gnw, gtanw, gbiw,
@@ -1249,7 +1217,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
         double u, double v,
         double x0, double y0, double dx, double dy,
         LVector3d normal_coefs,
-        bool inv_u, bool inv_v, bool swap_uv,
         bool has_offset, LVector3d offset_vector,
         bool use_jacobian,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw, GeomVertexWriter &gtanw,
@@ -1270,15 +1237,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
     LPoint3d point = LPoint3d(xp, yp, zp);
     LVector3d normal = point;
 
-    if (inv_u) {
-        u = 1.0 - u;
-    }
-    if (inv_v) {
-        v = 1.0 - v;
-    }
-    if (swap_uv) {
-        std::swap(u, v);
-    }
     gtw.add_data2(u, v);
     point.componentwise_mult(axes);
     if (has_offset) {
@@ -1296,13 +1254,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
         tangent.normalize();
         LVector3d binormal = normal.cross(tangent);
         binormal.normalize();
-        if (inv_u)
-            tangent = -tangent;
-        if (inv_v)
-            binormal = -binormal;
-        if (swap_uv) {
-            std::swap(tangent, binormal);
-        }
         gtanw.add_data3d(tangent);
         gbiw.add_data3d(binormal);
     }
@@ -1319,7 +1270,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
 NodePath
 ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
-        bool inv_u, bool inv_v, bool swap_uv,
         bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
@@ -1403,7 +1353,6 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                     double(i) / tessellation.inner, double(j) / tessellation.inner,
                     x0, y0, dx, dy,
                     normal_coefs,
-                    inv_u, inv_v, swap_uv,
                     has_offset, offset_vector,
                     use_jacobian,
                     gvw, gtw, gnw, gtanw, gbiw, gjacobianw);
@@ -1432,7 +1381,6 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                         double(i) / tessellation.inner, double(j) / tessellation.inner,
                         x0, y0, dx, dy,
                         normal_coefs,
-                        inv_u, inv_v, swap_uv,
                         has_offset, offset_vector,
                         use_jacobian,
                         gvw, gtw, gnw, gtanw, gbiw, gjacobianw);
@@ -1483,32 +1431,15 @@ void
 TilePatchGenerator::make_point(double size,
         double u, double v,
         double x, double y, double z,
-        bool inv_u, bool inv_v, bool swap_uv,
         GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
         GeomVertexWriter &gtanw, GeomVertexWriter &gbiw)
 {
-    if (inv_u) {
-        u = 1.0 - u;
-    }
-    if (inv_v) {
-        v = 1.0 - v;
-    }
-    if (swap_uv) {
-        std::swap(u, v);
-    }
     gtw.add_data2(u, v);
     gvw.add_data3(x * size, y * size, z * size);
 
     gnw.add_data3(0, 0, 1.0);
     LVector3d tan(1, 0, 0);
     LVector3d bin(0, 1, 0);
-    if (inv_u)
-        tan = -tan;
-    if (inv_v)
-        bin = -bin;
-    if (swap_uv) {
-        std::swap(tan, bin);
-    }
     gtanw.add_data3d(tan);
     gbiw.add_data3d(bin);
 }
@@ -1524,7 +1455,6 @@ TilePatchGenerator::make_point(double size,
  */
 NodePath
 TilePatchGenerator::make(double size, TessellationInfo tessellation,
-        bool inv_u, bool inv_v, bool swap_uv,
         bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv)
 {
@@ -1571,7 +1501,6 @@ TilePatchGenerator::make(double size, TessellationInfo tessellation,
             make_point(size,
                     u, v,
                     u, v, 0,
-                    inv_u, inv_v, swap_uv,
                     gvw, gtw, gnw, gtanw, gbiw);
         }
     }
@@ -1605,7 +1534,6 @@ TilePatchGenerator::make(double size, TessellationInfo tessellation,
                 make_point(size,
                         u, v,
                         x, y, -skirt_size,
-                        inv_u, inv_v, swap_uv,
                         gvw, gtw, gnw, gtanw, gbiw);
             }
         }

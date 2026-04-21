@@ -51,9 +51,6 @@ from .tessellation import (
 def Tile(
     size: float,
     tessellation: TessellationInfo,
-    inv_u: bool = False,
-    inv_v: bool = False,
-    swap_uv: bool = False,
     use_patch_adaptation: bool = True,
     use_patch_skirts: bool = True,
     skirt_size: float = 0.05,
@@ -63,15 +60,11 @@ def Tile(
 
     Generates a tessellated rectangular tile in the XY plane at Z=0, with optional
     skirts extending beyond the edges. The tile can use adaptive tessellation to
-    match different LOD levels along its edges, and UV coordinates can be transformed
-    as needed.
+    match different LOD levels along its edges.
 
     Args:
         size: Width and height of the square tile.
         tessellation: TessellationInfo object specifying inner and outer subdivision levels.
-        inv_u: If True, invert U texture coordinates (1.0 - u).
-        inv_v: If True, invert V texture coordinates (1.0 - v).
-        swap_uv: If True, swap U and V texture coordinates.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
         use_patch_skirts: If True, add skirts around tile edges to prevent gaps.
         skirt_size: Size of edge skirts (as fraction of patch size)
@@ -107,14 +100,7 @@ def Tile(
             x = u
             y = v
 
-            if inv_u:
-                u = 1.0 - u
-            if inv_v:
-                v = 1.0 - v
-            if swap_uv:
-                gtw.add_data2(v, u)
-            else:
-                gtw.add_data2(u, v)
+            gtw.add_data2(u, v)
             gvw.add_data3(x * size, y * size, 0)
             gnw.add_data3(0, 0, 1.0)
             gtanw.add_data3(1, 0, 0)
@@ -144,14 +130,7 @@ def Tile(
                     u = x
                     v = 1.0 + skirt_uv
 
-                if inv_u:
-                    u = 1.0 - u
-                if inv_v:
-                    v = 1.0 - v
-                if swap_uv:
-                    gtw.add_data2(v, u)
-                else:
-                    gtw.add_data2(u, v)
+                gtw.add_data2(u, v)
                 gvw.add_data3(x * size, y * size, -skirt_size * size)
                 gnw.add_data3(0, 0, 1.0)
                 gtanw.add_data3(1, 0, 0)

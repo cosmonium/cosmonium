@@ -119,8 +119,6 @@ PUBLISHED:
    * @param x1 Maximum U coordinate (longitude, 0-1)
    * @param y1 Maximum V coordinate (latitude, 0-1)
    * @param global_texture If true, texture coordinates map to global sphere
-   * @param inv_texture_u If true, invert U texture coordinates
-   * @param inv_texture_v If true, invert V texture coordinates
    * @param offset Offset distance from surface
    * @param use_patch_adaptation If true, enable adaptive edge tessellation to
    *        match neighbouring patches with different LOD levels
@@ -135,8 +133,8 @@ PUBLISHED:
   NodePath
   make(LVector3d axes, unsigned int rings, unsigned int sectors,
       double x0, double y0, double x1, double y1,
-      bool global_texture=false, bool inv_texture_u=false, bool inv_texture_v=false,
-      double offset=0.0, bool use_patch_adaptation=true, bool use_patch_skirts=true,
+      bool global_texture=false, double offset=0.0,
+      bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.05, double skirt_uv=0.05,
       LVecBase4i outer=LVecBase4i(0, 0, 0, 0));
 
@@ -402,9 +400,6 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param inv_u If true, invert U texture coordinates
-   * @param inv_v If true, invert V texture coordinates
-   * @param swap_uv If true, swap U and V texture coordinates
    * @param x_inverted If true, invert X axis mapping
    * @param y_inverted If true, invert Y axis mapping
    * @param xy_swap If true, swap X and Y axes (for face rotation)
@@ -420,7 +415,6 @@ PUBLISHED:
   NodePath
   make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
-      bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
@@ -432,7 +426,6 @@ private:
   make_point(LVector3d axes,
       double u, double v, double x0, double y0, double x1, double y1,
       LVector3d normal_coefs,
-      bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, LVector3d offset_vector,
       bool use_jacobian,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
@@ -525,9 +518,6 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param inv_u If true, invert U texture coordinates
-   * @param inv_v If true, invert V texture coordinates
-   * @param swap_uv If true, swap U and V texture coordinates
    * @param x_inverted If true, invert X axis mapping
    * @param y_inverted If true, invert Y axis mapping
    * @param xy_swap If true, swap X and Y axes (for face rotation)
@@ -543,7 +533,6 @@ PUBLISHED:
   NodePath
   make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
-      bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
@@ -555,7 +544,6 @@ private:
   make_point(LVector3d axes,
       double u, double v, double x0, double y0, double x1, double y1,
       LVector3d normal_coefs,
-      bool inv_u, bool inv_v, bool swap_uv,
       bool has_offset, LVector3d offset_vector,
       bool use_jacobian,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
@@ -599,9 +587,6 @@ PUBLISHED:
    *
    * @param size Size of the tile (width and height in world units)
    * @param tessellation Tessellation configuration (inner/outer densities)
-   * @param inv_u If true, invert U texture coordinates
-   * @param inv_v If true, invert V texture coordinates
-   * @param swap_uv If true, swap U and V texture coordinates
    * @param use_patch_adaptation If true, enable adaptive tessellation
    * @param use_patch_skirts If true, generate edge skirts
    * @param skirt_size Size of edge skirts (as fraction of patch size)
@@ -610,7 +595,6 @@ PUBLISHED:
    */
   NodePath
   make(double size, TessellationInfo tessellation,
-      bool inv_u=false, bool inv_v=false, bool swap_uv=false,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.05, double skirt_uv=0.05);
 
@@ -619,7 +603,6 @@ private:
   make_point(double size,
       double u, double v,
       double x, double y, double z,
-      bool inv_u, bool inv_v, bool swap_uv,
       GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
       GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
 };
