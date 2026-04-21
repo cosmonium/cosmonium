@@ -1512,10 +1512,6 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
 
     if (use_patch_skirts) {
         LVector3d reduced_axes = axes - LVector3d(std::max(dx, dy) * skirt_size);
-        LVector3d reduced_normal_coefs = LVector3d(
-                reduced_axes[1] * reduced_axes[2],
-                reduced_axes[0] * reduced_axes[2],
-                reduced_axes[0] * reduced_axes[1]);
         for (unsigned int a = 0; a < 4; ++a) {
             for (unsigned int b = 0; b < nb_vertices; ++b) {
                 unsigned int i, j;
@@ -1535,7 +1531,7 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
                 make_point(reduced_axes,
                         double(i) / tessellation.inner, double(j) / tessellation.inner,
                         x0, y0, dx, dy,
-                        reduced_normal_coefs,
+                        normal_coefs,
                         inv_u, inv_v, swap_uv,
                         has_offset, offset_vector,
                         use_jacobian,
