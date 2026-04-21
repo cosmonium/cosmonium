@@ -541,7 +541,9 @@ UVPatchGenerator::make_adapted_uv_primitives(GeomTriangles *prim,
                     if (ratio[i] == 1) {
                         prim->add_vertices(v, v + 1, v + r_sectors);
                     }
-                    prim->add_vertices(v + 1, v + r_sectors * ratio[j] + 1, v + r_sectors * ratio[j]);
+                    if (ratio[j] == 1) {
+                        prim->add_vertices(v + 1, v + r_sectors + 1, v + r_sectors);
+                    }
                 } else {
                     // Bottom edge, not corner
                     unsigned int vp = r * r_sectors + (s / ratio[i]) * ratio[i];
@@ -558,7 +560,9 @@ UVPatchGenerator::make_adapted_uv_primitives(GeomTriangles *prim,
                     if (ratio[j] == 1) {
                         prim->add_vertices(v, v + 1, v + r_sectors);
                     }
-                    prim->add_vertices(v + ratio[i], v + r_sectors + ratio[i], v + r_sectors);
+                    if (ratio[i] == 1) {
+                        prim->add_vertices(v + 1, v + r_sectors + 1, v + r_sectors);
+                    }
                 } else if (s == sectors - 1) {
                     // Top-right corner
                     unsigned int j = 2;  // right
@@ -741,7 +745,9 @@ CubePatchGeneratorBase::make_adapted_square_primitives(T *ptr,
                     if (ratio[i] == 1) {
                         ptr = add_vertices(ptr, v, v + nb_vertices, v + 1);
                     }
-                    ptr = add_vertices(ptr, v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1);
+                    if (ratio[j] == 1) {
+                        ptr = add_vertices(ptr, v + 1, v + nb_vertices, v + nb_vertices + 1);
+                    }
                 } else {
                     unsigned int vp = nb_vertices * x + int(y / ratio[i]) * ratio[i];
                     if ((y % ratio[i]) == 0) {
@@ -756,7 +762,9 @@ CubePatchGeneratorBase::make_adapted_square_primitives(T *ptr,
                     if (ratio[j] == 1) {
                         ptr = add_vertices(ptr, v, v + nb_vertices, v + 1);
                     }
-                    ptr = add_vertices(ptr, v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i]);
+                    if (ratio[i] == 1) {
+                        ptr = add_vertices(ptr, v + 1, v + nb_vertices, v + nb_vertices + 1);
+                    }
                 } else if (y == inner - 1) {
                     unsigned int j = 3;
                     if (ratio[i] == 1 && ratio[j] == 1) {

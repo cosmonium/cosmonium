@@ -158,7 +158,8 @@ def make_adapted_square_primitives(prim, inner: int, nb_vertices: int, ratio: li
                     j = 3
                     if ratio[i] == 1:
                         prim.add_vertices(v, v + nb_vertices, v + 1)
-                    prim.add_vertices(v + 1, v + nb_vertices * ratio[j], v + nb_vertices * ratio[j] + 1)
+                    if ratio[j] == 1:
+                        prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
                 else:
                     vp = nb_vertices * x + (y // ratio[i]) * ratio[i]
                     if (y % ratio[i]) == 0:
@@ -173,7 +174,8 @@ def make_adapted_square_primitives(prim, inner: int, nb_vertices: int, ratio: li
                     j = 1
                     if ratio[j] == 1:
                         prim.add_vertices(v, v + nb_vertices, v + 1)
-                    prim.add_vertices(v + ratio[i], v + nb_vertices, v + nb_vertices + ratio[i])
+                    if ratio[i] == 1:
+                        prim.add_vertices(v + 1, v + nb_vertices, v + nb_vertices + 1)
                 elif y == inner - 1:
                     j = 3
                     if ratio[i] == 1 and ratio[j] == 1:
@@ -315,7 +317,8 @@ def make_adapted_uv_primitives(prim, rings: int, sectors: int, r_rings: int, r_s
                     j = 2  # right ratio, merges r
                     if ratio[i] == 1:
                         prim.add_vertices(v, v + 1, v + r_sectors)
-                    prim.add_vertices(v + 1, v + r_sectors * ratio[j] + 1, v + r_sectors * ratio[j])
+                    if ratio[j] == 1:
+                        prim.add_vertices(v + 1, v + r_sectors + 1, v + r_sectors)
                 else:
                     # Bottom edge, not corner
                     vp = r * r_sectors + (s // ratio[i]) * ratio[i]
@@ -330,7 +333,8 @@ def make_adapted_uv_primitives(prim, rings: int, sectors: int, r_rings: int, r_s
                     j = 0  # left ratio, merges r
                     if ratio[j] == 1:
                         prim.add_vertices(v, v + 1, v + r_sectors)
-                    prim.add_vertices(v + ratio[i], v + r_sectors + ratio[i], v + r_sectors)
+                    if ratio[i] == 1:
+                        prim.add_vertices(v + 1, v + r_sectors + 1, v + r_sectors)
                 elif s == sectors - 1:
                     # Top-right corner
                     j = 2  # right ratio, merges r
