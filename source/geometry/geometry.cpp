@@ -816,28 +816,11 @@ QCSPatchGenerator::QCSPatchGenerator()
  * @brief Computes offset vector using standard QCS cube-to-sphere mapping.
  *
  * Maps cube face coordinates to sphere surface using direct normalization.
- * Handles axis inversions and swapping for different cube face orientations.
  */
 LVector3d
 QCSPatchGenerator::make_offset_vector(LVector3d axes,
-    double x0, double y0, double x1, double y1,
-    bool x_inverted, bool y_inverted, bool xy_swap)
+    double x0, double y0, double x1, double y1)
 {
-  if (x_inverted) {
-      double tmp = 1 - x0;
-      x0 = 1 - x1;
-      x1 = tmp;
-  }
-  if (y_inverted) {
-      double tmp = 1 - y0;
-      y0 = 1 - y1;
-      y1 = tmp;
-  }
-  if (xy_swap) {
-      std::swap(x0, y0);
-      std::swap(x1, y1);
-  }
-
   double dx = x1 - x0;
   double dy = y1 - y0;
 
@@ -859,24 +842,8 @@ QCSPatchGenerator::make_offset_vector(LVector3d axes,
  */
 LVector3d
 QCSPatchGenerator::make_normal(LVector3d axes,
-        double u, double v, double x0, double y0, double x1, double y1,
-        bool x_inverted, bool y_inverted, bool xy_swap)
+        double u, double v, double x0, double y0, double x1, double y1)
 {
-  if (x_inverted) {
-      double tmp = 1 - x0;
-      x0 = 1 - x1;
-      x1 = tmp;
-  }
-  if (y_inverted) {
-      double tmp = 1 - y0;
-      y0 = 1 - y1;
-      y1 = tmp;
-  }
-  if (xy_swap) {
-      std::swap(x0, y0);
-      std::swap(x1, y1);
-  }
-
   double dx = x1 - x0;
   double dy = y1 - y0;
 
@@ -950,7 +917,6 @@ QCSPatchGenerator::make_point(LVector3d axes,
 NodePath
 QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
-        bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv,
@@ -1005,22 +971,7 @@ QCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
 
     LVector3d offset_vector;
     if (has_offset) {
-        offset_vector = make_offset_vector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset;
-    }
-
-    if (x_inverted) {
-        double tmp = 1 - x0;
-        x0 = 1 - x1;
-        x1 = tmp;
-    }
-    if (y_inverted) {
-        double tmp = 1 - y0;
-        y0 = 1 - y1;
-        y1 = tmp;
-    }
-    if (xy_swap) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
+        offset_vector = make_offset_vector(axes, x0, y0, x1, y1) * offset;
     }
 
     double dx = x1 - x0;
@@ -1116,24 +1067,8 @@ ImprovedQCSPatchGenerator::ImprovedQCSPatchGenerator()
  */
 LVector3d
 ImprovedQCSPatchGenerator::make_offset_vector(LVector3d axes,
-    double x0, double y0, double x1, double y1,
-    bool x_inverted, bool y_inverted, bool xy_swap)
+    double x0, double y0, double x1, double y1)
 {
-    if (x_inverted) {
-        double tmp = 1 - x0;
-        x0 = 1 - x1;
-        x1 = tmp;
-    }
-    if (y_inverted) {
-        double tmp = 1 - y0;
-        y0 = 1 - y1;
-        y1 = tmp;
-    }
-    if (xy_swap) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
-    }
-
     double dx = x1 - x0;
     double dy = y1 - y0;
 
@@ -1165,24 +1100,8 @@ ImprovedQCSPatchGenerator::make_offset_vector(LVector3d axes,
  */
 LVector3d
 ImprovedQCSPatchGenerator::make_normal(LVector3d axes,
-        double u, double v, double x0, double y0, double x1, double y1,
-        bool x_inverted, bool y_inverted, bool xy_swap)
+        double u, double v, double x0, double y0, double x1, double y1)
 {
-    if (x_inverted) {
-        double tmp = 1 - x0;
-        x0 = 1 - x1;
-        x1 = tmp;
-    }
-    if (y_inverted) {
-        double tmp = 1 - y0;
-        y0 = 1 - y1;
-        y1 = tmp;
-    }
-    if (xy_swap) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
-    }
-
     double dx = x1 - x0;
     double dy = y1 - y0;
 
@@ -1270,7 +1189,6 @@ ImprovedQCSPatchGenerator::make_point(LVector3d axes,
 NodePath
 ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
         double x0, double y0, double x1, double y1,
-        bool x_inverted, bool y_inverted, bool xy_swap,
         bool has_offset, double offset,
         bool use_patch_adaptation, bool use_patch_skirts,
         double skirt_size, double skirt_uv,
@@ -1325,22 +1243,7 @@ ImprovedQCSPatchGenerator::make(LVector3d axes, TessellationInfo tessellation,
 
     LVector3d offset_vector;
     if (has_offset) {
-        offset_vector = make_offset_vector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset;
-    }
-
-    if (x_inverted) {
-        double tmp = 1 - x0;
-        x0 = 1 - x1;
-        x1 = tmp;
-    }
-    if (y_inverted) {
-        double tmp = 1 - y0;
-        y0 = 1 - y1;
-        y1 = tmp;
-    }
-    if (xy_swap) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
+        offset_vector = make_offset_vector(axes, x0, y0, x1, y1) * offset;
     }
 
     double dx = x1 - x0;

@@ -26,18 +26,10 @@ UV coordinate transformation, and optional skirts for seamless patch connections
 
 from typing import Optional
 
-from panda3d.core import (
-    Geom,
-    GeomPatches,
-    GeomVertexData,
-    GeomVertexFormat,
-    GeomVertexWriter,
-    LPoint3d,
-    NodePath,
-)
+from panda3d.core import Geom, GeomPatches, GeomVertexData, GeomVertexFormat, GeomVertexWriter, LPoint3d, NodePath
 
 from ...pstats import named_pstat
-from .core import convert_xy, empty_geom, empty_node
+from .core import empty_geom, empty_node
 from .tessellation import (
     TessellationInfo,
     make_adapted_square_primitives,
@@ -243,9 +235,6 @@ def QuadPatch(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
     offset: Optional[float] = None,
 ) -> NodePath:
     """Create a quad patch for tessellation with transformed coordinates.
@@ -259,9 +248,6 @@ def QuadPatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
         offset: Z offset for the patch. If None, defaults to 1.0.
 
     Returns:
@@ -272,8 +258,6 @@ def QuadPatch(
         - Vertices are ordered for tessellation: (x0,y0), (x1,y0), (x1,y1), (x0,y1).
         - Used primarily for cube face patch generation.
     """
-
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     if offset is None:
         offset = 1.0

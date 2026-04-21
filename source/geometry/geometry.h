@@ -357,15 +357,11 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes (for face rotation)
    * @return Offset vector from origin to patch center
    */
   LVector3d
   make_offset_vector(LVector3d axes,
-      double x0, double y0, double x1, double y1,
-      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+      double x0, double y0, double x1, double y1);
 
   /**
    * @brief Calculates the normal vector at a point on a QCS patch.
@@ -377,15 +373,11 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes
    * @return Normalized normal vector pointing outward from surface
    */
   LVector3d
   make_normal(LVector3d axes,
-          double u, double v, double x0, double y0, double x1, double y1,
-          bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+          double u, double v, double x0, double y0, double x1, double y1);
 
   /**
    * @brief Generates a QCS patch mesh.
@@ -400,9 +392,6 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes (for face rotation)
    * @param has_offset If true, apply offset to geometry
    * @param offset Offset distance from surface
    * @param use_patch_adaptation If true, enable adaptive tessellation
@@ -415,7 +404,6 @@ PUBLISHED:
   NodePath
   make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
-      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.001, double skirt_uv=0.001,
@@ -476,15 +464,11 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes (for face rotation)
    * @return Offset vector from origin to patch center
    */
   LVector3d
   make_offset_vector(LVector3d axes,
-      double x0, double y0, double x1, double y1,
-      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+      double x0, double y0, double x1, double y1);
 
   /**
    * @brief Calculates the normal vector at a point on an improved QCS patch.
@@ -496,15 +480,11 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes
    * @return Normalized normal vector pointing outward from surface
    */
   LVector3d
   make_normal(LVector3d axes,
-          double u, double v, double x0, double y0, double x1, double y1,
-          bool x_inverted=false, bool y_inverted=false, bool xy_swap=false);
+          double u, double v, double x0, double y0, double x1, double y1);
 
   /**
    * @brief Generates an improved QCS patch mesh.
@@ -518,9 +498,6 @@ PUBLISHED:
    * @param y0 Minimum Y coordinate on cube face (-1 to 1)
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
-   * @param x_inverted If true, invert X axis mapping
-   * @param y_inverted If true, invert Y axis mapping
-   * @param xy_swap If true, swap X and Y axes (for face rotation)
    * @param has_offset If true, apply offset to geometry
    * @param offset Offset distance from surface
    * @param use_patch_adaptation If true, enable adaptive tessellation
@@ -533,7 +510,6 @@ PUBLISHED:
   NodePath
   make(LVector3d axes, TessellationInfo tessellation,
       double x0, double y0, double x1, double y1,
-      bool x_inverted=false, bool y_inverted=false, bool xy_swap=false,
       bool has_offset=false, double offset=0.0,
       bool use_patch_adaptation=true, bool use_patch_skirts=true,
       double skirt_size=0.001, double skirt_uv=0.001,

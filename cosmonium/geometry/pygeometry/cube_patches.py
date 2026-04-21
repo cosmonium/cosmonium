@@ -38,7 +38,7 @@ from typing import Optional
 from panda3d.core import LPoint3d, LVector3d, NodePath
 
 from ...pstats import named_pstat
-from .core import convert_xy, empty_geom, empty_node
+from .core import empty_geom, empty_node
 from .tessellation import (
     TessellationInfo,
     make_adapted_square_primitives,
@@ -57,9 +57,6 @@ def SquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
     offset: Optional[float] = None,
 ) -> NodePath:
     """Create a flat square patch on a cube face with adaptive tessellation.
@@ -77,9 +74,6 @@ def SquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
         offset: Z offset for positioning. If None, uses height value.
 
     Returns:
@@ -100,7 +94,8 @@ def SquarePatch(
     )
     node.add_geom(geom)
 
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+    dx = x1 - x0
+    dy = y1 - y0
 
     if offset is None:
         offset = height
@@ -137,9 +132,6 @@ def SquaredDistanceSquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
     has_offset: bool = False,
     offset: Optional[float] = None,
     use_patch_adaptation: bool = True,
@@ -168,9 +160,6 @@ def SquaredDistanceSquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
         has_offset: If True, apply an offset from the patch center.
         offset: Offset magnitude from patch center if has_offset is True.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
@@ -206,11 +195,10 @@ def SquaredDistanceSquarePatch(
     node.add_geom(geom)
 
     if has_offset:
-        offset_vector = (
-            SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
-        )
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1) * offset
 
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+    dx = x1 - x0
+    dy = y1 - y0
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
 
@@ -289,9 +277,6 @@ def SquaredDistanceSquarePatchPoint(
     x1: float,
     y1: float,
     offset: Optional[float] = None,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate a point on a spherical patch using squared distance mapping.
 
@@ -307,18 +292,16 @@ def SquaredDistanceSquarePatchPoint(
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
         offset: Optional offset magnitude from patch center.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         LVector3d representing the 3D point on the ellipsoid surface.
     """
 
     if offset is not None:
-        offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1)
 
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+    dx = x1 - x0
+    dy = y1 - y0
 
     x = x0 + u * dx
     y = y0 + v * dy
@@ -351,9 +334,6 @@ def SquaredDistanceSquarePatchNormal(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate the surface normal at a point on a squared distance patch.
 
@@ -368,15 +348,13 @@ def SquaredDistanceSquarePatchNormal(
         y0: Starting Y coordinate of the patch in [0,1] range.
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         Normalized LVector3d representing the surface normal.
     """
 
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+    dx = x1 - x0
+    dy = y1 - y0
 
     x = x0 + u * dx
     y = y0 + v * dy
@@ -406,9 +384,6 @@ def SquaredDistanceSquarePatchOffsetVector(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate the offset vector for the center of a squared distance patch.
 
@@ -421,15 +396,12 @@ def SquaredDistanceSquarePatchOffsetVector(
         y0: Starting Y coordinate of the patch in [0,1] range.
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         LVector3d representing the patch center position.
     """
 
-    return SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+    return SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None)
 
 
 def SquaredDistanceSquarePatchBoundingPoints(
@@ -441,9 +413,6 @@ def SquaredDistanceSquarePatchBoundingPoints(
     x1: float,
     y1: float,
     offset: Optional[float] = None,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> list[LPoint3d]:
     """Calculate bounding points for a squared distance patch with height variation.
 
@@ -460,9 +429,6 @@ def SquaredDistanceSquarePatchBoundingPoints(
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
         offset: Optional offset magnitude from patch center.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         List of LPoint3d objects representing the bounding volume corners.
@@ -479,19 +445,13 @@ def SquaredDistanceSquarePatchBoundingPoints(
     else:
         heights = (min_height,)
     if offset is not None:
-        offset_vector = (
-            SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
-        )
+        offset_vector = SquaredDistanceSquarePatchOffsetVector(axes, x0, y0, x1, y1) * offset
     for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                point = SquaredDistanceSquarePatchPoint(
-                    axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap
-                )
+                point = SquaredDistanceSquarePatchPoint(axes, i, j, x0, y0, x1, y1, None)
                 if height != 0:
-                    normal = SquaredDistanceSquarePatchNormal(
-                        axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap
-                    )
+                    normal = SquaredDistanceSquarePatchNormal(axes, i, j, x0, y0, x1, y1)
                     point += normal * height
                 if offset is not None:
                     point -= offset_vector
@@ -507,9 +467,6 @@ def NormalizedSquarePatch(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
     has_offset: bool = False,
     offset: Optional[float] = None,
     use_patch_adaptation: bool = True,
@@ -534,9 +491,6 @@ def NormalizedSquarePatch(
         y0: Starting Y coordinate in [0,1] range.
         x1: Ending X coordinate in [0,1] range.
         y1: Ending Y coordinate in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
         has_offset: If True, apply an offset from the patch center.
         offset: Offset magnitude from patch center if has_offset is True.
         use_patch_adaptation: If True, use adaptive tessellation along edges.
@@ -573,11 +527,10 @@ def NormalizedSquarePatch(
     node.add_geom(geom)
 
     if has_offset:
-        offset_vector = (
-            NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
-        )
+        offset_vector = NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1) * offset
 
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+    dx = x1 - x0
+    dy = y1 - y0
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
 
@@ -651,9 +604,6 @@ def NormalizedSquarePatchPoint(
     x1: float,
     y1: float,
     offset: Optional[float] = None,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate a point on a spherical patch using normalized mapping.
 
@@ -669,15 +619,12 @@ def NormalizedSquarePatchPoint(
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
         offset: Optional offset magnitude from patch center.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         LVector3d representing the 3D point on the ellipsoid surface.
     """
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-
+    dx = x1 - x0
+    dy = y1 - y0
     x = x0 + u * dx
     y = y0 + v * dy
     vec = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
@@ -685,7 +632,7 @@ def NormalizedSquarePatchPoint(
     vec.componentwise_mult(axes)
 
     if offset is not None:
-        offset_vector = NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+        offset_vector = NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1)
         vec -= offset_vector * offset
 
     return vec
@@ -699,9 +646,6 @@ def NormalizedSquarePatchNormal(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate the surface normal at a point on a normalized patch.
 
@@ -716,15 +660,12 @@ def NormalizedSquarePatchNormal(
         y0: Starting Y coordinate of the patch in [0,1] range.
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         Normalized LVector3d representing the surface normal.
     """
-    (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
-
+    dx = x1 - x0
+    dy = y1 - y0
     x = x0 + u * dx
     y = y0 + v * dy
     normal = LVector3d(2.0 * x - 1.0, 2.0 * y - 1.0, 1.0)
@@ -742,9 +683,6 @@ def NormalizedSquarePatchOffsetVector(
     y0: float,
     x1: float,
     y1: float,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> LVector3d:
     """Calculate the offset vector for the center of a normalized patch.
 
@@ -757,14 +695,11 @@ def NormalizedSquarePatchOffsetVector(
         y0: Starting Y coordinate of the patch in [0,1] range.
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         LVector3d representing the patch center position.
     """
-    return NormalizedSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+    return NormalizedSquarePatchPoint(axes, 0.5, 0.5, x0, y0, x1, y1, None)
 
 
 def NormalizedSquarePatchBoundingPoints(
@@ -776,9 +711,6 @@ def NormalizedSquarePatchBoundingPoints(
     x1: float,
     y1: float,
     offset: Optional[float] = None,
-    x_inverted: bool = False,
-    y_inverted: bool = False,
-    xy_swap: bool = False,
 ) -> list[LPoint3d]:
     """Calculate bounding points for a normalized patch with height variation.
 
@@ -795,9 +727,6 @@ def NormalizedSquarePatchBoundingPoints(
         x1: Ending X coordinate of the patch in [0,1] range.
         y1: Ending Y coordinate of the patch in [0,1] range.
         offset: Optional offset magnitude from patch center.
-        x_inverted: If True, invert X coordinates before mapping.
-        y_inverted: If True, invert Y coordinates before mapping.
-        xy_swap: If True, swap X and Y coordinates before mapping.
 
     Returns:
         List of LPoint3d objects representing the bounding volume corners.
@@ -814,15 +743,13 @@ def NormalizedSquarePatchBoundingPoints(
     else:
         heights = (min_height,)
     if offset is not None:
-        offset_vector = (
-            NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap) * offset
-        )
+        offset_vector = NormalizedSquarePatchOffsetVector(axes, x0, y0, x1, y1) * offset
     for height in heights:
         for i in (0.0, 0.5, 1.0):
             for j in (0.0, 0.5, 1.0):
-                point = NormalizedSquarePatchPoint(axes, i, j, x0, y0, x1, y1, None, x_inverted, y_inverted, xy_swap)
+                point = NormalizedSquarePatchPoint(axes, i, j, x0, y0, x1, y1, None)
                 if height != 0:
-                    normal = NormalizedSquarePatchNormal(axes, i, j, x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
+                    normal = NormalizedSquarePatchNormal(axes, i, j, x0, y0, x1, y1)
                     point += normal * height
                 if offset is not None:
                     point -= offset_vector
