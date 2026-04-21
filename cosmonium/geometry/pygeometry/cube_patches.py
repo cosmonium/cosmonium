@@ -232,117 +232,68 @@ def SquaredDistanceSquarePatch(
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
+
+    def _make_point(u, v, point_axes):
+        """Write a single squared-distance-mapped vertex."""
+        x = x0 + u * dx
+        y = y0 + v * dy
+        x = 2.0 * x - 1.0
+        y = 2.0 * y - 1.0
+        z = 1.0
+        x2 = x * x
+        y2 = y * y
+        z2 = z * z
+        xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
+        yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
+        zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
+        point = LPoint3d(xp, yp, zp)
+        normal = LVector3d(point)
+        tu = 1.0 - u if inv_u else u
+        tv = 1.0 - v if inv_v else v
+        if swap_uv:
+            tu, tv = tv, tu
+        gtw.add_data2(tu, tv)
+        point.componentwise_mult(point_axes)
+        if has_offset:
+            point -= offset_vector
+        gvw.add_data3d(point)
+        normal.componentwise_mult(normal_coefs)
+        normal.normalize()
+        gnw.add_data3d(normal)
+        if use_jacobian:
+            jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
+        else:
+            tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
+            tangent.componentwise_mult(axes)
+            tangent.normalize()
+            binormal = normal.cross(tangent)
+            binormal.normalize()
+            if inv_u:
+                tangent = -tangent
+            if inv_v:
+                binormal = -binormal
+            if swap_uv:
+                tangent, binormal = binormal, tangent
+            gtanw.add_data3d(tangent)
+            gbiw.add_data3d(binormal)
+
     for i in range(0, nb_vertices):
         for j in range(0, nb_vertices):
-            u = float(i) / inner
-            v = float(j) / inner
-            x = x0 + u * dx
-            y = y0 + v * dy
-            x = 2.0 * x - 1.0
-            y = 2.0 * y - 1.0
-            z = 1.0
-            x2 = x * x
-            y2 = y * y
-            z2 = z * z
-            xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-            yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-            zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
-            point = LPoint3d(xp, yp, zp)
-            normal = LVector3d(point)
-            if not use_jacobian:
-                tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
-            if inv_u:
-                u = 1.0 - u
-            if inv_v:
-                v = 1.0 - v
-            if swap_uv:
-                u, v = v, u
-            gtw.add_data2(u, v)
-            point.componentwise_mult(axes)
-            if has_offset:
-                point -= offset_vector
-            gvw.add_data3d(point)
-            normal.componentwise_mult(normal_coefs)
-            normal.normalize()
-            gnw.add_data3d(normal)
-            if use_jacobian:
-                jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
-            else:
-                tangent.componentwise_mult(axes)
-                tangent.normalize()
-                binormal = normal.cross(tangent)
-                binormal.normalize()
-                if inv_u:
-                    tangent = -tangent
-                if inv_v:
-                    binormal = -binormal
-                if swap_uv:
-                    tangent, binormal = binormal, tangent
-                gtanw.add_data3d(tangent)
-                gbiw.add_data3d(binormal)
+            _make_point(float(i) / inner, float(j) / inner, axes)
 
     if use_patch_skirts:
         reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
-                    i = 0
-                    j = b
+                    i, j = 0, b
                 elif a == 1:
-                    i = inner
-                    j = b
+                    i, j = inner, b
                 elif a == 2:
-                    i = b
-                    j = 0
-                elif a == 3:
-                    i = b
-                    j = inner
-                u = float(i) / inner
-                v = float(j) / inner
-                x = x0 + u * dx
-                y = y0 + v * dy
-                x = 2.0 * x - 1.0
-                y = 2.0 * y - 1.0
-                z = 1.0
-                x2 = x * x
-                y2 = y * y
-                z2 = z * z
-                xp = x * sqrt(1.0 - y2 * 0.5 - z2 * 0.5 + y2 * z2 / 3.0)
-                yp = y * sqrt(1.0 - z2 * 0.5 - x2 * 0.5 + z2 * x2 / 3.0)
-                zp = z * sqrt(1.0 - x2 * 0.5 - y2 * 0.5 + x2 * y2 / 3.0)
-                point = LPoint3d(xp, yp, zp)
-                normal = LVector3d(point)
-                if not use_jacobian:
-                    tangent = LVector3d(1.0, x * y * (z2 / 3.0 - 0.5), x * z * (y2 / 3.0 - 0.5))
-                if inv_u:
-                    u = 1.0 - u
-                if inv_v:
-                    v = 1.0 - v
-                if swap_uv:
-                    u, v = v, u
-                gtw.add_data2(u, v)
-                point.componentwise_mult(reduced_axes)
-                if has_offset:
-                    point -= offset_vector
-                gvw.add_data3d(point)
-                normal.componentwise_mult(normal_coefs)
-                normal.normalize()
-                gnw.add_data3d(normal)
-                if use_jacobian:
-                    jacobian.add_data4d(x, y, sqrt(0.5 - x * x / 6), sqrt(0.5 - y * y / 6))
+                    i, j = b, 0
                 else:
-                    tangent.componentwise_mult(axes)
-                    tangent.normalize()
-                    binormal = normal.cross(tangent)
-                    binormal.normalize()
-                    if inv_u:
-                        tangent = -tangent
-                    if inv_v:
-                        binormal = -binormal
-                    if swap_uv:
-                        tangent, binormal = binormal, tangent
-                    gtanw.add_data3d(tangent)
-                    gbiw.add_data3d(binormal)
+                    i, j = b, inner
+                _make_point(float(i) / inner, float(j) / inner, reduced_axes)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
@@ -664,107 +615,63 @@ def NormalizedSquarePatch(
     (x0, y0, x1, y1, dx, dy) = convert_xy(x0, y0, x1, y1, x_inverted, y_inverted, xy_swap)
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
+
+    def _make_point(u, v, point_axes):
+        """Write a single normalized-mapped vertex."""
+        x = x0 + u * dx
+        y = y0 + v * dy
+        x = 2.0 * x - 1.0
+        y = 2.0 * y - 1.0
+        point = LVector3d(x, y, 1.0)
+        point.normalize()
+        normal = LVector3d(point)
+        tu = 1.0 - u if inv_u else u
+        tv = 1.0 - v if inv_v else v
+        if swap_uv:
+            tu, tv = tv, tu
+        gtw.add_data2(tu, tv)
+        point.componentwise_mult(point_axes)
+        if has_offset:
+            point -= offset_vector
+        gvw.add_data3d(point)
+        normal.componentwise_mult(normal_coefs)
+        normal.normalize()
+        gnw.add_data3d(normal)
+        if use_jacobian:
+            jacobian.add_data3d(x, y, 1 / (x * x + y * y + 1))
+        else:
+            tangent = LVector3d(1.0 + y * y, -x * y, -x)
+            binormal = LVector3d(-x * y, 1.0 + x * x, -y)
+            tangent.componentwise_mult(axes)
+            tangent.normalize()
+            binormal.componentwise_mult(axes)
+            binormal.normalize()
+            if inv_u:
+                tangent = -tangent
+            if inv_v:
+                binormal = -binormal
+            if swap_uv:
+                tangent, binormal = binormal, tangent
+            gtanw.add_data3d(tangent)
+            gbiw.add_data3d(binormal)
+
     for i in range(0, nb_vertices):
         for j in range(0, nb_vertices):
-            x = x0 + i * dx / inner
-            y = y0 + j * dy / inner
-            x = 2.0 * x - 1.0
-            y = 2.0 * y - 1.0
-            point = LVector3d(x, y, 1.0)
-            point.normalize()
-            normal = LVector3d(point)
-            if not use_jacobian:
-                tangent = LVector3d(1.0 + y * y, -x * y, -x)
-                binormal = LVector3d(-x * y, 1.0 + x * x, -y)
-            u = float(i) / inner
-            v = float(j) / inner
-            if inv_u:
-                u = 1.0 - u
-            if inv_v:
-                v = 1.0 - v
-            if swap_uv:
-                u, v = v, u
-            gtw.add_data2(u, v)
-            point.componentwise_mult(axes)
-            if has_offset:
-                point -= offset_vector
-            gvw.add_data3d(point)
-            normal.componentwise_mult(normal_coefs)
-            normal.normalize()
-            gnw.add_data3d(normal)
-            if use_jacobian:
-                jacobian.add_data3d(x, y, 1 / (x * x + y * y + 1))
-            else:
-                tangent.componentwise_mult(axes)
-                tangent.normalize()
-                binormal.componentwise_mult(axes)
-                binormal.normalize()
-                if inv_u:
-                    tangent = -tangent
-                if inv_v:
-                    binormal = -binormal
-                if swap_uv:
-                    tangent, binormal = binormal, tangent
-                gtanw.add_data3d(tangent)
-                gbiw.add_data3d(binormal)
+            _make_point(float(i) / inner, float(j) / inner, axes)
 
     if use_patch_skirts:
         reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
         for a in range(0, 4):
             for b in range(0, nb_vertices):
                 if a == 0:
-                    i = 0
-                    j = b
+                    i, j = 0, b
                 elif a == 1:
-                    i = inner
-                    j = b
+                    i, j = inner, b
                 elif a == 2:
-                    i = b
-                    j = 0
-                elif a == 3:
-                    i = b
-                    j = inner
-                x = x0 + i * dx / inner
-                y = y0 + j * dy / inner
-                x = 2.0 * x - 1.0
-                y = 2.0 * y - 1.0
-                point = LVector3d(x, y, 1.0)
-                point.normalize()
-                normal = LVector3d(point)
-                if not use_jacobian:
-                    tangent = LVector3d(1.0 + y * y, -x * y, -x)
-                    binormal = LVector3d(-x * y, 1.0 + x * x, -y)
-                u = float(i) / inner
-                v = float(j) / inner
-                if inv_u:
-                    u = 1.0 - u
-                if inv_v:
-                    v = 1.0 - v
-                if swap_uv:
-                    u, v = v, u
-                gtw.add_data2(u, v)
-                point.componentwise_mult(reduced_axes)
-                if has_offset:
-                    point -= offset_vector
-                gvw.add_data3d(point)
-                normal.componentwise_mult(normal_coefs)
-                normal.normalize()
-                gnw.add_data3d(normal)
-                if use_jacobian:
-                    jacobian.add_data3d(x, y, 1 / (x * x + y * y + 1))
+                    i, j = b, 0
                 else:
-                    tangent.componentwise_mult(axes)
-                    tangent.normalize()
-                    binormal.componentwise_mult(axes)
-                    binormal.normalize()
-                    if inv_u:
-                        tangent = -tangent
-                    if inv_v:
-                        binormal = -binormal
-                    if swap_uv:
-                        tangent, binormal = binormal, tangent
-                    gtanw.add_data3d(tangent)
-                    gbiw.add_data3d(binormal)
+                    i, j = b, inner
+                _make_point(float(i) / inner, float(j) / inner, reduced_axes)
 
     if use_patch_adaptation:
         make_adapted_square_primitives(prim, inner, nb_vertices, tessellation.ratio)
