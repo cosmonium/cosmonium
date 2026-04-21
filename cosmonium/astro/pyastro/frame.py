@@ -187,24 +187,21 @@ class CelestialReferenceFrame(AnchorReferenceFrame):
 
     def __init__(
         self,
-        body=None,
+        anchor=None,
         right_ascension=0.0,
-        right_ascension_unit=units.Deg,
         declination=0.0,
-        declination_unit=units.Deg,
         longitude_at_node=0.0,
-        longitude_at_nod_units=units.Deg,
     ):
-        AnchorReferenceFrame.__init__(self, body)
-        self.right_asc = right_ascension * right_ascension_unit
-        self.declination = declination * declination_unit
-        self.longitude_at_node = longitude_at_node * longitude_at_nod_units
+        AnchorReferenceFrame.__init__(self, anchor)
+        self.right_ascension = right_ascension
+        self.declination = declination
+        self.longitude_at_node = longitude_at_node
 
         longitude_quad = LQuaterniond()
         longitude_quad.setFromAxisAngleRad(self.longitude_at_node, LVector3d.unitZ())
         self.orientation = (
             longitude_quad
-            * calc_orientation(self.right_asc, self.declination, False)
+            * calc_orientation(self.right_ascension, self.declination, False)
             * J2000EquatorialReferenceFrame().get_orientation()
         )
 
