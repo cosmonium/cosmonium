@@ -232,22 +232,41 @@ def UVPatch(
 
     normal_coefs = LVector3d(axes[1] * axes[2], axes[0] * axes[2], axes[0] * axes[1])
 
+    def _make_point(r, s, u, v, point_axes, apply_offset):
+        """Write a single UV patch vertex with all attributes."""
+        cos_s_val = cos(2 * pi * (x0 + s * dx / sectors) + pi)
+        sin_s_val = sin(2 * pi * (x0 + s * dx / sectors) + pi)
+        sin_r_val = sin(pi * (y0 + r * dy / rings))
+        cos_r_val = cos(pi * (y0 + r * dy / rings))
+        point = LVector3d(cos_s_val * sin_r_val, sin_s_val * sin_r_val, -cos_r_val)
+        normal = LVector3d(point)
+        if sin_r_val != 0:
+            tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
+        else:
+            tangent = LVector3d(-axes[0], 0, 0)
+        binormal = LVector3d(cos_s_val * cos_r_val, sin_s_val * cos_r_val, sin_r_val)
+        gtw.add_data2(u, v)
+        point.componentwise_mult(point_axes)
+        if apply_offset:
+            point -= offset_vector
+        gvw.add_data3d(point)
+        normal.componentwise_mult(normal_coefs)
+        normal.normalize()
+        gnw.add_data3d(normal)
+        tangent.normalize()
+        gtanw.add_data3d(tangent)
+        binormal.componentwise_mult(axes)
+        binormal.normalize()
+        gbiw.add_data3d(binormal)
+
+    apply_offset = offset != 0.0
+
     # Generate main patch vertices
     for r in range(0, r_rings):
         for s in range(0, r_sectors):
-            cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
-            sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
-            sin_r = sin(pi * (y0 + r * dy / rings))
-            cos_r = cos(pi * (y0 + r * dy / rings))
-            point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
-            normal = LVector3d(point)
-            if sin_r != 0:
-                tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
-            else:
-                tangent = LVector3d(-axes[0], 0, 0)
-            binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
             if global_texture:
-                gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
+                u = x0 + s * dx / sectors
+                v = y0 + r * dy / rings
             else:
                 u = s / sectors
                 v = r / rings
@@ -255,178 +274,61 @@ def UVPatch(
                     v = 1.0 - v
                 if inv_texture_u:
                     u = 1.0 - u
-                gtw.add_data2(u, v)
-            point.componentwise_mult(axes)
-            if offset != 0.0:
-                point -= offset_vector
-            gvw.add_data3d(point)
-            normal.componentwise_mult(normal_coefs)
-            normal.normalize()
-            gnw.add_data3d(normal)
-            tangent.normalize()
-            gtanw.add_data3d(tangent)
-            binormal.componentwise_mult(axes)
-            binormal.normalize()
-            gbiw.add_data3d(binormal)
+            _make_point(r, s, u, v, axes, apply_offset)
 
     # Generate skirt vertices if enabled
     if use_patch_skirts:
-        # Reduce axes for skirt depth
         reduced_axes = axes - LVector3d(max(dx, dy) * skirt_size)
 
+        # Skirt edge definitions: (fixed_var, fixed_val, iter_count, u_func, v_func)
         # Edge order: 0=left, 1=right, 2=bottom, 3=top
-        for edge in range(0, 4):
-            if edge == 0:  # Left edge (s=0, all r)
-                for r in range(0, r_rings):
-                    s = 0
-                    u_skirt = -skirt_uv if not inv_texture_u else 1.0 + skirt_uv
-                    v_skirt = r / rings
-                    if inv_texture_v:
-                        v_skirt = 1.0 - v_skirt
-
-                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_r = sin(pi * (y0 + r * dy / rings))
-                    cos_r = cos(pi * (y0 + r * dy / rings))
-                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
-                    normal = LVector3d(point)
-                    if sin_r != 0:
-                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
-                    else:
-                        tangent = LVector3d(-axes[0], 0, 0)
-                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
-
-                    if not global_texture:
-                        gtw.add_data2(u_skirt, v_skirt)
-                    else:
-                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
-
-                    point.componentwise_mult(reduced_axes)
-                    if offset != 0.0:
-                        point -= offset_vector
-                    gvw.add_data3d(point)
-                    normal.componentwise_mult(normal_coefs)
-                    normal.normalize()
-                    gnw.add_data3d(normal)
-                    tangent.normalize()
-                    gtanw.add_data3d(tangent)
-                    binormal.componentwise_mult(axes)
-                    binormal.normalize()
-                    gbiw.add_data3d(binormal)
-
-            elif edge == 1:  # Right edge (s=sectors, all r)
-                for r in range(0, r_rings):
-                    s = sectors
-                    u_skirt = 1.0 + skirt_uv if not inv_texture_u else -skirt_uv
-                    v_skirt = r / rings
-                    if inv_texture_v:
-                        v_skirt = 1.0 - v_skirt
-
-                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_r = sin(pi * (y0 + r * dy / rings))
-                    cos_r = cos(pi * (y0 + r * dy / rings))
-                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
-                    normal = LVector3d(point)
-                    if sin_r != 0:
-                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
-                    else:
-                        tangent = LVector3d(-axes[0], 0, 0)
-                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
-
-                    if not global_texture:
-                        gtw.add_data2(u_skirt, v_skirt)
-                    else:
-                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
-
-                    point.componentwise_mult(reduced_axes)
-                    if offset != 0.0:
-                        point -= offset_vector
-                    gvw.add_data3d(point)
-                    normal.componentwise_mult(normal_coefs)
-                    normal.normalize()
-                    gnw.add_data3d(normal)
-                    tangent.normalize()
-                    gtanw.add_data3d(tangent)
-                    binormal.componentwise_mult(axes)
-                    binormal.normalize()
-                    gbiw.add_data3d(binormal)
-
-            elif edge == 2:  # Bottom edge (r=0, all s)
-                for s in range(0, r_sectors):
-                    r = 0
-                    u_skirt = s / sectors
-                    if inv_texture_u:
-                        u_skirt = 1.0 - u_skirt
-                    v_skirt = -skirt_uv if not inv_texture_v else 1.0 + skirt_uv
-
-                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_r = sin(pi * (y0 + r * dy / rings))
-                    cos_r = cos(pi * (y0 + r * dy / rings))
-                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
-                    normal = LVector3d(point)
-                    if sin_r != 0:
-                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
-                    else:
-                        tangent = LVector3d(-axes[0], 0, 0)
-                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
-
-                    if not global_texture:
-                        gtw.add_data2(u_skirt, v_skirt)
-                    else:
-                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
-
-                    point.componentwise_mult(reduced_axes)
-                    if offset != 0.0:
-                        point -= offset_vector
-                    gvw.add_data3d(point)
-                    normal.componentwise_mult(normal_coefs)
-                    normal.normalize()
-                    gnw.add_data3d(normal)
-                    tangent.normalize()
-                    gtanw.add_data3d(tangent)
-                    binormal.componentwise_mult(axes)
-                    binormal.normalize()
-                    gbiw.add_data3d(binormal)
-
-            else:  # edge == 3, Top edge (r=rings, all s)
-                for s in range(0, r_sectors):
-                    r = rings
-                    u_skirt = s / sectors
-                    if inv_texture_u:
-                        u_skirt = 1.0 - u_skirt
-                    v_skirt = 1.0 + skirt_uv if not inv_texture_v else -skirt_uv
-
-                    cos_s = cos(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_s = sin(2 * pi * (x0 + s * dx / sectors) + pi)
-                    sin_r = sin(pi * (y0 + r * dy / rings))
-                    cos_r = cos(pi * (y0 + r * dy / rings))
-                    point = LVector3d(cos_s * sin_r, sin_s * sin_r, -cos_r)
-                    normal = LVector3d(point)
-                    if sin_r != 0:
-                        tangent = LVector3d(-axes[0] * point[1], axes[1] * point[0], 0)
-                    else:
-                        tangent = LVector3d(-axes[0], 0, 0)
-                    binormal = LVector3d(cos_s * cos_r, sin_s * cos_r, sin_r)
-
-                    if not global_texture:
-                        gtw.add_data2(u_skirt, v_skirt)
-                    else:
-                        gtw.add_data2((x0 + s * dx / sectors), (y0 + r * dy / rings))
-
-                    point.componentwise_mult(reduced_axes)
-                    if offset != 0.0:
-                        point -= offset_vector
-                    gvw.add_data3d(point)
-                    normal.componentwise_mult(normal_coefs)
-                    normal.normalize()
-                    gnw.add_data3d(normal)
-                    tangent.normalize()
-                    gtanw.add_data3d(tangent)
-                    binormal.componentwise_mult(axes)
-                    binormal.normalize()
-                    gbiw.add_data3d(binormal)
+        skirt_edges = [
+            # Left edge (s=0, varying r)
+            (
+                r_rings,
+                lambda r_idx: (0, r_idx),
+                lambda r_idx: (
+                    -skirt_uv if not inv_texture_u else 1.0 + skirt_uv,
+                    (1.0 - r_idx / rings) if inv_texture_v else r_idx / rings,
+                ),
+            ),
+            # Right edge (s=sectors, varying r)
+            (
+                r_rings,
+                lambda r_idx: (sectors, r_idx),
+                lambda r_idx: (
+                    1.0 + skirt_uv if not inv_texture_u else -skirt_uv,
+                    (1.0 - r_idx / rings) if inv_texture_v else r_idx / rings,
+                ),
+            ),
+            # Bottom edge (r=0, varying s)
+            (
+                r_sectors,
+                lambda s_idx: (s_idx, 0),
+                lambda s_idx: (
+                    (1.0 - s_idx / sectors) if inv_texture_u else s_idx / sectors,
+                    -skirt_uv if not inv_texture_v else 1.0 + skirt_uv,
+                ),
+            ),
+            # Top edge (r=rings, varying s)
+            (
+                r_sectors,
+                lambda s_idx: (s_idx, rings),
+                lambda s_idx: (
+                    (1.0 - s_idx / sectors) if inv_texture_u else s_idx / sectors,
+                    1.0 + skirt_uv if not inv_texture_v else -skirt_uv,
+                ),
+            ),
+        ]
+        for count, rs_func, uv_func in skirt_edges:
+            for idx in range(0, count):
+                s, r = rs_func(idx)
+                if global_texture:
+                    u = x0 + s * dx / sectors
+                    v = y0 + r * dy / rings
+                else:
+                    u, v = uv_func(idx)
+                _make_point(r, s, u, v, reduced_axes, apply_offset)
 
     # Generate main patch primitives
     if ratio is not None:

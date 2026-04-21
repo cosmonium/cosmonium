@@ -185,6 +185,39 @@ private:
       unsigned int rings, unsigned int sectors,
       unsigned int r_rings, unsigned int r_sectors,
       LVecBase4i ratio);
+
+  /**
+   * @brief Writes vertex attributes for a single UV patch vertex.
+   *
+   * Computes position, normal, tangent, binormal, and texture coordinates
+   * for a vertex at the specified (r, s) location. Used by the main patch
+   * and skirt vertex generation loops.
+   *
+   * @param r Ring index (latitude direction)
+   * @param s Sector index (longitude direction)
+   * @param u Texture U coordinate for this vertex
+   * @param v Texture V coordinate for this vertex
+   * @param point_axes Semi-axes to use for vertex position (may be reduced for skirts)
+   * @param x0 Minimum U coordinate of patch
+   * @param y0 Minimum V coordinate of patch
+   * @param dx Patch width in U direction
+   * @param dy Patch height in V direction
+   * @param rings Number of ring subdivisions
+   * @param sectors Number of sector subdivisions
+   * @param axes Original semi-axes for tangent/binormal computation
+   * @param normal_coefs Normal scaling coefficients
+   * @param apply_offset Whether to apply the offset vector
+   * @param offset_vector Offset vector to subtract from point
+   */
+  void
+  make_point(unsigned int r, unsigned int s, double u, double v,
+      LVector3d point_axes,
+      double x0, double y0, double dx, double dy,
+      unsigned int rings, unsigned int sectors,
+      LVector3d axes, LVector3d normal_coefs,
+      bool apply_offset, LVector3d offset_vector,
+      GeomVertexWriter &gvw, GeomVertexWriter &gtw, GeomVertexWriter &gnw,
+      GeomVertexWriter &gtanw, GeomVertexWriter &gbiw);
 };
 
 /**
