@@ -216,19 +216,39 @@ j2000GalacticReferenceFrame = CelestialReferenceFrame(
 )
 
 
-class OrbitReferenceFrame(AnchorReferenceFrame):
+class StellarAnchorReferenceFrame(ReferenceFrame):
+    def __init__(self, anchor=None):
+        self.anchor = anchor
+
+    def set_anchor(self, anchor):
+        self.anchor = anchor
+
+    def get_center(self):
+        return self.anchor.get_local_position()
+
+    def get_absolute_reference_point(self):
+        return self.anchor.get_absolute_reference_point()
+
+    def get_orientation(self):
+        return LQuaterniond.ident_quat()
+
+    def __str__(self):
+        return self.__class__.__name__ + '(' + self.anchor.get_name() + ')'
+
+
+class OrbitReferenceFrame(StellarAnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.orbit.frame.get_orientation()
         return rot
 
 
-class EquatorialReferenceFrame(AnchorReferenceFrame):
+class EquatorialReferenceFrame(StellarAnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.get_equatorial_rotation()
         return rot
 
 
-class SynchroneReferenceFrame(AnchorReferenceFrame):
+class SynchroneReferenceFrame(StellarAnchorReferenceFrame):
     def get_orientation(self):
         rot = self.anchor.get_sync_rotation()
         return rot

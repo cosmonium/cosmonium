@@ -49,12 +49,11 @@ except ImportError as e:
     from .pyastro.frame import AnchorReferenceFrame  # noqa: F401
     from .pyastro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame  # noqa: F401
     from .pyastro.frame import CelestialReferenceFrame, RelativeReferenceFrame  # noqa: F401
-    from .pyastro.frame import OrbitReferenceFrame  # noqa: F401
+    from .pyastro.frame import StellarAnchorReferenceFrame, OrbitReferenceFrame  # noqa: F401
     from .pyastro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame  # noqa: F401
     from .pyastro.frame import J2000BarycentricEclipticReferenceFrame  # noqa: F401
     from .pyastro.frame import J2000BarycentricEquatorialReferenceFrame  # noqa: F401
 
-    StellarAnchorReferenceFrame = AnchorReferenceFrame
 
 BodyReferenceFrames = (AnchorReferenceFrame, StellarAnchorReferenceFrame)
 
