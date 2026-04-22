@@ -238,18 +238,18 @@ CelestialReferenceFrame::CelestialReferenceFrame(AnchorBase *anchor,
     double declination,
     double longitude_at_node) :
     AnchorReferenceFrame(anchor),
-    right_ascension(right_ascension),
-    declination(declination),
-    longitude_at_node(longitude_at_node)
+    _right_ascension(right_ascension),
+    _declination(declination),
+    _longitude_at_node(longitude_at_node)
 {
   update_orientation();
 }
 
 CelestialReferenceFrame::CelestialReferenceFrame(CelestialReferenceFrame const &other) :
     AnchorReferenceFrame(other.anchor),
-    right_ascension(other.right_ascension),
-    declination(other.declination),
-    longitude_at_node(other.longitude_at_node)
+    _right_ascension(other._right_ascension),
+    _declination(other._declination),
+    _longitude_at_node(other._longitude_at_node)
 {
   update_orientation();
 }
@@ -263,15 +263,15 @@ CelestialReferenceFrame::make_copy(void) const
 void
 CelestialReferenceFrame::update_orientation(void)
 {
-  double inclination = M_PI / 2 - to_rad(declination);
-  double ascending_node = to_rad(right_ascension) + M_PI / 2;
+  double inclination = M_PI / 2 - to_rad(_declination);
+  double ascending_node = to_rad(_right_ascension) + M_PI / 2;
 
   LQuaterniond inclination_quat;
   inclination_quat.set_from_axis_angle_rad(inclination, LVector3d::unit_x());
   LQuaterniond ascending_node_quat;
   ascending_node_quat.set_from_axis_angle_rad(ascending_node, LVector3d::unit_z());
   LQuaterniond longitude_quat;
-  longitude_quat.set_from_axis_angle_rad(to_rad(longitude_at_node), LVector3d::unit_z());
+  longitude_quat.set_from_axis_angle_rad(to_rad(_longitude_at_node), LVector3d::unit_z());
   LQuaterniond equatorial_orientation;
   equatorial_orientation.set_from_axis_angle_rad(-to_rad(J2000_Obliquity), LVector3d::unit_x());
   orientation = longitude_quat * inclination_quat * ascending_node_quat * equatorial_orientation;
@@ -281,6 +281,45 @@ LQuaterniond
 CelestialReferenceFrame::get_orientation(void)
 {
   return orientation;
+}
+
+double
+CelestialReferenceFrame::get_right_ascension(void) const
+{
+  return _right_ascension;
+}
+
+void
+CelestialReferenceFrame::set_right_ascension(double ra)
+{
+  _right_ascension = ra;
+  update_orientation();
+}
+
+double
+CelestialReferenceFrame::get_declination(void) const
+{
+  return _declination;
+}
+
+void
+CelestialReferenceFrame::set_declination(double decl)
+{
+  _declination = decl;
+  update_orientation();
+}
+
+double
+CelestialReferenceFrame::get_longitude_at_node(void) const
+{
+  return _longitude_at_node;
+}
+
+void
+CelestialReferenceFrame::set_longitude_at_node(double lon)
+{
+  _longitude_at_node = lon;
+  update_orientation();
 }
 
 TypeHandle StellarAnchorReferenceFrame::_type_handle;

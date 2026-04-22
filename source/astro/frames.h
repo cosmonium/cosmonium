@@ -174,12 +174,22 @@ PUBLISHED:
 
   virtual LQuaterniond get_orientation(void);
 
-public:
-  double right_ascension;
-  double declination;
-  double longitude_at_node;
+  double get_right_ascension(void) const;
+  void set_right_ascension(double ra);
+  MAKE_PROPERTY(right_ascension, get_right_ascension, set_right_ascension);
+
+  double get_declination(void) const;
+  void set_declination(double decl);
+  MAKE_PROPERTY(declination, get_declination, set_declination);
+
+  double get_longitude_at_node(void) const;
+  void set_longitude_at_node(double lon);
+  MAKE_PROPERTY(longitude_at_node, get_longitude_at_node, set_longitude_at_node);
 
 protected:
+  double _right_ascension;
+  double _declination;
+  double _longitude_at_node;
   LQuaterniond orientation;
 
   MAKE_TYPE("CelestialReferenceFrame", AnchorReferenceFrame);
