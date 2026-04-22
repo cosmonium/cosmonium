@@ -18,7 +18,6 @@
 #
 
 
-from math import pi
 from panda3d.core import LPoint3d, LVector3d, LQuaterniond
 
 from ..astro import calc_orientation
@@ -151,11 +150,9 @@ class J2000EclipticReferenceFrame(AnchorReferenceFrame):
 
 
 class J2000EquatorialReferenceFrame(AnchorReferenceFrame):
-    _orientation = LQuaterniond()
-    _orientation.setFromAxisAngleRad(-units.J2000_Obliquity / 180.0 * pi, LVector3d.unitX())
 
     def get_orientation(self):
-        return self._orientation
+        return units.J2000_Orientation
 
 
 class RelativeReferenceFrame(ReferenceFrame):
@@ -202,7 +199,7 @@ class CelestialReferenceFrame(AnchorReferenceFrame):
         self.orientation = (
             longitude_quad
             * calc_orientation(self.right_ascension, self.declination, False)
-            * J2000EquatorialReferenceFrame().get_orientation()
+            * units.J2000_Orientation
         )
 
     def get_orientation(self):
