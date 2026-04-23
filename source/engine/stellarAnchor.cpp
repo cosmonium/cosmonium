@@ -20,6 +20,7 @@
 #include "stellarAnchor.h"
 #include "systemAnchor.h"
 #include "cameraAnchor.h"
+#include "frames_stellar.h"
 #include "orbits.h"
 #include "rotations.h"
 #include "anchorTraverser.h"

@@ -18,7 +18,7 @@
  */
 
 #include "wgccre.h"
-#include "frames.h"
+#include "frames_anchor.h"
 #include "math.h"
 
 #ifndef M_PI

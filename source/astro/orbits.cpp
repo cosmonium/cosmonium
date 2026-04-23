@@ -17,6 +17,7 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "frames_base.h"
 #include "orbits.h"
 #include "kepler.h"
 #include "astro.h"

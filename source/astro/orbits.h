@@ -25,7 +25,8 @@
 #include "luse.h"
 #include"type_utils.h"
 
-#include "frames.h"
+class ReferenceFrame;
+
 
 class OrbitBase : public TypedObject, public ReferenceCount
 {

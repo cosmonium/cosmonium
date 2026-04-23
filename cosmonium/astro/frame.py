@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,26 +35,58 @@
 #      z    =   -y
 
 try:
-    from cosmonium_engine import AnchorReferenceFrame
-    from cosmonium_engine import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
-    from cosmonium_engine import CelestialReferenceFrame, RelativeReferenceFrame
-    from cosmonium_engine import StellarAnchorReferenceFrame, OrbitReferenceFrame
-    from cosmonium_engine import EquatorialReferenceFrame, SynchroneReferenceFrame
-    from cosmonium_engine import J2000BarycentricEclipticReferenceFrame
-    from cosmonium_engine import J2000BarycentricEquatorialReferenceFrame
+    from cosmonium_engine import (
+        AnchorReferenceFrame,
+        CelestialReferenceFrame,
+        EquatorialReferenceFrame,
+        J2000BarycentricEclipticReferenceFrame,
+        J2000BarycentricEquatorialReferenceFrame,
+        J2000EclipticReferenceFrame,
+        J2000EquatorialReferenceFrame,
+        OrbitReferenceFrame,
+        RelativeReferenceFrame,
+        StellarAnchorReferenceFrame,
+        SynchroneReferenceFrame,
+    )
 except ImportError as e:
     print("WARNING: Could not load frames C implementation, fallback on python implementation")
     print("\t", e)
-    from .pyastro.frame import ReferenceFrame  # noqa: F401
-    from .pyastro.frame import AnchorReferenceFrame  # noqa: F401
-    from .pyastro.frame import J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame  # noqa: F401
-    from .pyastro.frame import CelestialReferenceFrame, RelativeReferenceFrame  # noqa: F401
-    from .pyastro.frame import StellarAnchorReferenceFrame, OrbitReferenceFrame  # noqa: F401
-    from .pyastro.frame import EquatorialReferenceFrame, SynchroneReferenceFrame  # noqa: F401
-    from .pyastro.frame import J2000BarycentricEclipticReferenceFrame  # noqa: F401
-    from .pyastro.frame import J2000BarycentricEquatorialReferenceFrame  # noqa: F401
-
-
+    from .pyastro.frames.anchors import (
+        AnchorReferenceFrame,
+        CelestialReferenceFrame,
+        J2000EclipticReferenceFrame,
+        J2000EquatorialReferenceFrame,
+    )
+    from .pyastro.frames.base import (
+        J2000BarycentricEclipticReferenceFrame,
+        J2000BarycentricEquatorialReferenceFrame,
+        ReferenceFrame,
+    )
+    from .pyastro.frames.relative import RelativeReferenceFrame
+    from .pyastro.frames.stellars import (
+        EquatorialReferenceFrame,
+        OrbitReferenceFrame,
+        StellarAnchorReferenceFrame,
+        SynchroneReferenceFrame,
+    )
 BodyReferenceFrames = (AnchorReferenceFrame, StellarAnchorReferenceFrame)
 
 AbsoluteReferenceFrame = J2000BarycentricEclipticReferenceFrame
+
+
+__all__ = [
+    'AbsoluteReferenceFrame',
+    'BodyReferenceFrames',
+    'AnchorReferenceFrame',
+    'CelestialReferenceFrame',
+    'EquatorialReferenceFrame',
+    'ReferenceFrame',
+    'J2000BarycentricEclipticReferenceFrame',
+    'J2000BarycentricEquatorialReferenceFrame',
+    'J2000EclipticReferenceFrame',
+    'J2000EquatorialReferenceFrame',
+    'OrbitReferenceFrame',
+    'RelativeReferenceFrame',
+    'StellarAnchorReferenceFrame',
+    'SynchroneReferenceFrame',
+]
