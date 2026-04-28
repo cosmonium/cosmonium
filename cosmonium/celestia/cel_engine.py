@@ -654,6 +654,8 @@ time_regex = re.compile(r'^(-?\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+(?:\.\d*)?)$')
 def time(command_name, sequence, base, parameters):
     """Parameters:
     float jd = 2451545.0
+    or
+    string utc
     Description:
     Set the time to the specified Julian day.
     """
@@ -664,7 +666,7 @@ def time(command_name, sequence, base, parameters):
         try:
             m = time_regex.match(utc)
             if m is None:
-                raise ValueError("no regex match")
+                raise ValueError()
             jd = units.values_to_time(
                 int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), float(m.group(6))
             )
