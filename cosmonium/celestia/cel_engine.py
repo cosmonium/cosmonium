@@ -663,6 +663,8 @@ def time(command_name, sequence, base, parameters):
         utc = parameters.get('utc', '')
         try:
             m = time_regex.match(utc)
+            if m is None:
+                raise ValueError("no regex match")
             jd = units.values_to_time(
                 int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))
             )
