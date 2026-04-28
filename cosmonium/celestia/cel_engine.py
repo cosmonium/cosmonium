@@ -586,19 +586,19 @@ def setorientation(command_name, sequence, base, parameters):
 
 def setposition(command_name, sequence, base, parameters):
     """Parameters:
-    vector position = [ 0 0 0 ]
-    vector position = [ 0 0 0 ]
+    vector base = [ 0 0 0 ]
+    vector offset = [ 0 0 0 ]
     or
     string x, y, z
     Description:
     """
     if 'base' in parameters:
-        base = parameters.get('base', [0, 0, 0])
-        offset = parameters.get('offset', [0, 0, 0])
-        base = LVector3d(base[0], -base[2], base[1]) * units.Ly
-        offset = LVector3d(offset[0], -offset[2], offset[1])
-        # TODO: use glogal and local position
-        position = base + offset
+        base_pos = parameters.get('base', [0, 0, 0])
+        offset_pos = parameters.get('offset', [0, 0, 0])
+        base_pos = LVector3d(base_pos[0], -base_pos[2], base_pos[1]) * units.Ly
+        offset_pos = LVector3d(offset_pos[0], -offset_pos[2], offset_pos[1])
+        # TODO: use global and local position
+        position = base_pos + offset_pos
     else:
         x = parameters.get('x')
         y = parameters.get('y')
