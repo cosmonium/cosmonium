@@ -44,7 +44,7 @@ def create_frame(coordsys, ref_name):
     coordsys = coordsys.lower()
     if coordsys == "observer":
         return None
-    elif coordsys == "bodyfixed" or "geographic":
+    elif coordsys in ("bodyfixed", "geographic"):
         return SynchroneReferenceFrame(ref)
     elif coordsys == "equatorial":
         return J2000EquatorialReferenceFrame(ref)
