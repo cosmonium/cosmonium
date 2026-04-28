@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #
 
 
+import logging
 import os
 import sys
 
@@ -26,6 +27,8 @@ from ..textures import InvalidTextureSource
 
 from .textures.source import CelestiaVirtualTextureSource
 from . import config_parser
+
+logger = logging.getLogger('ctx')
 
 
 def instanciate_vt(filename, context, item_name, item_data):
@@ -47,9 +50,9 @@ def instanciate_vt(filename, context, item_name, item_data):
         elif key == 'TilePrefix':
             tile_prefix = value
         else:
-            print("Key of VirtualTexture", key, "not supported")
+            logger.warning("Key of VirtualTexture '%s' not supported", key)
     if base_split != 0:
-        print("WARNING: BaseSplit different than 0 not yet supported")
+        logger.warning("BaseSplit different than 0 not yet supported")
     path = os.path.join(os.path.dirname(filename), image_directory)
     vt = CelestiaVirtualTextureSource(root=path, ext=tile_type, size=tile_size, prefix=tile_prefix, context=context)
     return vt
@@ -57,30 +60,30 @@ def instanciate_vt(filename, context, item_name, item_data):
 
 def instanciate_item(filename, context, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
-        print("Disposition", disposition, "not supported")
+        logger.warning("Disposition '%s' not supported", disposition)
         return
     if item_type == 'VirtualTexture':
         return instanciate_vt(filename, context, item_name, item_data)
     else:
-        print("Type", item_type, "not supported")
+        logger.warning("Type '%s' not supported", item_type)
         return
 
 
 def parse_file(filename, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is None:
-        print("Can not find file", filename)
+        logger.warning("Can not find file: %s", filename)
         return InvalidTextureSource()
     try:
         data = open(filepath).read()
     except IOError:
-        print("Could not read file", filepath)
+        logger.error("Could not read file: %s", filepath)
         return InvalidTextureSource()
     items = config_parser.parse(data)
     if items and len(items) == 1:
         return instanciate_item(filepath, context, *items[0])
     else:
-        print("Invalid file", filepath)
+        logger.error("Invalid file: %s", filepath)
         return InvalidTextureSource()
 
 

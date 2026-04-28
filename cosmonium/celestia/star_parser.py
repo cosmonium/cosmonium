@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 import builtins
 import io
+import logging
 from panda3d.core import LVector3d
 import re
 import struct
@@ -39,6 +40,8 @@ from ..objects.star import Star
 from ..objects.universe import Universe
 
 from .bodies import celestiaStarSurfaceFactory
+
+logger = logging.getLogger('celstars')
 
 
 def parse_line(line, names, universe):
@@ -66,19 +69,19 @@ def parse_line(line, names, universe):
         )
         universe.add_child_fast(star)
     else:
-        print("Malformed line", data)
+        logger.warning("Malformed line: %s", data)
 
 
 def do_load_text(filepath, names, universe):
     start = time()
-    print("Loading", filepath)
+    logger.info("Loading %s", filepath)
     builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath)
     data.readline()
     for line in data.readlines():
         parse_line(line, names, universe)
     end = time()
-    print("Load time:", end - start)
+    logger.debug("Load time: %.3fs", end - start)
 
 
 def load_text(filename, names, universe, context=defaultDirContext):
@@ -86,24 +89,24 @@ def load_text(filename, names, universe, context=defaultDirContext):
     if filepath is not None:
         return do_load_text(filepath, names, universe)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
         return {}
 
 
 def do_load_bin(filepath, names, universe):
     start = time()
-    print("Loading", filepath)
+    logger.info("Loading %s", filepath)
     builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath, 'rb')
     field = data.read(8 + 2 + 4)
     header, version, count = struct.unpack("<8shi", field)
     if not header == b"CELSTARS":
-        print("Invalid header", header)
+        logger.error("Invalid header: %s", header)
         return
     if not version == 0x0100:
-        print("Invalid version", version)
+        logger.error("Invalid version: 0x%04X", version)
         return
-    print("Found", count, "stars")
+    logger.debug("Found %d stars", count)
     fmt = "<ifffhh"
     size = struct.calcsize(fmt)
     for i in range(count):
@@ -128,7 +131,7 @@ def do_load_bin(filepath, names, universe):
         )
         universe.add_child_fast(star)
     end = time()
-    print("Load time:", end - start)
+    logger.debug("Load time: %.3fs", end - start)
 
 
 def load_bin(filename, names, universe, context=defaultDirContext):
@@ -136,7 +139,7 @@ def load_bin(filename, names, universe, context=defaultDirContext):
     if filepath is not None:
         return do_load_bin(filepath, names, universe)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
         return {}
 
 
@@ -150,7 +153,7 @@ def parse_line_name(line):
 
 def do_load_names(filepath):
     start = time()
-    print("Loading", filepath)
+    logger.info("Loading %s", filepath)
     builtins.base.splash.set_text("Loading %s" % filepath)
     names = {}
     data = io.open(filepath, encoding='latin-1')
@@ -158,7 +161,7 @@ def do_load_names(filepath):
         catNo, aliases = parse_line_name(line)
         names[catNo] = list(map(lambda x: bayer.canonize_name(x), aliases))
     end = time()
-    print("Load time:", end - start)
+    logger.debug("Load time: %.3fs", end - start)
     return names
 
 
@@ -167,7 +170,7 @@ def load_names(filename, context=defaultDirContext):
     if filepath is not None:
         return do_load_names(filepath)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
         return {}
 
 

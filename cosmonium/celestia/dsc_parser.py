@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 import builtins
 import io
+import logging
 from panda3d.core import LVector3d
 import sys
 
@@ -34,6 +35,8 @@ from ..objects.galaxies import Galaxy
 from ..objects.universe import Universe
 
 from . import config_parser
+
+logger = logging.getLogger('dsc')
 
 
 def names_list(name):
@@ -77,7 +80,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
         elif key == 'InfoURL':
             pass  # = value
         else:
-            print("Key of", item_type, key, "not supported")
+            logger.warning("Key of %s '%s' not supported", item_type, key)
     position = calc_position(ra, decl, distance)
     frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
     orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
@@ -91,15 +94,15 @@ def instanciate_body(universe, item_type, item_name, item_data):
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
-        print("Disposition", disposition, "not supported")
+        logger.warning("Disposition '%s' not supported", disposition)
         return
     if item_parent:
-        print("Parent", item_parent, "not supported")
+        logger.warning("Parent '%s' not supported in DSC files", item_parent)
     if item_type == 'Galaxy':
         body = instanciate_body(universe, item_type, item_name, item_data)
         universe.add_child_fast(body)
     else:
-        print("Type", item_type, "not supported")
+        logger.warning("Type '%s' not supported", item_type)
         return
 
 
@@ -111,14 +114,14 @@ def instanciate(items_list, universe):
 def parse_file(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is not None:
-        print("Loading", filepath)
+        logger.info("Loading %s", filepath)
         builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:
             instanciate(items, universe)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
 
 
 def load(dsc, universe, context=defaultDirContext):

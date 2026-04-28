@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #
 
 
+import logging
 from math import log
 from panda3d.core import LVector3d
 
@@ -25,6 +26,8 @@ from ..entities.datasource import DataSource
 from ..entities.entity import Entity
 from ..scattering.scattering import ScatteringBase
 from ..shaders.scattering import AtmosphericScattering
+
+logger = logging.getLogger('celestia-scattering')
 
 
 class CelestiaScattering(ScatteringBase):
@@ -320,7 +323,7 @@ class CelestiaScatteringDataSource(DataSource):
     def update(self, shape, instance, camera_pos, camera_rot):
         body = self.parameters.body
         if body.lights is None or len(body.lights.lights) == 0:
-            print("No light source for scattering")
+            logger.warning("No light source for scattering")
             return
         light_source = body.lights.lights[0].source
         body_radius = self.parameters.body_radius

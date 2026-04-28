@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 import builtins
 import io
+import logging
 from ply import lex, yacc
 from ply.lex import Token
 import sys
@@ -29,6 +30,8 @@ from ..astro.orbits import FixedPosition
 from ..astro import bayer
 from ..components.annotations.asterism import NamedAsterism
 from ..dircontext import defaultDirContext
+
+logger = logging.getLogger('asterisms')
 
 
 def Rule(r):
@@ -71,7 +74,7 @@ def t_FLOAT(t):
     try:
         t.value = float(t.value)
     except ValueError:
-        print("Float value too large %d", t.value)
+        logger.warning("Float value too large %s", t.value)
         t.value = 0
     return t
 
@@ -81,7 +84,7 @@ def t_INT(t):
     try:
         t.value = int(t.value)
     except ValueError:
-        print("Integer value too large %d", t.value)
+        logger.warning("Integer value too large %s", t.value)
         t.value = 0
     return t
 
@@ -92,7 +95,7 @@ def t_newline(t):
 
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+    logger.warning("Illegal character '%s'", t.value[0])
     t.lexer.skip(1)
 
 
@@ -171,9 +174,9 @@ def p_empty(p):
 
 def p_error(p):
     if p:
-        print("Syntax error at token", p.type, "line", p.lineno, ":", p.value)
+        logger.error("Syntax error at token %s line %d: %s", p.type, p.lineno, p.value)
     else:
-        print("SYNTAX ERROR AT EOF")
+        logger.error("SYNTAX ERROR AT EOF")
 
 
 parser = yacc.yacc(tabmodule='asterism_parsetab', write_tables=False, debug=False)
@@ -198,7 +201,7 @@ def create_asterism(universe, name, text_segments):
                     star = star.parent
                 segment.append(star.anchor)
             else:
-                print("Could not find star", star_name)
+                logger.warning("Could not find star '%s'", star_name)
         segments.append(segment)
     asterism = NamedAsterism(name)
     asterism.set_segments_list(segments)
@@ -208,14 +211,14 @@ def create_asterism(universe, name, text_segments):
 def load(filename, universe, context=defaultDirContext, debug=0):
     filepath = context.find_data(filename)
     if filepath is not None:
-        print("Loading", filepath)
+        logger.info("Loading %s", filepath)
         builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='iso8859-1').read()
         asterisms = parse(data, debug)
         for asterism in asterisms:
             create_asterism(universe, asterism[0], asterism[1])
     else:
-        print("File not found", filepath)
+        logger.warning("File not found: %s", filename)
 
 
 if __name__ == '__main__':

@@ -20,6 +20,7 @@
 
 import builtins
 import io
+import logging
 import sys
 from time import time
 
@@ -41,6 +42,8 @@ from .bodies import celestiaStarSurfaceFactory
 from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit
 from .celestia_utils import instanciate_uniform_rotation, instanciate_custom_rotation
 from . import config_parser
+
+logger = logging.getLogger('stc')
 
 
 def names_list(name):
@@ -81,7 +84,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         parent = objectsDB.get(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:
-            print("Could not find parent", parent)
+            logger.warning("Could not find parent barycenter: %s", parent_name)
             return
         parent = parent.get_or_create_system()
     if parent is None:
@@ -128,7 +131,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         elif key == 'InfoURL':
             pass  # = value
         else:
-            print("Key of Star", key, "not supported")
+            logger.warning("Key of Star '%s' not supported", key)
     if has_barycenter:
         parent_anchor.update(0, 0)
         frame = J2000EclipticReferenceFrame(parent_anchor)
@@ -143,7 +146,9 @@ def instanciate_star(universe, item_name, item_alias, item_data):
         distance = orbit.get_absolute_reference_point_at(0).length()
     if app_magnitude is not None and distance is not None:
         if distance <= 0:
-            print(names, distance, parent.anchor.body.get_names())
+            logger.warning(
+                "Star %s has non-positive distance %s (parent: %s)", names, distance, parent.anchor.body.get_names()
+            )
             return None
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     if texture is not None:
@@ -196,7 +201,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         parent = objectsDB.get(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:
-            print("Could not find parent", parent)
+            logger.warning("Could not find parent barycenter: %s", parent_name)
             return
         parent = parent.get_or_create_system()
     if parent is None:
@@ -221,7 +226,7 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
         elif key == 'InfoURL':
             pass  # = value
         else:
-            print("Key of Barycenter", key, "not supported")
+            logger.warning("Key of Barycenter '%s' not supported", key)
     # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
     # If so, merge its names into the new star and replace it.
     existing_star = objectsDB.get(names[0]) if names else None
@@ -256,14 +261,14 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
-        print("Disposition", disposition, "not supported")
+        logger.warning("Disposition '%s' not supported", disposition)
         return
     if item_type == 'Body':
         instanciate_star(universe, item_name, item_alias, item_data)
     elif item_type == 'Barycenter':
         instanciate_barycenter(universe, item_name, item_alias, item_data)
     else:
-        print("Type", item_type, "not supported")
+        logger.warning("Type '%s' not supported", item_type)
         return
 
 
@@ -276,16 +281,16 @@ def parse_file(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is not None:
         start = time()
-        print("Loading", filepath)
+        logger.info("Loading %s", filepath)
         builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:
             instanciate(items, universe)
         end = time()
-        print("Load time:", end - start)
+        logger.debug("Load time: %.3fs", end - start)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
 
 
 def load(stc, universe):

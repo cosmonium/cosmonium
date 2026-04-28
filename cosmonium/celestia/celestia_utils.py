@@ -19,6 +19,7 @@
 
 
 from math import pi
+import logging
 
 from ..astro import bayer
 from ..astro import units
@@ -28,6 +29,8 @@ from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J200
 from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
 from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
 from ..catalogs import objectsDB
+
+logger = logging.getLogger('celestia')
 
 
 def names_list(name):
@@ -42,7 +45,7 @@ def body_path(parent):
 def find_body(path):
     body = objectsDB.get(path[0])
     if not body:
-        print("Body", path[0], "not found")
+        logger.warning("Body '%s' not found", path[0])
         return None
     if len(path) > 1:
         if not body.is_system() and body.anchor.get_system() is not None:
@@ -114,7 +117,7 @@ def instanciate_elliptical_orbit(data, global_coord):
         elif key == 'MeanLongitude':
             mean_longitude = value
         else:
-            print("Key of EllipticalOrbit", key, "not supported")
+            logger.warning("Key of EllipticalOrbit '%s' not supported", key)
     if pericenter_distance is None:
         if semi_major_axis is None:
             # TODO: raise error
@@ -168,9 +171,9 @@ def instanciate_frame(universe, data, parent_anchor, global_coord):
                 if frame_center is not None:
                     frame_center = frame_center.anchor
                 else:
-                    print(f"Frame center '{name}'not found")
+                    logger.warning("Frame center '%s' not found", name)
             else:
-                print(f"Frame parameter '{key}' not supported")
+                logger.warning("Frame parameter '%s' not supported", key)
     return frame_center, global_coord
 
 
@@ -185,7 +188,7 @@ def instanciate_reference_frame(universe, data, parent_anchor, global_coord):
             frame_type = J2000EclipticReferenceFrame
             frame_center, global_coord = instanciate_frame(universe, value, parent_anchor, global_coord)
         else:
-            print("Reference frame type", key, "not supported")
+            logger.warning("Reference frame type '%s' not supported", key)
     #     if frame_center:
     #         print("Found center", frame_center.get_name())
     return frame_type(frame_center), global_coord
@@ -233,7 +236,7 @@ def instanciate_uniform_rotation(data, parent_anchor, global_coord):
         elif key == 'MeridianAngle':
             meridian_angle = value
         else:
-            print("Key of UniformRotation", key, "not supported")
+            logger.warning("Key of UniformRotation '%s' not supported", key)
     flipped = period is not None and period < 0
     orientation = calc_orientation_from_incl_an(inclination * units.Deg, ascending_node * units.Deg, flipped)
     frame = J2000EquatorialReferenceFrame()

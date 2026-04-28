@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,9 +18,12 @@
 #
 
 
+import logging
 from ply import lex, yacc
 from ply.lex import Token
 import sys
+
+logger = logging.getLogger('catparser')
 
 
 def Rule(r):
@@ -63,7 +66,7 @@ def t_FLOAT(t):
     try:
         t.value = float(t.value)
     except ValueError:
-        print("Float value too large %d", t.value)
+        logger.warning("Float value too large %s", t.value)
         t.value = 0
     return t
 
@@ -73,7 +76,7 @@ def t_INT(t):
     try:
         t.value = int(t.value)
     except ValueError:
-        print("Integer value too large %d", t.value)
+        logger.warning("Integer value too large %s", t.value)
         t.value = 0
     return t
 
@@ -84,7 +87,7 @@ def t_newline(t):
 
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+    logger.warning("Illegal character '%s'", t.value[0])
     t.lexer.skip(1)
 
 
@@ -315,9 +318,9 @@ def p_empty(p):
 
 def p_error(p):
     if p:
-        print("Syntax error at token", p.type, "line", p.lineno, ":", p.value)
+        logger.error("Syntax error at token %s line %d: %s", p.type, p.lineno, p.value)
     else:
-        print("SYNTAX ERROR AT EOF")
+        logger.error("Syntax error at EOF")
 
 
 parser = yacc.yacc(tabmodule='ssc_parsetab', write_tables=False, debug=False)

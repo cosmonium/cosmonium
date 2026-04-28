@@ -20,6 +20,7 @@
 
 import builtins
 import io
+import logging
 from math import pi
 from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
 from time import time
@@ -52,13 +53,15 @@ from .celestia_utils import instanciate_reference_frame, names_list, body_path
 from .scattering import CelestiaScattering
 from .shaders import LunarLambertLightingModel
 
+logger = logging.getLogger('ssc')
+
 
 def get_color(value):
     if len(value) == 4:
         return LColor(*value)
     if len(value) == 3:
         return LColor(value[0], value[1], value[2], 1.0)
-    print("Invalid color", value)
+    logger.warning("Invalid color: %s", value)
     return None
 
 
@@ -116,7 +119,7 @@ def instanciate_atmosphere(data):
         elif key == 'Sunset':
             pass  # = value
         else:
-            print("Key of Atmosphere", key, "not supported")
+            logger.warning("Key of Atmosphere '%s' not supported", key)
     clouds_appearance.bake()
     if mie_phase_asymmetry != 0.0:
         scattering = CelestiaScattering(
@@ -153,7 +156,7 @@ def instanciate_rings(name, data, parent):
         elif key == 'Color':
             appearance.diffuseColor = get_color(value)
         else:
-            print("Key of Ring", key, "not supported")
+            logger.warning("Key of Ring '%s' not supported", key)
     appearance.bake()
     rings_object = Rings(inner_radius, outer_radius, appearance=appearance, shader=RenderingShader())
     actual_parent = parent.primary or parent
@@ -302,7 +305,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'InfoURL':
             pass  # = value
         else:
-            print("Key of body", key, "not supported")
+            logger.warning("Key of body '%s' not supported", key)
     if orbit_frame is None and not custom_orbit:
         if is_planet:
             orbit_frame = J2000EclipticReferenceFrame(parent_anchor)
@@ -451,7 +454,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
             rotation = instanciate_custom_rotation(value, parent_anchor)
             custom_rotation = True
         else:
-            print("Key of ReferencePoint", key, "not supported")
+            logger.warning("Key of ReferencePoint '%s' not supported", key)
     if orbit_frame is None and not custom_orbit:
         if is_planet:
             orbit_frame = J2000EclipticReferenceFrame(parent_anchor)
@@ -487,7 +490,7 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
 def find_parent_system(path):
     body = objectsDB.get(path[0])
     if not body:
-        print("Body", path[0], "not found")
+        logger.warning("Body '%s' not found", path[0])
         return None
     body = body.get_or_create_system()
     if len(path) > 1:
@@ -501,10 +504,10 @@ def find_parent_system(path):
 
 def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
-        print("Disposition", disposition, "not supported")
+        logger.warning("Disposition '%s' not supported", disposition)
         return
     if item_type not in ['Body', 'ReferencePoint', 'AltSurface']:
-        print("Type", item_type, "not supported")
+        logger.warning("Type '%s' not supported", item_type)
         return
     if item_type == 'AltSurface':
         return
@@ -513,7 +516,7 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
     is_planet = len(path) == 1
     parent = find_parent_system(path)
     if not parent:
-        print("Parent", item_parent, "not found")
+        logger.warning("Parent '%s' not found", item_parent)
         return
     if parent.is_system() and parent.primary is not None:
         parent_anchor = parent.primary.anchor
@@ -535,16 +538,16 @@ def parse_file(filename, universe, context=defaultDirContext):
     filepath = context.find_data(filename)
     if filepath is not None:
         start = time()
-        print("Loading", filepath)
+        logger.info("Loading %s", filepath)
         builtins.base.splash.set_text("Loading %s" % filepath)
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:
             instanciate(items, universe)
         end = time()
-        print("Load time:", end - start)
+        logger.debug("Load time: %.3fs", end - start)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
 
 
 def load(config_parser, universe):

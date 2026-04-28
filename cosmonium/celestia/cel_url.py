@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 
 from panda3d.core import LQuaterniond, LVector3d
+import logging
 import re
 import sys
 from urllib import parse as urlparse
@@ -28,6 +29,8 @@ from ..appstate import AppState
 from ..astro import units
 
 from .bigfix import Bigfix
+
+logger = logging.getLogger('celurl')
 
 
 class CelUrl(object):
@@ -113,30 +116,30 @@ class CelUrl(object):
             parameters[entry[0]] = value
         version = parameters.get('ver', '1')
         if version not in ['2', '3']:
-            print("Unsupported cel version", version)
+            logger.warning("Unsupported cel version: %s", version)
             return False
         self.version = int(version)
         if result.scheme != 'cel':
-            print("Not a cel:// url")
+            logger.warning("Not a cel:// url")
             return False
         if result.netloc not in self.valid_modes:
-            print("Unsupported flight mode", result.netloc)
+            logger.warning("Unsupported flight mode: %s", result.netloc)
             return False
         self.flight_mode = result.netloc
         elements = result.path.split('/')
         if len(elements) == 0 or elements[0] != '':
-            print("Invalid path")
+            logger.warning("Invalid path")
             return False
         elements.pop(0)
         target = None
         if result.netloc not in self.modes_without_target:
             if len(elements) == 0:
-                print("Missing target")
+                logger.warning("Missing target")
                 return False
             target = elements.pop(0)
         self.target = target
         if len(elements) == 0:
-            print("Missing date/time")
+            logger.warning("Missing date/time")
             return False
         time = elements.pop(0)
         m = re.search(r'^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d\.\d{5})$', time)
@@ -150,17 +153,17 @@ class CelUrl(object):
             secs = float(secs)
             self.time = units.values_to_time(year, month, day, hours, mins, secs)
         else:
-            print("Invalid date/time field", time)
+            logger.warning("Invalid date/time field: %s", time)
             return False
         if len(elements) > 0:
-            print("Unsupported extra parameters", elements)
+            logger.warning("Unsupported extra path parameters: %s", elements)
             return False
         if parameters.get('dist') is not None:
-            print("Unsupported non absolute reference", elements)
+            logger.warning("Unsupported non absolute reference: dist=%s", parameters.get('dist'))
             return False
         (x, y, z) = (parameters.get('x'), parameters.get('y'), parameters.get('z'))
         if x is None or y is None or z is None:
-            print("Missing position")
+            logger.warning("Missing position")
             return False
         x = Bigfix.bigfix_to_float(x)
         y = Bigfix.bigfix_to_float(y)
@@ -168,7 +171,7 @@ class CelUrl(object):
         self.position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
         (ox, oy, oz, ow) = (parameters.get('ox'), parameters.get('oy'), parameters.get('oz'), parameters.get('ow'))
         if ox is None or oy is None or oz is None or ow is None:
-            print("Missing orientation")
+            logger.warning("Missing orientation")
             return False
         ox = float(ox)
         oy = float(oy)
@@ -212,17 +215,17 @@ class CelUrl(object):
         if self.target is not None:
             target = engine.universe.find_by_path(self.target, separator=':')
             if target is None:
-                print("Could not find", self.target)
+                logger.warning("Could not find target: %s", self.target)
                 return None
         if self.select is not None:
             select = engine.universe.find_by_path(self.select, separator=':')
             if select is None:
-                print("Could not find", self.select)
+                logger.warning("Could not find selected object: %s", self.select)
                 return None
         if self.track is not None:
             track = engine.universe.find_by_path(self.track, separator=':')
             if track is None:
-                print("Could not find", self.track)
+                logger.warning("Could not find tracked object: %s", self.track)
                 return None
         state = AppState()
         if self.flight_mode == 'Follow':
@@ -230,9 +233,9 @@ class CelUrl(object):
         elif self.flight_mode == 'SyncOrbit':
             state.sync = target
         elif self.flight_mode == 'Chase':
-            print('Chase is not supported yet')
+            logger.warning("Chase flight mode is not supported yet")
         elif self.flight_mode == 'PhaseLock':
-            print('PhaseLock is not supported yet')
+            logger.warning("PhaseLock flight mode is not supported yet")
         state.track = track
         state.selected = select
         state.time_full = self.time

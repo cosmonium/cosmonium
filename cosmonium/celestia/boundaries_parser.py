@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 
 import builtins
+import logging
 import re
 import sys
 from time import time
@@ -29,10 +30,12 @@ from ..components.annotations.boundary import Boundary
 from ..dircontext import defaultDirContext
 from ..objects.universe import Universe
 
+logger = logging.getLogger('boundaries')
+
 
 def do_load(filepath, universe):
     start = time()
-    print("Loading", filepath)
+    logger.info("Loading %s", filepath)
     builtins.base.splash.set_text("Loading %s" % filepath)
     data = open(filepath)
     prev_const = None
@@ -50,9 +53,9 @@ def do_load(filepath, universe):
             position = InfinitePosition(float(ra) * units.HourAngle, declination=float(decl) * units.Deg)
             points.append(position)
         else:
-            print("Malformed line", data)
+            logger.warning("Malformed line: %s", data)
     end = time()
-    print("Load time:", end - start)
+    logger.debug("Load time: %.3fs", end - start)
 
 
 def load(filename, universe, context=defaultDirContext):
@@ -60,7 +63,7 @@ def load(filename, universe, context=defaultDirContext):
     if filepath is not None:
         do_load(filepath, universe)
     else:
-        print("File not found", filename)
+        logger.warning("File not found: %s", filename)
 
 
 if __name__ == '__main__':

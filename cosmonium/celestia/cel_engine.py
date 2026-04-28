@@ -19,6 +19,7 @@
 
 
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
+import logging
 from math import pi
 from panda3d.core import LVector3d, LQuaterniond
 import re
@@ -32,6 +33,8 @@ from .. import settings
 
 from .bigfix import Bigfix
 from .celestia_utils import body_path, find_body
+
+logger = logging.getLogger('cel')
 
 
 def create_frame(coordsys, ref_name):
@@ -65,7 +68,7 @@ def ignore(command_name, sequence, base, parameters):
 
 
 def not_implemented(command_name, sequence, base, parameters):
-    print("Command not implemented", command_name)
+    logger.warning("Command not implemented: %s", command_name)
 
 
 def cancel(command_name, sequence, base, parameters):
@@ -416,7 +419,7 @@ def do_renderflags(base, set_flags, clear_flags):
         elif name == "ecliptic":
             pass
         else:
-            print("Setting", name, 'unknown')
+            logger.warning("Render setting '%s' unknown", name)
 
     for setting in set_flags:
         apply_setting(setting, True)
@@ -481,7 +484,7 @@ def select(command_name, sequence, base, parameters):
     if body:
         sequence.append(Func(base.select_body, body))
     else:
-        print(f"Path '{path_name}' not found")
+        logger.warning("Path '%s' not found", path_name)
 
 
 def set_cmd(command_name, sequence, base, parameters):
@@ -511,21 +514,21 @@ def set_cmd(command_name, sequence, base, parameters):
         if nav is not None:
             sequence.append(Func(base.set_nav, nav))
         else:
-            print("ERROR: Navigation mode '{}' unknown".format(nav_name))
+            logger.error("Navigation mode '%s' unknown", nav_name)
     elif name == 'ship':
         ship_name = parameters.get('value', '')
         ship = base.get_ship(ship_name)
         if ship is not None:
             sequence.append(Func(base.set_ship, ship))
         else:
-            print("ERROR: Ship '{}' unknown".format(ship_name))
+            logger.error("Ship '%s' unknown", ship_name)
     elif name == 'camera':
         camera_name = parameters.get('value', '')
         camera_controller = base.get_camera_controller(camera_name)
         if camera_controller is not None:
             sequence.append(Func(base.set_camera_controller, camera_controller))
         else:
-            print("ERROR: Camera mode '{}' unknown".format(camera_name))
+            logger.error("Camera mode '%s' unknown", camera_name)
     else:
         value = float(parameters.get('value', 0.0))
         if name == 'fov':
@@ -533,7 +536,7 @@ def set_cmd(command_name, sequence, base, parameters):
         elif name == "ambientlightlevel":
             sequence.append(Func(base.set_ambient, value))
         else:
-            print("Parameter", name, "not supported")
+            logger.warning("Parameter '%s' not supported", name)
 
 
 def setambientlight(command_name, sequence, base, parameters):
@@ -671,7 +674,7 @@ def time(command_name, sequence, base, parameters):
                 int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), float(m.group(6))
             )
         except ValueError:
-            print("ERROR: Invalid time '{}'".format(utc))
+            logger.error("Invalid time '%s'", utc)
             return
     else:
         jd = 2451545.0
@@ -774,6 +777,6 @@ def build_sequence(base, script):
         if command_name in commands:
             commands[command_name](command_name, sequence, base, parameters)
         else:
-            print("Unknown command", command_name)
+            logger.warning("Unknown command: %s", command_name)
     sequence.append(Func(done, base))
     return sequence
