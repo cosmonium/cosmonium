@@ -93,7 +93,7 @@ def instanciate_elliptical_orbit(data, global_coord):
     for key, value in data.items():
         if key == 'SemiMajorAxis':
             semi_major_axis = value
-        elif key == '':
+        elif key == 'PericenterDistance':
             pericenter_distance = value
         elif key == 'Period':
             period = value
