@@ -573,7 +573,7 @@ def setorientation(command_name, sequence, base, parameters):
     """
     if 'angle' in parameters:
         angle = float(parameters.get('angle', '0.0'))
-        axis = float(parameters.get('axis', [0, 0, 0]))
+        axis = parameters.get('axis', [0, 0, 0])
         orientation = quaternion_from_axis_angle(angle, axis)
     else:
         ox = parameters.get('ox', 0.0)
