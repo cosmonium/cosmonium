@@ -666,7 +666,7 @@ def time(command_name, sequence, base, parameters):
             if m is None:
                 raise ValueError("no regex match")
             jd = units.values_to_time(
-                int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))
+                int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), float(m.group(6))
             )
         except ValueError:
             print("ERROR: Invalid time '{}'".format(utc))
