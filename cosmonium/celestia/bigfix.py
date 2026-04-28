@@ -144,14 +144,18 @@ class Bigfix:
 
             hi = (w3 << 32) | w2
             lo = (w1 << 32) | w0
+        else:
+            # Value overflows the 64.64 fixed-point range; clamp to INT64_MAX
+            hi = cls.INT64_MAX
+            lo = 0xFFFFFFFFFFFFFFFF
 
         if isNegative:
             # For a twos-complement number, -n = ~n + 1
             hi = (~hi) & 0xFFFFFFFFFFFFFFFF
             lo = (~lo) & 0xFFFFFFFFFFFFFFFF
-            lo += 1
+            lo = (lo + 1) & 0xFFFFFFFFFFFFFFFF
             if lo == 0:
-                hi += 1
+                hi = (hi + 1) & 0xFFFFFFFFFFFFFFFF
 
         n = [0, 0, 0, 0, 0, 0, 0, 0]
         n[0] = lo & 0xFFFF
