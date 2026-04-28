@@ -437,11 +437,11 @@ def instanciate_reference_point(universe, names, is_planet, data, parent_anchor)
             rotation_ascending_node = value
         elif key == 'OrbitFrame':
             orbit_frame, orbit_global_coord = instanciate_reference_frame(
-                universe, value, orbit_global_coord, parent_anchor
+                universe, value, parent_anchor, orbit_global_coord
             )
         elif key == 'BodyFrame':
             body_frame, rotation_global_coord = instanciate_reference_frame(
-                universe, value, rotation_global_coord, parent_anchor
+                universe, value, parent_anchor, rotation_global_coord
             )
         elif key == 'UniformRotation':
             rotation = instanciate_uniform_rotation(value, parent_anchor, rotation_global_coord)
