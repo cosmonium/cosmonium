@@ -137,4 +137,4 @@ class DataSourcesHandler(DataSource):
 
     def clear(self, shape, instance):
         for source in self.sources:
-            source.clear(shape, shape.instance)
+            source.clear(shape, instance)
