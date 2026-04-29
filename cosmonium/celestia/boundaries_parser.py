@@ -47,7 +47,7 @@ def do_load(filepath, universe):
     prev_const = None
     points = []
     for line in data.readlines():
-        data = re.split(' +', line.rstrip('\r\n').lstrip((' ')))
+        data = re.split(r'\s+', line.rstrip('\r\n').lstrip(' '))
         if len(data) == 4:
             (ra, decl, const, ignore) = data
             if const != prev_const and prev_const is not None:
