@@ -17,6 +17,12 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Parser for Celestia constellation boundary data files.
+
+Reads a whitespace-delimited boundary file and creates :class:`~Boundary`
+objects for each constellation.
+"""
+
 
 import builtins
 import logging

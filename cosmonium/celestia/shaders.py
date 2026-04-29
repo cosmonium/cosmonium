@@ -18,6 +18,8 @@
 #
 
 
+"""Celestia's "Lunar Lambert" lighting model, implemented as a shader component."""
+
 from ..shaders.component import ShaderComponent
 from ..shaders.lighting.lambert import BRDFInterface
 

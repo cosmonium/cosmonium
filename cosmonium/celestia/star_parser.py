@@ -17,6 +17,13 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia star catalog loader.
+
+Supports both the plain-text format (one star per line) and the Celestia
+binary format (``CELSTARS`` header). Provides also loading of a companion
+names file (HIP numbers mapped to canonical names).
+"""
+
 
 import builtins
 import io
@@ -54,7 +61,7 @@ def parse_line(line, names, universe):
         else:
             name = "HIP %d" % catNo
         position = calc_position(float(ra) * units.Deg, float(decl) * units.Deg, float(distance) * units.Ly)
-        frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
+        frame = AbsoluteReferenceFrame()  # TODO: This should be J2000BarycentricEclipticReferenceFrame
         orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
         abs_magnitude = app_to_abs_mag(float(app_magnitude), float(distance) * units.KmPerLy)
         star = Star(

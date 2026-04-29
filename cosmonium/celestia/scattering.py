@@ -17,6 +17,11 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia-compatible atmospheric scattering implementation.
+
+Implements Rayleigh and Mie atmospheric scattering as used in Celestia.
+"""
+
 
 import logging
 from math import log

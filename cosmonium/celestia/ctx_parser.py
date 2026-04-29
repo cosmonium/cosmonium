@@ -17,6 +17,11 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Virtual texture context (.ctx) file parser.
+
+Parses Celestia ``.ctx`` virtual-texture configuration files and returns a
+:class:`~CelestiaVirtualTextureSource`.
+"""
 
 import logging
 import os

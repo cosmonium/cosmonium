@@ -17,6 +17,12 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Parser and encoder for Celestia ``cel://`` URLs.
+
+A ``cel://`` URL encodes the complete application state (camera position and
+orientation, selected/tracked objects, render flags, simulation time, ...) as a
+URL that can be shared or stored and later reloaded to restore that exact state.
+"""
 
 from panda3d.core import LQuaterniond, LVector3d
 import logging

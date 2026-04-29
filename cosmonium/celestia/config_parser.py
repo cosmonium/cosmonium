@@ -17,6 +17,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Generic PLY-based parser for Celestia catalog configuration files.
+
+Handles the shared grammar used by SSC, STC and DSC files.
+"""
 
 import logging
 from ply import lex, yacc

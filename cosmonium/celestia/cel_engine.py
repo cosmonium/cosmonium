@@ -17,6 +17,17 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia script command executor.
+
+Translates Celestia script commands (as parsed by :mod:`cel_parser`)
+into Panda3D :class:`Sequence` actions that are executed against the running
+engine (``base``).
+
+The main entry-point is :func:`build_sequence` which accepts the list of
+``[command_name, parameters_dict]`` pairs returned by the parser and returns
+a :class:`Sequence` ready to be started.
+"""
+
 
 from direct.interval.IntervalGlobal import Sequence, Func, Wait
 import logging

@@ -17,6 +17,12 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Deep-Sky Catalog (.dsc) file parser.
+
+Parses Celestia DSC files and instantiates :class:`~Galaxy` objects and
+registers them in the universe. Other DSC objects than galaxies are not supported yet.
+"""
+
 
 import builtins
 import io
@@ -82,7 +88,7 @@ def instanciate_body(universe, item_type, item_name, item_data):
         else:
             logger.warning("Key of %s '%s' not supported", item_type, key)
     position = calc_position(ra, decl, distance)
-    frame = AbsoluteReferenceFrame()  # TDODO: This should be J2000BarycentricEclipticReferenceFrame
+    frame = AbsoluteReferenceFrame()  # TODO: This should be J2000BarycentricEclipticReferenceFrame
     orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
     rot = quaternion_from_axis_angle(axis, angle, units.Deg)
     rotation = FixedRotation(rot, J2000EquatorialReferenceFrame())

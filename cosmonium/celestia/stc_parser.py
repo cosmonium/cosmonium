@@ -17,6 +17,13 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia Star Catalog (.stc) file parser.
+
+Parses Celestia STC files and instantiates :class:`~Star` and
+:class:`~Barycenter` objects, merging them with any stars that
+were already loaded from the star catalog.
+"""
+
 
 import builtins
 import io

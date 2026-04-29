@@ -17,6 +17,13 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Utility functions shared across Celestia data-file parsers.
+
+Provides factory functions for building orbits, rotations and reference
+frames from raw data dictionaries produced by the PLY-based parsers, as
+well as path-resolution helpers for looking up bodies in the catalog.
+"""
+
 
 from math import pi
 import logging

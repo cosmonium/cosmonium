@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,17 @@
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
+
+"""128-bit fixed-point (64.64) codec used in Celestia ``cel://`` URLs.
+
+The :class:`Bigfix` class provides two class methods:
+
+* :meth:`~Bigfix.bigfix_to_float` – decode a base64-like encoded bigfix
+  string (as found in ``x``/``y``/``z`` URL query parameters) to a Python
+  ``float``.
+* :meth:`~Bigfix.float_to_bigfix` – encode a Python ``float`` back to the
+  bigfix string representation.
+"""
 
 
 from math import floor

@@ -17,6 +17,11 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""PLY-based parser for Celestia script (.cel) files.
+
+Parses a Celestia script into a list of ``[command_name, parameters_dict]``
+pairs suitable for consumption by :mod:`cel_engine`.
+"""
 
 import io
 import logging

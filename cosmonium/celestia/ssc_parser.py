@@ -17,6 +17,11 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Celestia Solar System Catalog (.ssc) file parser.
+
+Parses Celestia SSC files and instantiates objects and inserts them into the universe.
+"""
+
 
 import builtins
 import io

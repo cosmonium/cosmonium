@@ -17,6 +17,11 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+"""Parser for Celestia asterism data files.
+
+Builds :class:`~NamedAsterism` objects from the PLY-parsed token stream and
+registers them in the universe.
+"""
 
 import builtins
 import io
