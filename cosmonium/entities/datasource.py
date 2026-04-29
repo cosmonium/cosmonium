@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,13 +71,11 @@ class DataSourcesHandler(DataSource):
         self.sources = []
 
     def get_source(self, name):
-        source = None
         for source in self.sources:
             if source.name == name:
-                break
-        else:
-            print(f"Source {name} not found")
-        return source
+                return source
+        print(f"Source {name} not found")
+        return None
 
     def add_source(self, source):
         if source is not None:
