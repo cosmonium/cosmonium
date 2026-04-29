@@ -31,24 +31,25 @@ import logging
 import sys
 from time import time
 
-from ..astro.astro import calc_position
+from ..astro import bayer, units
+from ..astro.astro import app_to_abs_mag, calc_position
+from ..astro.frame import J2000BarycentricEclipticReferenceFrame, J2000EclipticReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
-from ..astro.frame import J2000BarycentricEclipticReferenceFrame, J2000EclipticReferenceFrame
-from ..astro.astro import app_to_abs_mag
-from ..astro import bayer
-from ..astro import units
 from ..catalogs import objectsDB
 from ..dircontext import defaultDirContext
 from ..objects.star import Star
 from ..objects.surface_factory import StarTexSurfaceFactory
-from ..objects.universe import Universe
 from ..objects.systems import Barycenter
-
-from .bodies import celestiaStarSurfaceFactory
-from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit
-from .celestia_utils import instanciate_uniform_rotation, instanciate_custom_rotation
+from ..objects.universe import Universe
 from . import config_parser
+from .bodies import celestiaStarSurfaceFactory
+from .celestia_utils import (
+    instanciate_custom_orbit,
+    instanciate_custom_rotation,
+    instanciate_elliptical_orbit,
+    instanciate_uniform_rotation,
+)
 
 logger = logging.getLogger('stc')
 

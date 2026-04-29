@@ -24,16 +24,16 @@ orientation, selected/tracked objects, render flags, simulation time, ...) as a
 URL that can be shared or stored and later reloaded to restore that exact state.
 """
 
-from panda3d.core import LQuaterniond, LVector3d
 import logging
 import re
 import sys
 from urllib import parse as urlparse
 from urllib import parse as urlquote
 
+from panda3d.core import LQuaterniond, LVector3d
+
 from ..appstate import AppState
 from ..astro import units
-
 from .bigfix import Bigfix
 
 logger = logging.getLogger('celurl')

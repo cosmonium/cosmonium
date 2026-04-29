@@ -30,8 +30,8 @@ import re
 import sys
 from time import time
 
-from ..astro.projection import InfinitePosition
 from ..astro import units
+from ..astro.projection import InfinitePosition
 from ..components.annotations.boundary import Boundary
 from ..dircontext import defaultDirContext
 from ..objects.universe import Universe

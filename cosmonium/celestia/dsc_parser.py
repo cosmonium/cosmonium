@@ -27,19 +27,19 @@ registers them in the universe. Other DSC objects than galaxies are not supporte
 import builtins
 import io
 import logging
-from panda3d.core import LVector3d
 import sys
 
+from panda3d.core import LVector3d
+
+from ..astro import units
 from ..astro.astro import app_to_abs_mag, calc_position
-from ..astro.frame import J2000EquatorialReferenceFrame, AbsoluteReferenceFrame
+from ..astro.frame import AbsoluteReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
-from ..astro import units
 from ..dircontext import defaultDirContext
 from ..mathutil.quaternion import quaternion_from_axis_angle
 from ..objects.galaxies import Galaxy
 from ..objects.universe import Universe
-
 from . import config_parser
 
 logger = logging.getLogger('dsc')

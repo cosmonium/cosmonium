@@ -29,9 +29,8 @@ import sys
 
 from ..dircontext import defaultDirContext
 from ..textures import InvalidTextureSource
-
-from .textures.source import CelestiaVirtualTextureSource
 from . import config_parser
+from .textures.source import CelestiaVirtualTextureSource
 
 logger = logging.getLogger('ctx')
 

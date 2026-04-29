@@ -25,9 +25,10 @@ pairs suitable for consumption by :mod:`cel_engine`.
 
 import io
 import logging
+import sys
+
 from ply import lex, yacc
 from ply.lex import Token
-import sys
 
 from ..dircontext import defaultDirContext
 

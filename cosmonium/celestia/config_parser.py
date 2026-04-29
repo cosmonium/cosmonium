@@ -23,9 +23,10 @@ Handles the shared grammar used by SSC, STC and DSC files.
 """
 
 import logging
+import sys
+
 from ply import lex, yacc
 from ply.lex import Token
-import sys
 
 logger = logging.getLogger('catparser')
 

@@ -25,16 +25,15 @@ well as path-resolution helpers for looking up bodies in the catalog.
 """
 
 
-from math import pi
 import logging
+from math import pi
 
-from ..astro import bayer
-from ..astro import units
+from ..astro import bayer, units
 from ..astro.astro import calc_orientation_from_incl_an
 from ..astro.elementsdb import orbit_elements_db, rotation_elements_db
 from ..astro.frame import BodyReferenceFrames, J2000EclipticReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition, EllipticalOrbit
-from ..astro.rotations import UnknownRotation, UniformRotation, SynchronousRotation
+from ..astro.rotations import SynchronousRotation, UniformRotation, UnknownRotation
 from ..catalogs import objectsDB
 
 logger = logging.getLogger('celestia')

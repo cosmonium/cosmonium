@@ -25,6 +25,7 @@ Implements Rayleigh and Mie atmospheric scattering as used in Celestia.
 
 import logging
 from math import log
+
 from panda3d.core import LVector3d
 
 from ..entities.datasource import DataSource

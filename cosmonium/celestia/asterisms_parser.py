@@ -26,13 +26,14 @@ registers them in the universe.
 import builtins
 import io
 import logging
-from ply import lex, yacc
-from ply.lex import Token
 import sys
 
-from ..catalogs import objectsDB
-from ..astro.orbits import FixedPosition
+from ply import lex, yacc
+from ply.lex import Token
+
 from ..astro import bayer
+from ..astro.orbits import FixedPosition
+from ..catalogs import objectsDB
 from ..components.annotations.asterism import NamedAsterism
 from ..dircontext import defaultDirContext
 

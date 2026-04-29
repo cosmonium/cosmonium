@@ -27,34 +27,41 @@ import builtins
 import io
 import logging
 from math import pi
-from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
 from time import time
 
+from panda3d.core import LColor, LPoint3d, LQuaterniond, LVector3d
+
 from ..appearances import Appearance
-from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
-from ..astro.rotations import FixedRotation, UniformRotation, SynchronousRotation
-from ..astro.astro import calc_orientation_from_incl_an
 from ..astro import units
-from ..astro.frame import J2000EclipticReferenceFrame, EquatorialReferenceFrame
+from ..astro.astro import calc_orientation_from_incl_an
+from ..astro.frame import EquatorialReferenceFrame, J2000EclipticReferenceFrame
+from ..astro.orbits import AbsoluteFixedPosition, LocalFixedPosition
+from ..astro.rotations import FixedRotation, SynchronousRotation, UniformRotation
 from ..catalogs import objectsDB
 from ..components.elements.atmosphere import Atmosphere
-from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
-from ..components.elements.rings import Rings
 from ..components.elements.clouds import Clouds
+from ..components.elements.rings import Rings
+from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
 from ..dircontext import defaultDirContext
 from ..objects.reflective import ReflectiveBody
 from ..objects.rings import StellarRings
 from ..objects.systems import ReferencePoint
-from ..shapes.mesh import MeshShape
-from ..shapes.spheres import SphereShape
-from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.base import AtmosphereLightingModel, ShadingLightingModel
 from ..shaders.lighting.lambert import LambertPhongLightingModel
-
+from ..shaders.rendering import RenderingShader
+from ..shapes.mesh import MeshShape
+from ..shapes.spheres import SphereShape
 from . import config_parser
-from .celestia_utils import instanciate_elliptical_orbit, instanciate_custom_orbit
-from .celestia_utils import instanciate_uniform_rotation, instanciate_precessing_rotation, instanciate_custom_rotation
-from .celestia_utils import instanciate_reference_frame, names_list, body_path
+from .celestia_utils import (
+    body_path,
+    instanciate_custom_orbit,
+    instanciate_custom_rotation,
+    instanciate_elliptical_orbit,
+    instanciate_precessing_rotation,
+    instanciate_reference_frame,
+    instanciate_uniform_rotation,
+    names_list,
+)
 from .scattering import CelestiaScattering
 from .shaders import LunarLambertLightingModel
 

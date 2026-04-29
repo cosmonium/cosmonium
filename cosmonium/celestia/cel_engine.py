@@ -29,19 +29,23 @@ a :class:`Sequence` ready to be started.
 """
 
 
-from direct.interval.IntervalGlobal import Sequence, Func, Wait
 import logging
-from math import pi
-from panda3d.core import LVector3d, LQuaterniond
 import re
+from math import pi
 
-from ..astro import units
-from ..astro.frame import J2000EclipticReferenceFrame, J2000BarycentricEclipticReferenceFrame
-from ..astro.frame import J2000EquatorialReferenceFrame, SynchroneReferenceFrame
-from ..bodyclass import bodyClasses
-from ..mathutil.quaternion import quaternion_from_euler, quaternion_from_axis_angle
+from direct.interval.IntervalGlobal import Func, Sequence, Wait
+from panda3d.core import LQuaterniond, LVector3d
+
 from .. import settings
-
+from ..astro import units
+from ..astro.frame import (
+    J2000BarycentricEclipticReferenceFrame,
+    J2000EclipticReferenceFrame,
+    J2000EquatorialReferenceFrame,
+    SynchroneReferenceFrame,
+)
+from ..bodyclass import bodyClasses
+from ..mathutil.quaternion import quaternion_from_axis_angle, quaternion_from_euler
 from .bigfix import Bigfix
 from .celestia_utils import body_path, find_body
 

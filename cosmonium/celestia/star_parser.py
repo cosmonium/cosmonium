@@ -28,24 +28,22 @@ names file (HIP numbers mapped to canonical names).
 import builtins
 import io
 import logging
-from panda3d.core import LVector3d
 import re
 import struct
 import sys
 from time import time
 
-from ..astro.astro import calc_position
-from ..astro.spectraltype import spectralTypeStringDecoder, spectralTypeIntDecoder
+from panda3d.core import LVector3d
+
+from ..astro import bayer, units
+from ..astro.astro import app_to_abs_mag, calc_position
+from ..astro.frame import AbsoluteReferenceFrame, J2000BarycentricEclipticReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
-from ..astro.frame import J2000BarycentricEclipticReferenceFrame, AbsoluteReferenceFrame
-from ..astro.astro import app_to_abs_mag
-from ..astro import bayer
-from ..astro import units
+from ..astro.spectraltype import spectralTypeIntDecoder, spectralTypeStringDecoder
 from ..dircontext import defaultDirContext
 from ..objects.star import Star
 from ..objects.universe import Universe
-
 from .bodies import celestiaStarSurfaceFactory
 
 logger = logging.getLogger('celstars')
