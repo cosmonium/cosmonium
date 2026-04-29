@@ -88,9 +88,12 @@ class DataSourcesHandler(DataSource):
 
     def remove_source(self, source):
         if source is not None:
-            self.sources.remove(source)
-            if self._usage > 0:
-                source.release(self._usage)
+            if source in self.sources:
+                self.sources.remove(source)
+                if self._usage > 0:
+                    source.release(self._usage)
+            else:
+                print("Removing source not in handler", source)
 
     def remove_source_by_name(self, name):
         source = None
