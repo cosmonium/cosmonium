@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,15 @@
 #
 
 
-from collections import deque
-from panda3d.core import Texture
+import logging
 import struct
+from collections import deque
+
+from panda3d.core import Texture
 
 from ..shaders.data_source.data_store import DataStoreManagerShaderDataSource, ParametersDataStoreShaderDataSource
+
+logger = logging.getLogger('data_store')
 
 
 class PatchDataStoreManager:
@@ -94,7 +98,7 @@ class PatchParametersDataStore:
 
     def add_data_source(self, data_source):
         if self.texture_data is not None:
-            print("ERROR, can not add data source")
+            logger.error("Can not add data source '%s'", data_source.name)
             return
         self.data_sources.append(data_source)
         self.data_size += data_source.get_nb_shader_data()

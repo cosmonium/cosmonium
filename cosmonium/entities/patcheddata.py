@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +17,15 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import logging
 
 from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import LVector2, AsyncFuture
+from panda3d.core import AsyncFuture, LVector2
 
 from ..textures import TexCoord
 from .datasource import DataSource
+
+logger = logging.getLogger('patcheddata')
 
 
 class PatchData:
@@ -185,11 +188,11 @@ class PatchedData(DataSource):
                     patch_data.apply(instance)
                 else:
                     if patch.lod > 0:
-                        print("NO PARENT DATA FOR", patch.str_id())
+                        logger.warning("No parent data for %s", patch.str_id())
             else:
                 patch_data.apply(instance)
         else:
-            print("PATCH NOT CREATED?", patch.str_id())
+            logger.warning("Patch not created for early_apply: %s", patch.str_id())
 
     def create_load_task(self, tasks_tree, patch, owner):
         tasks_tree.add_task_for(self, self.load(tasks_tree, patch, owner))
@@ -201,7 +204,7 @@ class PatchedData(DataSource):
         if parent is not None:
             return self.get_or_create(parent)
         else:
-            print("MAX LOD PATCH NOT FOUND")
+            logger.warning("Max LOD patch not found for %s", patch_data.patch.str_id())
 
     async def load(self, tasks_tree, patch, owner):
         if patch.str_id() in self.map_patch_data:
@@ -215,18 +218,18 @@ class PatchedData(DataSource):
                         patch_data.calc_sub_patch(max_lod_parent)
                         patch_data.loaded = True
                     else:
-                        print("Could not load patch: max LOD parent not found", patch.str_id())
+                        logger.warning("Could not load patch %s: max LOD parent not found", patch.str_id())
                 else:
                     await patch_data.load(tasks_tree, patch)
         else:
-            print("PATCH NOT CREATED?", patch.str_id())
+            logger.warning("Patch not created for load: %s", patch.str_id())
 
     def apply(self, patch, instance):
         if patch.str_id() in self.map_patch_data:
             patch_data = self.map_patch_data[patch.str_id()]
             patch_data.apply(instance)
         else:
-            print("PATCH NOT CREATED?", patch.str_id())
+            logger.warning("Patch not created for apply: %s", patch.str_id())
 
     def get_nb_shader_data(self):
         raise NotImplementedError()
@@ -236,7 +239,7 @@ class PatchedData(DataSource):
             patch_data = self.map_patch_data[patch.str_id()]
             patch_data.collect_shader_data(data)
         else:
-            print("PATCH NOT CREATED?", patch.str_id())
+            logger.warning("Patch not created for collect_shader_data: %s", patch.str_id())
 
     def clear(self, patch, instance):
         patch_id = patch.str_id()

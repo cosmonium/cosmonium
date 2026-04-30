@@ -17,6 +17,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import logging
+
+logger = logging.getLogger('datasource')
+
 
 class DataSource:
     def __init__(self, name):
@@ -32,7 +36,7 @@ class DataSource:
             if self._usage == 0:
                 self.clear_all()
         else:
-            print("Release already released data source", count, self)
+            logger.warning("Release already released data source (count=%d, usage=%d) %s", count, self._usage, self)
 
     def create(self, shape):
         pass
@@ -74,7 +78,7 @@ class DataSourcesHandler(DataSource):
         for source in self.sources:
             if source.name == name:
                 return source
-        print(f"Source {name} not found")
+        logger.warning("Source '%s' not found", name)
         return None
 
     def add_source(self, source):
@@ -84,7 +88,7 @@ class DataSourcesHandler(DataSource):
                 if self._usage > 0:
                     source.use(self._usage)
             else:
-                print("Adding already added source", source)
+                logger.warning("Adding already added source %s", source)
 
     def remove_source(self, source):
         if source is not None:
@@ -93,16 +97,16 @@ class DataSourcesHandler(DataSource):
                 if self._usage > 0:
                     source.release(self._usage)
             else:
-                print("Removing source not in handler", source)
+                logger.warning("Removing source not in handler %s", source)
 
     def remove_source_by_name(self, name):
-        source = None
         for source in self.sources:
             if source.name == name:
                 self.sources.remove(source)
                 if self._usage > 0:
                     source.release(self._usage)
-                break
+                return
+        logger.warning("Source '%s' not found for removal", name)
 
     def use(self, count=1):
         DataSource.use(self, count)
