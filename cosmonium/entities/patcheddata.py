@@ -236,12 +236,11 @@ class PatchedData(DataSource):
             print("PATCH NOT CREATED?", patch.str_id())
 
     def clear(self, patch, instance):
-        try:
-            patch_data = self.map_patch_data[patch.str_id()]
+        patch_id = patch.str_id()
+        patch_data = self.map_patch_data.get(patch_id)
+        if patch_data is not None:
             patch_data.clear(instance)
-            del self.map_patch_data[patch.str_id()]
-        except KeyError:
-            pass
+            del self.map_patch_data[patch_id]
 
     def clear_all(self):
         self.map_patch_data = {}
