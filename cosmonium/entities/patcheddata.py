@@ -88,7 +88,7 @@ class PatchData:
 
     def load(self, tasks_tree, patch):
         if len(self.awaitables) == 0:
-            taskMgr.add(self.load_wrapper(tasks_tree, patch))
+            taskMgr.add(self.load_wrapper(tasks_tree, patch), sort=taskMgr.getCurrentTask().sort + 1)
         future = AsyncFuture()
         self.awaitables.append(future)
         return future
