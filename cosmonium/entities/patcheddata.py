@@ -209,10 +209,13 @@ class PatchedData(DataSource):
             if not patch_data.loaded:
                 if patch.lod > self.max_lod:
                     max_lod_parent = self.find_max_lod_parent(patch_data)
-                    if not max_lod_parent.loaded:
-                        await max_lod_parent.load(tasks_tree, max_lod_parent.patch)
-                    patch_data.calc_sub_patch(max_lod_parent)
-                    patch_data.loaded = True
+                    if max_lod_parent is not None:
+                        if not max_lod_parent.loaded:
+                            await max_lod_parent.load(tasks_tree, max_lod_parent.patch)
+                        patch_data.calc_sub_patch(max_lod_parent)
+                        patch_data.loaded = True
+                    else:
+                        print("Could not load patch: max LOD parent not found", patch.str_id())
                 else:
                     await patch_data.load(tasks_tree, patch)
         else:
