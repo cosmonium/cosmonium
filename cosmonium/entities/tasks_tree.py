@@ -38,6 +38,7 @@ class TasksTree:
             source.create_load_task(self, shape, owner)
 
     async def run_tasks(self):
-        await gather(*self.tasks)
+        if self.tasks:
+            await gather(*self.tasks)
         self.named_tasks = {}
         self.tasks = []
