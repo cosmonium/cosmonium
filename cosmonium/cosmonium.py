@@ -56,7 +56,7 @@ from .components.annotations.grid import Grid
 from .controllers.base import MovementController
 from .controllers.position import CartesianMovementController, SurfaceMovementController
 from .debug import Debug
-from .dircontext import defaultDirContext
+from .dircontext import defaultDirContext, init_default_context
 from .engine.anchors import StellarAnchor
 from .engine.c_settings import c_settings
 from .engine.traversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser
@@ -118,6 +118,9 @@ class CosmoniumBase(ShowBase):
         self.window_manager = WindowManager(self)
         self.common_state = NodePath("<state>")
 
+        main_dir = app_config.main_dir
+        init_default_context(main_dir)
+
         register_parsers()
 
         configParser.load()
@@ -161,7 +164,7 @@ class CosmoniumBase(ShowBase):
 
         # Front to back bin is added between opaque and transparent
         CullBinManager.get_global_ptr().add_bin("front_to_back", CullBinManager.BT_front_to_back, 25)
-        mesh.init_mesh_loader()
+        mesh.init_mesh_loader(main_dir)
 
     def panda_config(self):
         data = []

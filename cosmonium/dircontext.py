@@ -21,7 +21,6 @@
 from copy import deepcopy
 import glob
 import os
-from panda3d.core import ExecutionEnvironment
 
 
 class DirContext(object):
@@ -100,6 +99,8 @@ class DirContext(object):
 
 
 defaultDirContext = DirContext()
-main_dir = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
-defaultDirContext.add_all_path_auto(main_dir)
-defaultDirContext.add_all_path(main_dir)
+
+
+def init_default_context(main_dir):
+    defaultDirContext.add_all_path_auto(main_dir)
+    defaultDirContext.add_all_path(main_dir)

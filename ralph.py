@@ -46,7 +46,7 @@ from direct.showbase.PythonUtil import clamp
 from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.TaskManagerGlobal import taskMgr
 from math import pow, pi
-from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath
+from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath, ExecutionEnvironment
 from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp
 
 from cosmonium.astro import units
@@ -422,6 +422,8 @@ class SimpleShadowCaster(CustomShadowMapShadowCaster):
 
 class RalphAppConfig:
     def __init__(self):
+        base_path = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
+        self.main_dir = base_path
         self.config_file = "ralph-data/ralph.yaml"
         self.prc_file = None
         self.test_start = False

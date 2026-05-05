@@ -30,6 +30,7 @@ from ..parsers.yamlparser import YamlParser
 class CosmoniumConfig:
     def __init__(self):
         base_path = ExecutionEnvironment.getEnvironmentVariable("MAIN_DIR")
+        self.main_dir = base_path
         self.common = os.path.join(base_path, 'data/defaults.yaml')
         self.main = os.path.join(base_path, 'data/cosmonium.yaml')
         self.ui = os.path.join(base_path, 'config/ui/default/ui.yaml')

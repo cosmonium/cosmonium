@@ -26,7 +26,6 @@ from gltf._loader import GltfLoader
 from panda3d.core import loadPrcFileData, LoaderFileTypeRegistry, Filename, get_model_path
 
 from .cmod.cmod_loader import CmodLoader
-from .dircontext import main_dir
 from . import cache
 from . import settings
 
@@ -44,7 +43,7 @@ def set_physics_engine(engine_name):
     GltfSettings.collision_shapes = engine_name
 
 
-def init_mesh_loader():
+def init_mesh_loader(main_dir):
     if settings.use_assimp:
         loadPrcFileData("", "load-file-type p3assimp\n" "assimp-gen-normals #t\n" "assimp-smooth-normal-angle 90\n")
 
