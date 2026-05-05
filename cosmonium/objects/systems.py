@@ -95,7 +95,7 @@ class StellarSystem(StellarObject):
 
     def add_child_fast(self, child):
         if child.parent is not None:
-            child.parent.anchor.remove_child(child.anchor)
+            # remove_child_fast handles both the body-level and anchor-level removal
             child.parent.remove_child_fast(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
