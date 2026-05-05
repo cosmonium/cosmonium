@@ -439,6 +439,8 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
         AtmosphericScattering.fragment_uniforms(self, code)
         if self.calc_in_fragment:
             self.uniforms_scattering(code)
+        elif self.atmosphere:
+            code.append("uniform mat3 atm_descale;")
         self.uniforms_colors(code)
 
     def fragment_inputs(self, code):
@@ -467,7 +469,8 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
                     "    oneil_calc_scattering(world_vertex, world_normal, light_direction, light_color, rayleigh_inscattering, mie_inscattering, transmittance);"
                 )
         if self.atmosphere:
-            code.append("    float fCos = dot(light_direction, v3Direction) / length(v3Direction);")
+            code.append("    vec3 oneil_light_pos = normalize(atm_descale * light_direction);")
+            code.append("    float fCos = dot(oneil_light_pos, v3Direction) / length(v3Direction);")
             code.append("    float fRayleighPhase = 0.75 * (1.0 + fCos*fCos);")
             code.append(
                 "    float fMiePhase = 1.5 * ((1.0 - fg2) / (2.0 + fg2)) * (1.0 + fCos*fCos) / pow(1.0 + fg2 - 2.0*fg*fCos, 1.5);"
