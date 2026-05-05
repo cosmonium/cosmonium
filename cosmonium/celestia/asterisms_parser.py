@@ -35,7 +35,6 @@ from ..astro import bayer
 from ..astro.orbits import FixedPosition
 from ..catalogs import objectsDB
 from ..components.annotations.asterism import NamedAsterism
-from ..dircontext import defaultDirContext
 
 logger = logging.getLogger('asterisms')
 
@@ -214,7 +213,7 @@ def create_asterism(universe, name, text_segments):
     universe.add_component(asterism)
 
 
-def load(filename, universe, context=defaultDirContext, debug=0):
+def load(filename, universe, context, debug=0):
     filepath = context.find_data(filename)
     if filepath is not None:
         logger.info("Loading %s", filepath)

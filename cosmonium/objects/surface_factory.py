@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,12 +31,13 @@ class SurfaceFactory(object):
 
 
 class StarTexSurfaceFactory(SurfaceFactory):
-    def __init__(self, texture):
+    def __init__(self, texture, context):
         self.texture = texture
+        self.context = context
 
     def create(self, body):
         shape = SphereShape()
-        appearance = Appearance(emissionColor=body.anchor.point_color, texture=self.texture)
+        appearance = Appearance(emissionColor=body.anchor.point_color, texture=self.texture, context=self.context)
         shader = RenderingShader(lighting_model=FlatLightingModel())
         return EllipsoidFlatSurface(
             'surface',

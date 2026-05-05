@@ -23,7 +23,6 @@ import re
 from ..astro import units
 from ..astro.projection import InfinitePosition
 from ..components.annotations.boundary import Boundary
-from ..dircontext import defaultDirContext
 
 
 def create_line(points, prev_ra, prev_decl, ra, decl):
@@ -86,7 +85,7 @@ def do_load(filepath):
     return boundaries
 
 
-def load(filename, context=defaultDirContext):
+def load(filename, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         return do_load(filepath)

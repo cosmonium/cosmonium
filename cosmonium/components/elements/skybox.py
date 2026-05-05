@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ from ...utils import TransparencyBlend
 
 
 class SkyBox(Entity):
-    def __init__(self, scattering, shape=None, appearance=None, shader=None):
+    def __init__(self, scattering, shape=None, appearance=None, shader=None, context=None):
         self.scattering = scattering
         if shape is None:
             shape = MeshShape(
@@ -40,6 +40,7 @@ class SkyBox(Entity):
                 panda=True,
                 flatten=True,
                 attribution=None,
+                context=context,
             )
         if appearance is None:
             appearance = Appearance()

@@ -37,7 +37,6 @@ from ..astro.frame import J2000BarycentricEclipticReferenceFrame, J2000EclipticR
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
 from ..catalogs import objectsDB
-from ..dircontext import defaultDirContext
 from ..objects.star import Star
 from ..objects.surface_factory import StarTexSurfaceFactory
 from ..objects.systems import Barycenter
@@ -70,7 +69,7 @@ def parse_names(item_name, item_alias):
     return names
 
 
-def instanciate_star(universe, item_name, item_alias, item_data):
+def instanciate_star(universe, context, item_name, item_alias, item_data):
     names = parse_names(item_name, item_alias)
     ra = None
     decl = None
@@ -160,7 +159,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
             return None
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
     if texture is not None:
-        surface_factory = StarTexSurfaceFactory(texture)
+        surface_factory = StarTexSurfaceFactory(texture, context)
     else:
         surface_factory = celestiaStarSurfaceFactory
     # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
@@ -194,7 +193,7 @@ def instanciate_star(universe, item_name, item_alias, item_data):
     return star
 
 
-def instanciate_barycenter(universe, item_name, item_alias, item_data):
+def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
     names = parse_names(item_name, item_alias)
     ra = None
     decl = None
@@ -267,25 +266,25 @@ def instanciate_barycenter(universe, item_name, item_alias, item_data):
     return barycenter
 
 
-def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
+def instanciate_item(universe, context, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
         logger.warning("Disposition '%s' not supported", disposition)
         return
     if item_type == 'Body':
-        instanciate_star(universe, item_name, item_alias, item_data)
+        instanciate_star(universe, context, item_name, item_alias, item_data)
     elif item_type == 'Barycenter':
-        instanciate_barycenter(universe, item_name, item_alias, item_data)
+        instanciate_barycenter(universe, context, item_name, item_alias, item_data)
     else:
         logger.warning("Type '%s' not supported", item_type)
         return
 
 
-def instanciate(items_list, universe):
+def instanciate(items_list, universe, context):
     for item in items_list:
-        instanciate_item(universe, *item)
+        instanciate_item(universe, context, *item)
 
 
-def parse_file(filename, universe, context=defaultDirContext):
+def parse_file(filename, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         start = time()
@@ -294,19 +293,19 @@ def parse_file(filename, universe, context=defaultDirContext):
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:
-            instanciate(items, universe)
+            instanciate(items, universe, context)
         end = time()
         logger.debug("Load time: %.3fs", end - start)
     else:
         logger.warning("File not found: %s", filename)
 
 
-def load(stc, universe):
+def load(stc, universe, context):
     if isinstance(stc, list):
         for stc in stc:
-            parse_file(stc, universe)
+            parse_file(stc, universe, context)
     else:
-        parse_file(stc, universe)
+        parse_file(stc, universe, context)
 
 
 if __name__ == '__main__':

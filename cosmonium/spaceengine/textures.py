@@ -27,7 +27,6 @@ mapping from Cosmonium's Z-up system to SpaceEngine's Y-up system.
 
 import os
 
-from ..dircontext import defaultDirContext
 from ..textures import AutoTextureSource, TextureSourceFactory, VirtualTextureSource
 
 
@@ -53,7 +52,7 @@ class SpaceEngineVirtualTextureSource(VirtualTextureSource):
         'neg_y',  # face 5 BOTTOM (-Z) -> SE -Y
     ]
 
-    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=defaultDirContext):
+    def __init__(self, root, ext, size, channel=None, alpha_channel=None, attribution=None, context=None):
         VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.channel = channel
         self.alpha_channel = alpha_channel
@@ -128,7 +127,7 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
     (color ``_c`` and alpha ``_a`` suffixes) from base texture naming conventions.
     """
 
-    def create_source(self, filename, context=defaultDirContext):
+    def create_source(self, filename, context):
         """Detect and create a SpaceEngine virtual texture source.
 
         Resolves the filename via the directory context, verifies that all six
@@ -161,7 +160,7 @@ class SpaceEngineTextureSourceFactory(TextureSourceFactory):
                         channel = 'c'
                     if os.path.exists(os.path.join(filename, 'base_a.jpg')):
                         alpha_channel = 'a'
-                return SpaceEngineVirtualTextureSource(filename, 'jpg', 258, channel, alpha_channel)
+                return SpaceEngineVirtualTextureSource(filename, 'jpg', 258, channel, alpha_channel, context=context)
         return None
 
 

@@ -33,7 +33,6 @@ from time import time
 from ..astro import units
 from ..astro.projection import InfinitePosition
 from ..components.annotations.boundary import Boundary
-from ..dircontext import defaultDirContext
 from ..objects.universe import Universe
 
 logger = logging.getLogger('boundaries')
@@ -64,7 +63,7 @@ def do_load(filepath, universe):
     logger.debug("Load time: %.3fs", end - start)
 
 
-def load(filename, universe, context=defaultDirContext):
+def load(filename, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         do_load(filepath, universe)

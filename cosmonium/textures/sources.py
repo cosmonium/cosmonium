@@ -28,7 +28,6 @@ import logging
 import os
 
 from .. import settings, workers
-from ..dircontext import defaultDirContext
 from .base import TextureSource
 
 logger = logging.getLogger("textures")
@@ -51,7 +50,7 @@ class AutoTextureSource(TextureSource):
 
     factories = []
 
-    def __init__(self, filename, attribution=None, context=defaultDirContext):
+    def __init__(self, filename, attribution=None, context=None):
         """Initialize the auto texture source with the given filename and context.
         Args:
             filename: The file path or identifier for the texture to load.
@@ -59,6 +58,7 @@ class AutoTextureSource(TextureSource):
             context: Directory context for resolving texture file paths.
         """
         TextureSource.__init__(self, attribution)
+        assert context is not None, "Context is required for AutoTextureSource"
         self.filename = filename
         self.context = context
         self.source = None
@@ -172,7 +172,7 @@ class TextureSourceFactory:
     ``TextureSource`` for a given file path and directory context.
     """
 
-    def create_source(self, filename, context=defaultDirContext):
+    def create_source(self, filename, context=None):
         return None
 
 
@@ -185,7 +185,7 @@ class TextureFileSource(TextureSource):
 
     cached = True
 
-    def __init__(self, filename, attribution=None, context=defaultDirContext):
+    def __init__(self, filename, attribution=None, context=None):
         TextureSource.__init__(self, attribution)
         self.filename = filename
         self.context = context
@@ -241,7 +241,7 @@ class TextureFileSource(TextureSource):
 class TextureFileSourceFactory(TextureSourceFactory):
     """Factory that creates ``TextureFileSource`` instances for any file extension."""
 
-    def create_source(self, filename, context=defaultDirContext):
+    def create_source(self, filename, context=None):
         return TextureFileSource(filename, None, context)
 
 
@@ -285,7 +285,7 @@ class VirtualTextureSource(TextureSource):
 
     cached = False
 
-    def __init__(self, root, ext, size, attribution=None, context=defaultDirContext):
+    def __init__(self, root, ext, size, attribution=None, context=None):
         """Initialize the virtual texture source with the given root directory, file extension, and texture size.
 
         Args:
@@ -296,6 +296,7 @@ class VirtualTextureSource(TextureSource):
             context: Directory context for resolving texture file paths.
         """
         TextureSource.__init__(self, attribution)
+        assert context is not None, "Context is required for VirtualTextureSource"
         self.map_patch = {}
         self.root = root
         self.ext = ext

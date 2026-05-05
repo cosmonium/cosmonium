@@ -120,6 +120,7 @@ class CosmoniumBase(ShowBase):
 
         main_dir = app_config.main_dir
         init_default_context(main_dir)
+        YamlModuleParser.context = defaultDirContext
 
         register_parsers()
 
@@ -591,17 +592,17 @@ class Cosmonium(CosmoniumBase):
             universeYamlParser.set_universe(self.universe)
             for support in self.app_config.celestia_support:
                 self.load_file(parser, support)
-        names = star_parser.load_names(self.app_config.celestia_stars_names)
+        names = star_parser.load_names(self.app_config.celestia_stars_names, defaultDirContext)
         if self.app_config.celestia_stars_catalog is not None:
             if self.app_config.celestia_stars_catalog.endswith('.dat'):
-                star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe)
+                star_parser.load_bin(self.app_config.celestia_stars_catalog, names, self.universe, defaultDirContext)
             else:
-                star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe)
-        stc_parser.load(self.app_config.celestia_stc, self.universe)
-        ssc_parser.load(self.app_config.celestia_ssc, self.universe)
-        asterisms_parser.load(self.app_config.celestia_asterisms, self.background)
-        boundaries_parser.load(self.app_config.celestia_boundaries, self.background)
-        # dsc_parser.load(self.celestia_dsc, self.universe)
+                star_parser.load_text(self.app_config.celestia_stars_catalog, names, self.universe, defaultDirContext)
+        stc_parser.load(self.app_config.celestia_stc, self.universe, defaultDirContext)
+        ssc_parser.load(self.app_config.celestia_ssc, self.universe, defaultDirContext)
+        asterisms_parser.load(self.app_config.celestia_asterisms, self.background, defaultDirContext)
+        boundaries_parser.load(self.app_config.celestia_boundaries, self.background, defaultDirContext)
+        # dsc_parser.load(self.celestia_dsc, self.universe, defaultDirContext)
 
     def load_file(self, parser, path):
         lower = path.lower()
@@ -881,7 +882,7 @@ class Cosmonium(CosmoniumBase):
         return self.current_sequence is not None
 
     def load_and_run_script(self, script_path):
-        script = cel_parser.load(script_path)
+        script = cel_parser.load(script_path, defaultDirContext)
         running = self.run_script(cel_engine.build_sequence(self, script))
         return running
 

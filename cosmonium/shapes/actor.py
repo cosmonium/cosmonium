@@ -19,7 +19,6 @@
 
 from direct.actor.Actor import Actor
 
-from ..dircontext import defaultDirContext
 from .mesh import MeshShape
 
 
@@ -36,7 +35,7 @@ class ActorShape(MeshShape):
         flatten,
         panda,
         attribution,
-        context=defaultDirContext,
+        context=None,
     ):
         MeshShape.__init__(
             self,

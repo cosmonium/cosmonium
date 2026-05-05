@@ -22,7 +22,6 @@ import numpy
 from panda3d.core import Texture, LColor
 import traceback
 
-from .dircontext import defaultDirContext
 from .entities.shapedata import TextureShapeDataBase
 from .entities.patcheddata import PatchData, PatchedData
 from .filters import BilinearFilter
@@ -325,7 +324,7 @@ class TextureHeightmap(TextureHeightmapBase):
         )
         self.data_source = data_source
 
-    def set_data_source(self, data_source, context=defaultDirContext):
+    def set_data_source(self, data_source, context):
         if data_source is not None and not isinstance(data_source, TextureBase):
             data_source = HeightMapTexture(AutoTextureSource(data_source, None, context))
         self.data_source = data_source

@@ -27,7 +27,6 @@ import logging
 import os
 import sys
 
-from ..dircontext import defaultDirContext
 from ..textures import InvalidTextureSource
 from . import config_parser
 from .textures.source import CelestiaVirtualTextureSource
@@ -73,7 +72,7 @@ def instanciate_item(filename, context, disposition, item_type, item_name, item_
         return
 
 
-def parse_file(filename, context=defaultDirContext):
+def parse_file(filename, context):
     filepath = context.find_data(filename)
     if filepath is None:
         logger.warning("Can not find file: %s", filename)

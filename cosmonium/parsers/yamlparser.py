@@ -30,7 +30,6 @@ The validation layer is in schemavalidator.py.
 
 from pydantic import BaseModel
 
-from ..dircontext import defaultDirContext
 from ..engine.objectname import ObjectName, ObjectNames
 from .yamlloader import YamlLoader
 
@@ -112,7 +111,7 @@ class YamlModuleParser(YamlParser):
     This provides backward compatibility while using the new architecture.
     """
 
-    context = defaultDirContext
+    context = None
     translation = None
     app = None
 
@@ -171,6 +170,9 @@ class YamlModuleParser(YamlParser):
         """
         if context is None:
             context = YamlModuleParser.context
+        if context is None:
+            from ..dircontext import defaultDirContext
+            context = defaultDirContext
 
         # Use YamlLoader to load with context
         data, filepath, new_context = YamlLoader.load_with_context(filename, context)

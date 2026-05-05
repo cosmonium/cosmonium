@@ -23,7 +23,6 @@ Provides the ``CelestiaVirtualTextureSourceFactory`` class which delegates
 parsing of ``.ctx`` files to the ``ctx_parser`` module.
 """
 
-from ...dircontext import defaultDirContext
 from ...textures import TextureSourceFactory
 from .. import ctx_parser
 
@@ -35,7 +34,7 @@ class CelestiaVirtualTextureSourceFactory(TextureSourceFactory):
     a configured ``CelestiaVirtualTextureSource`` instance.
     """
 
-    def create_source(self, filename, context=defaultDirContext):
+    def create_source(self, filename, context=None):
         """Parse a .ctx file and return the corresponding texture source.
 
         Args:

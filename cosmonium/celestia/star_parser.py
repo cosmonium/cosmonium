@@ -41,7 +41,6 @@ from ..astro.frame import AbsoluteReferenceFrame, J2000BarycentricEclipticRefere
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
 from ..astro.spectraltype import spectralTypeIntDecoder, spectralTypeStringDecoder
-from ..dircontext import defaultDirContext
 from ..objects.star import Star
 from ..objects.universe import Universe
 from .bodies import celestiaStarSurfaceFactory
@@ -89,7 +88,7 @@ def do_load_text(filepath, names, universe):
     logger.debug("Load time: %.3fs", end - start)
 
 
-def load_text(filename, names, universe, context=defaultDirContext):
+def load_text(filename, names, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         return do_load_text(filepath, names, universe)
@@ -139,7 +138,7 @@ def do_load_bin(filepath, names, universe):
     logger.debug("Load time: %.3fs", end - start)
 
 
-def load_bin(filename, names, universe, context=defaultDirContext):
+def load_bin(filename, names, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         return do_load_bin(filepath, names, universe)
@@ -170,7 +169,7 @@ def do_load_names(filepath):
     return names
 
 
-def load_names(filename, context=defaultDirContext):
+def load_names(filename, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         return do_load_names(filepath)

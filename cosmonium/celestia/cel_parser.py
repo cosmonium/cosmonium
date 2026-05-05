@@ -30,8 +30,6 @@ import sys
 from ply import lex, yacc
 from ply.lex import Token
 
-from ..dircontext import defaultDirContext
-
 logger = logging.getLogger('cel')
 
 
@@ -219,7 +217,7 @@ def parse(data, debug=0):
     return p
 
 
-def load(filename, context=defaultDirContext, debug=0):
+def load(filename, context, debug=0):
     filepath = context.find_script(filename)
     if filepath is not None:
         logger.info("Loading %s", filepath)

@@ -1,6 +1,6 @@
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,5 +28,5 @@ class SkyBoxYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, scattering):
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
-        skybox = SkyBox(scattering, shader=shader)
+        skybox = SkyBox(scattering, shader=shader, context=cls.context)
         return skybox

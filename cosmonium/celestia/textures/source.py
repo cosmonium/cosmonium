@@ -26,7 +26,6 @@ named using a ``tx_X_Y.ext`` convention.
 
 import os
 
-from ...dircontext import defaultDirContext
 from ...textures import VirtualTextureSource
 
 
@@ -39,7 +38,7 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
     for repositioning the texture origin.
     """
 
-    def __init__(self, root, ext, size, prefix='tx_', offset=0, attribution=None, context=defaultDirContext):
+    def __init__(self, root, ext, size, prefix='tx_', offset=0, attribution=None, context=None):
         VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
         self.prefix = prefix
         self.offset = offset

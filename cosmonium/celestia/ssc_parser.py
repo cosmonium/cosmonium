@@ -42,7 +42,6 @@ from ..components.elements.atmosphere import Atmosphere
 from ..components.elements.clouds import Clouds
 from ..components.elements.rings import Rings
 from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
-from ..dircontext import defaultDirContext
 from ..objects.reflective import ReflectiveBody
 from ..objects.rings import StellarRings
 from ..objects.systems import ReferencePoint
@@ -89,7 +88,7 @@ def instanciate_legacy_rotation(period, obliquity, ascending_node, offset, epoch
     return rotation
 
 
-def instanciate_atmosphere(data):
+def instanciate_atmosphere(data, context):
     atmosphere = None
     clouds = None
     clouds_height = 0
@@ -105,7 +104,7 @@ def instanciate_atmosphere(data):
         if key == 'CloudHeight':
             clouds_height = value
         elif key == 'CloudMap':
-            clouds_appearance.set_texture(value, transparency=True)
+            clouds_appearance.set_texture(value, transparency=True, context=context)
         elif key == 'CloudSpeed':
             pass  # = value
         elif key == 'CloudShadowDepth':
@@ -154,7 +153,7 @@ def instanciate_atmosphere(data):
     return (atmosphere, clouds)
 
 
-def instanciate_rings(name, data, parent):
+def instanciate_rings(name, data, context, parent):
     inner_radius = 0
     outer_radius = 0
     appearance = Appearance()
@@ -164,7 +163,7 @@ def instanciate_rings(name, data, parent):
         elif key == 'Outer':
             outer_radius = value
         elif key == 'Texture':
-            appearance.set_texture(value, transparency=True, transparency_level=0.5)
+            appearance.set_texture(value, transparency=True, transparency_level=0.5, context=context)
         elif key == 'Color':
             appearance.diffuseColor = get_color(value)
         else:
@@ -189,7 +188,7 @@ def instanciate_rings(name, data, parent):
     return body
 
 
-def instanciate_body(universe, names, is_planet, data, parent_anchor):
+def instanciate_body(universe, context, names, is_planet, data, parent_anchor):
     appearance = Appearance()
     point_color = None
     radius = 1.0
@@ -230,9 +229,9 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         if key == 'Radius':
             radius = value
         elif key == 'Texture':
-            appearance.set_texture(value)
+            appearance.set_texture(value, context=context)
         elif key == 'NightTexture':
-            appearance.set_emission_texture(value)
+            appearance.set_emission_texture(value, context=context)
             appearance.emissionColor = LColor(1, 1, 1, 1)
             appearance.set_nightscale(0.02)
         elif key == 'BumpHeight':
@@ -240,7 +239,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'BumpMap':
             bump_map = value
         elif key == 'NormalMap':
-            appearance.set_normal_map(value)
+            appearance.set_normal_map(value, context=context)
         elif key == 'Color':
             point_color = get_color(value)
         elif key == 'BlendTexture':
@@ -253,7 +252,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'SpecularColor':
             appearance.specularColor = get_color(value)
         elif key == 'SpecularTexture':
-            appearance.set_specular_map(value)
+            appearance.set_specular_map(value, context=context)
         elif key == 'LunarLambert':
             lunar_lambert = value
         elif key == 'Mesh':
@@ -276,7 +275,7 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
         elif key == 'Rings':
             rings_data = value
         elif key == 'Atmosphere':
-            (atmosphere, clouds) = instanciate_atmosphere(value)
+            (atmosphere, clouds) = instanciate_atmosphere(value, context)
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':
@@ -358,11 +357,12 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
             flatten=True,
             panda=False,
             attribution=None,
+            context=context,
         )
     else:
         shape = SphereShape()
     if bump_map is not None:
-        appearance.set_bump_map(bump_map, bump_height)
+        appearance.set_bump_map(bump_map, bump_height, context=context)
     lighting_model = None
     if lunar_lambert > 0.0:
         lighting_model = LunarLambertLightingModel()
@@ -401,12 +401,12 @@ def instanciate_body(universe, names, is_planet, data, parent_anchor):
     body.body_class = body_class
     if rings_data is not None:
         body = body.get_or_create_system()
-        rings = instanciate_rings(names, rings_data, body)
+        rings = instanciate_rings(names, rings_data, context, body)
         body.add_child_fast(rings)
     return body
 
 
-def instanciate_reference_point(universe, names, is_planet, data, parent_anchor):
+def instanciate_reference_point(universe, context, names, is_planet, data, parent_anchor):
     orbit = None
     legacy_rotation = False
     rotation_period = None
@@ -514,7 +514,7 @@ def find_parent_system(path):
     return body
 
 
-def instanciate_item(universe, disposition, item_type, item_name, item_parent, item_alias, item_data):
+def instanciate_item(universe, context, disposition, item_type, item_name, item_parent, item_alias, item_data):
     if disposition != 'Add':
         logger.warning("Disposition '%s' not supported", disposition)
         return
@@ -535,18 +535,18 @@ def instanciate_item(universe, disposition, item_type, item_name, item_parent, i
     else:
         parent_anchor = parent.anchor
     if item_type == 'Body':
-        body = instanciate_body(universe, names, is_planet, item_data, parent_anchor)
+        body = instanciate_body(universe, context, names, is_planet, item_data, parent_anchor)
     elif item_type == 'ReferencePoint':
-        body = instanciate_reference_point(universe, names, is_planet, item_data, parent_anchor)
+        body = instanciate_reference_point(universe, context, names, is_planet, item_data, parent_anchor)
     parent.add_child_fast(body)
 
 
-def instanciate(items_list, universe):
+def instanciate(items_list, universe, context):
     for item in items_list:
-        instanciate_item(universe, *item)
+        instanciate_item(universe, context, *item)
 
 
-def parse_file(filename, universe, context=defaultDirContext):
+def parse_file(filename, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         start = time()
@@ -555,16 +555,16 @@ def parse_file(filename, universe, context=defaultDirContext):
         data = io.open(filepath, encoding='latin-1').read()
         items = config_parser.parse(data)
         if items is not None:
-            instanciate(items, universe)
+            instanciate(items, universe, context)
         end = time()
         logger.debug("Load time: %.3fs", end - start)
     else:
         logger.warning("File not found: %s", filename)
 
 
-def load(config_parser, universe):
+def load(config_parser, universe, context):
     if isinstance(config_parser, list):
         for config_parser in config_parser:
-            parse_file(config_parser, universe)
+            parse_file(config_parser, universe, context)
     else:
-        parse_file(config_parser, universe)
+        parse_file(config_parser, universe, context)

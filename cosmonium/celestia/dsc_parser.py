@@ -36,7 +36,6 @@ from ..astro.astro import app_to_abs_mag, calc_position
 from ..astro.frame import AbsoluteReferenceFrame, J2000EquatorialReferenceFrame
 from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
-from ..dircontext import defaultDirContext
 from ..mathutil.quaternion import quaternion_from_axis_angle
 from ..objects.galaxies import Galaxy
 from ..objects.universe import Universe
@@ -117,7 +116,7 @@ def instanciate(items_list, universe):
         instanciate_item(universe, *item)
 
 
-def parse_file(filename, universe, context=defaultDirContext):
+def parse_file(filename, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
         logger.info("Loading %s", filepath)
@@ -130,7 +129,7 @@ def parse_file(filename, universe, context=defaultDirContext):
         logger.warning("File not found: %s", filename)
 
 
-def load(dsc, universe, context=defaultDirContext):
+def load(dsc, universe, context):
     if isinstance(dsc, list):
         for dsc in dsc:
             parse_file(dsc, universe, context)

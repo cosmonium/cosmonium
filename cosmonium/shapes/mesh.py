@@ -21,7 +21,6 @@ import builtins
 from panda3d.core import LQuaternion
 from panda3d.core import NodePath, ModelPool, Filename
 
-from ..dircontext import defaultDirContext
 from ..parameters import ParametersGroup, AutoUserParameter, UserParameter
 
 from .base import Shape
@@ -41,7 +40,7 @@ class MeshShape(Shape):
         flatten,
         panda,
         attribution,
-        context=defaultDirContext,
+        context,
     ):
         Shape.__init__(self)
         self.model = model
