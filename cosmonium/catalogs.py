@@ -28,21 +28,34 @@ class CatalogIndex:
 
     def __init__(self, catalog_prefix: str) -> None:
         self.catalog_prefix: str = catalog_prefix
-        self._sorted_ids: list[tuple[str, Any]] = []  # Sorted list of (catalog_id, body) tuples
-        self._id_to_body: dict[str, Any] = {}  # Dict for exact lookup
+        self._sorted_keys: list[str] = []  # Sorted list of upper-cased catalog IDs for prefix search
+        self._id_to_body: dict[str, Any] = {}  # Dict for exact lookup and replacement
         self._dirty: bool = False
 
     def add(self, catalog_id: str, body: Any) -> None:
         """Add a catalog entry."""
         upper_id = catalog_id.upper()
-        self._sorted_ids.append((upper_id, body))
+        self._sorted_keys.append(upper_id)
         self._id_to_body[upper_id] = body
         self._dirty = True
 
+    def replace(self, catalog_id: str, new_body: Any) -> None:
+        """Replace the body associated with a catalog ID.
+
+        The sorted keys list is not modified; only the lookup dict is updated.
+
+        Args:
+            catalog_id: The catalog ID whose body should be replaced.
+            new_body: The new body to associate with the catalog ID.
+        """
+        upper_id = catalog_id.upper()
+        if upper_id in self._id_to_body:
+            self._id_to_body[upper_id] = new_body
+
     def _ensure_sorted(self) -> None:
-        """Sort the list if needed."""
+        """Sort the keys list if needed."""
         if self._dirty:
-            self._sorted_ids.sort(key=lambda x: x[0])
+            self._sorted_keys.sort()
             self._dirty = False
 
     def get(self, catalog_id: str) -> Optional[Any]:
@@ -58,18 +71,18 @@ class CatalogIndex:
 
         if not id_prefix:
             # Return first N entries
-            return [(f"{self.catalog_prefix} {entry[0]}", entry[1]) for entry in self._sorted_ids[:max_results]]
+            return [(f"{self.catalog_prefix} {key}", self._id_to_body[key]) for key in self._sorted_keys[:max_results]]
 
         upper_prefix = id_prefix.upper()
 
-        # Use bisect to find the leftmost position where upper_str_id >= upper_prefix
-        idx = bisect.bisect_left(self._sorted_ids, upper_prefix, key=lambda x: x[0])
+        # Use bisect to find the leftmost position where upper_key >= upper_prefix
+        idx = bisect.bisect_left(self._sorted_keys, upper_prefix)
 
         result = []
-        while idx < len(self._sorted_ids) and len(result) < max_results:
-            upper_str_id, body = self._sorted_ids[idx]
+        while idx < len(self._sorted_keys) and len(result) < max_results:
+            upper_str_id = self._sorted_keys[idx]
             if upper_str_id.startswith(upper_prefix):
-                result.append((f"{self.catalog_prefix} {upper_str_id}", body))
+                result.append((f"{self.catalog_prefix} {upper_str_id}", self._id_to_body[upper_str_id]))
                 idx += 1
             else:
                 break
@@ -81,34 +94,46 @@ class NameIndex:
     """Index for name entries with efficient sorted search."""
 
     def __init__(self) -> None:
-        self._entries: list[tuple[str, str, Any]] = []  # List of (UPPER_NAME, original_name, body) tuples
+        self._sorted_keys: list[str] = []  # Sorted list of upper-cased names for prefix search
+        self._name_to_entry: dict[str, tuple[str, Any]] = {}  # upper_name -> (original_name, body)
         self._dirty: bool = False
 
     def add(self, name: str, body: Any) -> None:
         """Add a name entry."""
         upper_name = name.upper()
-        self._entries.append((upper_name, name, body))
+        self._sorted_keys.append(upper_name)
+        self._name_to_entry[upper_name] = (name, body)
         self._dirty = True
 
+    def replace(self, name: str, new_body: Any) -> bool:
+        """Replace the body associated with a name.
+
+        The sorted keys list is not modified; only the lookup dict is updated.
+
+        Args:
+            name: The name whose body should be replaced.
+            new_body: The new body to associate with the name.
+
+        Returns:
+            True if the name was found and replaced, False otherwise.
+        """
+        upper_name = name.upper()
+        if upper_name in self._name_to_entry:
+            original_name = self._name_to_entry[upper_name][0]
+            self._name_to_entry[upper_name] = (original_name, new_body)
+            return True
+        return False
+
     def _ensure_sorted(self) -> None:
-        """Sort the list if needed."""
+        """Sort the keys list if needed."""
         if self._dirty:
-            self._entries.sort(key=lambda x: x[0])
+            self._sorted_keys.sort()
             self._dirty = False
 
     def get(self, name: str) -> Optional[Any]:
-        """Get a body by exact name (case-insensitive) using binary search."""
-        self._ensure_sorted()
-        upper_name = name.upper()
-
-        # Use binary search to find exact match
-        idx = bisect.bisect_left(self._entries, (upper_name, '', None))
-
-        # Check if we found an exact match
-        if idx < len(self._entries) and self._entries[idx][0] == upper_name:
-            return self._entries[idx][2]  # Return the body
-
-        return None
+        """Get a body by exact name (case-insensitive)."""
+        entry = self._name_to_entry.get(name.upper())
+        return entry[1] if entry is not None else None
 
     def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
         """Find names starting with the given text using binary search."""
@@ -116,18 +141,21 @@ class NameIndex:
 
         if not text:
             # Return first N entries
-            return [(entry[1], entry[2]) for entry in self._entries[:max_results]]
+            return [
+                (self._name_to_entry[key][0], self._name_to_entry[key][1]) for key in self._sorted_keys[:max_results]
+            ]
 
         upper_text = text.upper()
 
         # Binary search for first matching entry
-        idx = bisect.bisect_left(self._entries, (upper_text, '', None))
+        idx = bisect.bisect_left(self._sorted_keys, upper_text)
 
         result = []
-        while idx < len(self._entries) and len(result) < max_results:
-            entry_upper, entry_name, body = self._entries[idx]
-            if entry_upper.startswith(upper_text):
-                result.append((entry_name, body))
+        while idx < len(self._sorted_keys) and len(result) < max_results:
+            upper_name = self._sorted_keys[idx]
+            if upper_name.startswith(upper_text):
+                entry = self._name_to_entry[upper_name]
+                result.append((entry[0], entry[1]))
                 idx += 1
             else:
                 break
@@ -217,28 +245,16 @@ class GlobalObjectsDB:
                     catalog_index = self.catalog_indexes[prefix]
                     upper_id = catalog_id.upper()
                     if upper_id in catalog_index._id_to_body:
-                        # Update the dict entry
-                        catalog_index._id_to_body[upper_id] = new_body
-                        # Update the sorted list entry
-                        for i, (eid, _) in enumerate(catalog_index._sorted_ids):
-                            if eid == upper_id:
-                                catalog_index._sorted_ids[i] = (eid, new_body)
-                                break
+                        # Catalog ID already exists, replace the body
+                        catalog_index.replace(catalog_id, new_body)
                     else:
+                        # New catalog ID, add it to the index
                         catalog_index.add(catalog_id, new_body)
                     continue
 
-            # Update the name index
-            name_index = self.name_index
-            upper_name = name.upper()
-            found = False
-            for i, (ename, _, _) in enumerate(name_index._entries):
-                if ename == upper_name:
-                    name_index._entries[i] = (ename, name_index._entries[i][1], new_body)
-                    found = True
-                    break
-            if not found:
-                name_index.add(name, new_body)
+            # Update or add the name index
+            if not self.name_index.replace(name, new_body):
+                self.name_index.add(name, new_body)
 
     def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
         """
