@@ -192,14 +192,15 @@ uniform struct p3d_LightModelParameters {
         code.append("for (int i = 0; i < p3d_LightSource.length(); ++i) {")
         self.local_shadows.prepare_shadow_for(code, "i")
         code.append("}")
-        global_lights = self.shader.data_source.get_source_for('global_lights')
-        code.append("for (int i = 0; i < 1; ++i) {")
-        for shadow in self.shader.shadows:
-            shadow.prepare_shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
-        self.scattering.prepare_scattering_for(
-            code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
-        )
-        code.append("}")
+        if self.shader.data_source.has_source_for('global_lights'):
+            global_lights = self.shader.data_source.get_source_for('global_lights')
+            code.append("for (int i = 0; i < 1; ++i) {")
+            for shadow in self.shader.shadows:
+                shadow.prepare_shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
+            self.scattering.prepare_scattering_for(
+                code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
+            )
+            code.append("}")
 
     def fragment_shader(self, code):
         CompositeShaderComponent.fragment_shader(self, code)
@@ -233,41 +234,42 @@ uniform struct p3d_LightModelParameters {
         self.brdf.light_contribution(code, "contribution", "light_direction", "p3d_LightSource[i].diffuse")
         code.append("    total_diffuse_color.rgb += contribution * shadow;")
         code.append("}")
-        global_lights = self.shader.data_source.get_source_for('global_lights')
-        code.append("  vec3 transmittance = vec3(1);")
-        self.scattering.calc_transmittance(code)
-        code.append("for (int i = 0; i < 1; ++i) {")
-        code.append("    vec3 incoming_light_color = vec3(0);")
-        code.append("    vec3 in_scatter = vec3(0);")
-        code.append("    vec3 ambient_diffuse = vec3(0);")
-        code.append("    float global_shadow = 1.0;")
-        code.append("    float local_shadow = 1.0;")
-        for shadow in self.shader.shadows:
-            shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
-        self.scattering.incoming_light_for(
-            code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
-        )
-        code.append("    vec3 direct_contribution;")
-        self.brdf.light_contribution(
-            code,
-            "direct_contribution",
-            global_lights + "eye_direction",
-            "incoming_light_color",
-        )
-        code.append("    vec3 indirect_contribution;")
-        self.brdf.ambient_contribution(code, "indirect_contribution", "ambient_diffuse")
-        code.append(
-            "    total_diffuse_color.rgb += "
-            "((direct_contribution * local_shadow + indirect_contribution ) * transmittance + in_scatter) "
-            "* global_shadow;"
-        )
-        self.emission.light_contribution(
-            code,
-            global_lights + "direction",
-            global_lights + "eye_direction",
-            self.brdf.cos_light_normal(),
-        )
-        code.append("}")
+        if self.shader.data_source.has_source_for('global_lights'):
+            global_lights = self.shader.data_source.get_source_for('global_lights')
+            code.append("  vec3 transmittance = vec3(1);")
+            self.scattering.calc_transmittance(code)
+            code.append("for (int i = 0; i < 1; ++i) {")
+            code.append("    vec3 incoming_light_color = vec3(0);")
+            code.append("    vec3 in_scatter = vec3(0);")
+            code.append("    vec3 ambient_diffuse = vec3(0);")
+            code.append("    float global_shadow = 1.0;")
+            code.append("    float local_shadow = 1.0;")
+            for shadow in self.shader.shadows:
+                shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
+            self.scattering.incoming_light_for(
+                code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
+            )
+            code.append("    vec3 direct_contribution;")
+            self.brdf.light_contribution(
+                code,
+                "direct_contribution",
+                global_lights + "eye_direction",
+                "incoming_light_color",
+            )
+            code.append("    vec3 indirect_contribution;")
+            self.brdf.ambient_contribution(code, "indirect_contribution", "ambient_diffuse")
+            code.append(
+                "    total_diffuse_color.rgb += "
+                "((direct_contribution * local_shadow + indirect_contribution ) * transmittance + in_scatter) "
+                "* global_shadow;"
+            )
+            self.emission.light_contribution(
+                code,
+                global_lights + "direction",
+                global_lights + "eye_direction",
+                self.brdf.cos_light_normal(),
+            )
+            code.append("}")
         code.append("vec3 ambient = surface_color.rgb * (ambient_color * ambient_coef + p3d_LightModel.ambient.rgb);")
         if self.appearance.has_occlusion:
             code.append("ambient *= surface_occlusion;")
@@ -301,27 +303,29 @@ class AtmosphereLightingModel(CompositeShaderComponent):
 
     def vertex_shader(self, code):
         CompositeShaderComponent.vertex_shader(self, code)
-        global_lights = self.shader.data_source.get_source_for('global_lights')
-        code.append("for (int i = 0; i < 1; ++i) {")
-        self.scattering.prepare_scattering_for(
-            code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
-        )
-        code.append("}")
+        if self.shader.data_source.has_source_for('global_lights'):
+            global_lights = self.shader.data_source.get_source_for('global_lights')
+            code.append("for (int i = 0; i < 1; ++i) {")
+            self.scattering.prepare_scattering_for(
+                code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
+            )
+            code.append("}")
 
     def fragment_shader(self, code):
         CompositeShaderComponent.fragment_shader(self, code)
-        global_lights = self.shader.data_source.get_source_for('global_lights')
-        code.append("for (int i = 0; i < 1; ++i) {")
-        code.append("    vec3 incoming_light_color = vec3(0);")
-        code.append("    vec3 in_scatter = vec3(0);")
-        code.append("    vec3 transmittance = vec3(1);")
-        code.append("    float global_shadow = 1.0;")
-        code.append("    float local_shadow = 1.0;")
-        for shadow in self.shader.shadows:
-            shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
-        self.scattering.incoming_light_for(
-            code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
-        )
-        code.append("    total_diffuse_color.rgb += in_scatter * global_shadow;")
-        code.append("}")
+        if self.shader.data_source.has_source_for('global_lights'):
+            global_lights = self.shader.data_source.get_source_for('global_lights')
+            code.append("for (int i = 0; i < 1; ++i) {")
+            code.append("    vec3 incoming_light_color = vec3(0);")
+            code.append("    vec3 in_scatter = vec3(0);")
+            code.append("    vec3 transmittance = vec3(1);")
+            code.append("    float global_shadow = 1.0;")
+            code.append("    float local_shadow = 1.0;")
+            for shadow in self.shader.shadows:
+                shadow.shadow_for(code, "i", global_lights + "direction", global_lights + "eye_direction")
+            self.scattering.incoming_light_for(
+                code, global_lights + "direction", global_lights + "eye_direction", global_lights + "color"
+            )
+            code.append("    total_diffuse_color.rgb += in_scatter * global_shadow;")
+            code.append("}")
         code.append("total_diffuse_color.a = surface_color.a;")
