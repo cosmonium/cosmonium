@@ -488,11 +488,11 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
         if not self.calc_in_fragment:
             if self.atmosphere:
                 code.append(
-                    f"oneil_calc_scattering(world_vertex, world_normal, {eye_light_direction}, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);"
+                    f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);"
                 )
             else:
                 code.append(
-                    f"oneil_calc_scattering(world_vertex, world_normal, {eye_light_direction}, rayleigh_inscattering, mie_inscattering, transmittance);"
+                    f"oneil_calc_scattering(world_vertex, world_normal, {light_direction}, rayleigh_inscattering, mie_inscattering, transmittance);"
                 )
 
     def calc_transmittance(self, code):
@@ -500,7 +500,7 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
 
     def incoming_light_for(self, code, light_direction, eye_light_direction, light_color):
         code.append(
-            f"oneil_incoming_light_for(world_vertex, world_normal, {eye_light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);"
+            f"oneil_incoming_light_for(world_vertex, world_normal, {light_direction}, {light_color}.rgb, incoming_light_color, in_scatter, transmittance);"
         )
 
 
@@ -510,7 +510,6 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
     def uniforms_scattering(self, code):
         code.append("uniform vec3 v3OriginPos;")  # Center of the planet
         code.append("uniform vec3 v3CameraPos;")  # The camera's current position
-        code.append("uniform vec3 v3EyeLightDir;")  # The direction vector to the light source in eye reference frame
         code.append("uniform vec3 v3InvWavelength;")  # 1 / pow(wavelength, 4) for the red, green, and blue channels
         code.append("uniform float fCameraHeight;")  # The camera's current height
         code.append("uniform float fCameraHeight2;")  # fCameraHeight^2
@@ -533,7 +532,6 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
         code.append("uniform float model_scale;")
         code.append("uniform float height_scale;")
         code.append("uniform mat3 atm_descale;")
-        code.append("uniform mat3 atm_eye_descale;")
 
     def scale_func(self, code):
         code.append("float scale(float fCos)")
@@ -556,7 +554,7 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
         code.append("void oneil_calc_scattering(")
         code.append("        in vec3 world_vertex,")
         code.append("        in vec3 world_normal,")
-        code.append("        in vec3 v3EyeLightDir,")
+        code.append("        in vec3 v3WorldLightDir,")
         code.append("        in vec3 v3LightColor,")
         if self.atmosphere:
             code.append("        out vec3 v3Direction,")
@@ -576,7 +574,7 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
                     code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
             code.append("  vec3 scaled_vertex = atm_descale * (world_vertex * model_scale - v3OriginPos);")
-        code.append("  vec3 v3LightPos = normalize(atm_eye_descale * v3EyeLightDir);")
+        code.append("  vec3 v3LightPos = normalize(atm_descale * v3WorldLightDir);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
         code.append("  vec3 scaled_vertex_dir = scaled_vertex / scaled_vertex_length;")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
@@ -689,16 +687,11 @@ class ONeilScatteringDataSourceBase(DataSource):
             orientation.extract_to_matrix(rotation_mat)
             rotation_mat_inv = LMatrix4()
             rotation_mat_inv.invert_from(rotation_mat)
-            camera_mat = LMatrix4()
-            LQuaternion(*camera_rot).extract_to_matrix(camera_mat)
             descale_mat = rotation_mat_inv * descale * rotation_mat
-            eye_descale_mat = camera_mat * descale_mat
             height_scale = inner_radius
             offset = LVector3d()
         else:
             descale_mat = LMatrix4.ident_mat()
-            eye_descale_mat = LMatrix4()
-            LQuaternion(*camera_rot).extract_to_matrix(eye_descale_mat)
             height_scale = 1.0
             offset = LVector3d(0, 0, inner_radius)
         pos = body.anchor.rel_position - offset
@@ -716,7 +709,6 @@ class ONeilScatteringDataSourceBase(DataSource):
         instance.setShaderInput("model_scale", factor)
         instance.setShaderInput("height_scale", height_scale)
         instance.setShaderInput("atm_descale", descale_mat)
-        instance.setShaderInput("atm_eye_descale", eye_descale_mat)
 
 
 class ONeilSimpleScatteringDataSource(ONeilScatteringDataSourceBase):
@@ -944,14 +936,13 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("uniform float model_scale;")
         code.append("uniform float height_scale;")
         code.append("uniform mat3 atm_descale;")
-        code.append("uniform mat3 atm_eye_descale;")
         code.append("#define DELTA 1e-6")
 
     def calc_scattering(self, code):
         code.append("void oneil_calc_scattering(")
         code.append("        in vec3 world_vertex,")
         code.append("        in vec3 world_normal,")
-        code.append("        in vec3 v3EyeLightDir,")
+        code.append("        in vec3 v3WorldLightDir,")
         code.append("        in vec3 v3LightColor,")
         if self.atmosphere:
             code.append("        out vec3 v3Direction,")
@@ -971,7 +962,7 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
                     code.append("  scaled_vertex += world_normal * vertex_height * height_scale;")
         else:
             code.append("  vec3 scaled_vertex = atm_descale * (world_vertex * model_scale - v3OriginPos);")
-        code.append("  vec3 v3LightPos = normalize(atm_eye_descale * v3EyeLightDir);")
+        code.append("  vec3 v3LightPos = normalize(atm_descale * v3WorldLightDir);")
         code.append("  float scaled_vertex_length = length(scaled_vertex);")
         code.append("  vec3 scaled_vertex_dir = scaled_vertex / scaled_vertex_length;")
         code.append("  vec3 v3Ray = scaled_vertex - v3CameraPos;")
