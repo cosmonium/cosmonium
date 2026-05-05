@@ -87,6 +87,8 @@ class Entity(VisibleObject):
         self.task = None
         self.body = None
         self.physics = None
+        self.lights_source = None
+        self.scattering_source = None
 
     def set_body(self, body) -> None:
         """Sets the body of which this entity is part.
@@ -187,8 +189,10 @@ class Entity(VisibleObject):
         Args:
             lights: Lights data source.
         """
-        self.sources.remove_source_by_name('lights')
-        self.shader.data_source.remove_source('global_lights')
+        if self.lights_source is not None:
+            self.sources.remove_source(self.lights_source)
+            self.shader.data_source.remove_source('global_lights')
+        self.lights_source = lights
         if lights is not None:
             self.sources.add_source(lights)
             self.shader.data_source.add_source(lights.get_data_source())
@@ -284,7 +288,9 @@ class Entity(VisibleObject):
             scattering_source: Scattering data source.
             scattering_shader: Scattering shader.
         """
-        self.sources.remove_source_by_name('scattering')
+        if self.scattering_source is not None:
+            self.sources.remove_source(self.scattering_source)
+        self.scattering_source = scattering_source
         self.shader.lighting_model.set_scattering(scattering_shader)
         self.update_shader()
         self.sources.add_source(scattering_source)
@@ -295,7 +301,9 @@ class Entity(VisibleObject):
         """Removes scattering from the shader and sources."""
         self.shader.lighting_model.set_scattering(NoScattering())
         self.update_shader()
-        self.sources.remove_source_by_name('scattering')
+        if self.scattering_source is not None:
+            self.sources.remove_source(self.scattering_source)
+            self.scattering_source = None
         if self.instance is not None:
             # scattering_source.un_apply(self.instance)
             pass
