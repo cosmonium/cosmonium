@@ -196,6 +196,7 @@ class Entity(VisibleObject):
         if lights is not None:
             self.sources.add_source(lights)
             self.shader.data_source.add_source(lights.get_data_source())
+            self.update_shader()
 
     def set_oid_color(self, oid_color):
         """Sets the object ID color for picking.
