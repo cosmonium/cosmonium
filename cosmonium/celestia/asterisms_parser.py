@@ -47,7 +47,7 @@ def Rule(r):
     return set_rule
 
 
-tokens = ('STRING', 'NAME', 'INT', 'FLOAT', 'BOOL')
+tokens = ('STRING',)
 
 literals = ['(', ')', '[', ']', '{', '}']
 
@@ -57,40 +57,9 @@ t_ignore = " \t"
 t_ignore_COMMENT = r'\#.*'
 
 
-@Token(r'true|false')
-def t_BOOL(t):
-    t.value = t.value == 'true'
-    return t
-
-
-@Token(r'[a-zA-Z_][a-zA-Z0-9_]*')
-def t_NAME(t):
-    return t
-
-
 @Token(r'\".*?\"')
 def t_STRING(t):
     t.value = t.value[1:-1]
-    return t
-
-
-@Token(r'[\+-]?((\d*\.\d+)(E[\+-]?\d+)?|[\+-]?([1-9]\d*E[\+-]?\d+))')
-def t_FLOAT(t):
-    try:
-        t.value = float(t.value)
-    except ValueError:
-        logger.warning("Float value too large %s", t.value)
-        t.value = 0
-    return t
-
-
-@Token(r'[\+-]?\d+')
-def t_INT(t):
-    try:
-        t.value = int(t.value)
-    except ValueError:
-        logger.warning("Integer value too large %s", t.value)
-        t.value = 0
     return t
 
 
