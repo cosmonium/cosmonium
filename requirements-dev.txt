@@ -27,3 +27,10 @@ pre-commit == 4.0.1
 # Test tools
 
 pytest == 8.3.4
+
+
+# Documentation tools
+
+sphinx == 8.1.3
+
+sphinx-rtd-theme == 3.1.0

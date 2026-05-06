@@ -1,3 +1,5 @@
+# panda3d-1.11.0.dev3849 must be manually installed from https://archive.panda3d.org/simple or from SDK
+
 cefpython3==66.1 ; python_version < "3.10" and (sys_platform == 'win32' or sys_platform == 'win_amd64')
 https://github.com/cosmonium/cefpython/releases/download/v66.1/cefpython3-66.1-py3-none-manylinux2014_x86_64.whl ; python_version < "3.10" and sys_platform == 'linux'
 
