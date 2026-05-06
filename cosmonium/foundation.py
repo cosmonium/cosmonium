@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,18 +18,17 @@
 #
 
 
-from panda3d.core import LVecBase3, NodePath, LColor, DrawMask, OmniBoundingVolume
-from panda3d.core import TextNode, CardMaker, BitMask32
+from panda3d.core import BitMask32, CardMaker, DrawMask, LColor, LVecBase3, NodePath, OmniBoundingVolume, TextNode
 
+from . import settings
 from .appearances import ModelAppearance
 from .astro import bayer
 from .bodyclass import bodyClasses
-from .fonts import fontsManager, Font
+from .fonts import Font, fontsManager
 from .parameters import ParametersGroup
-from .shaders.rendering import RenderingShader
 from .shaders.lighting.flat import FlatLightingModel
-from .utils import srgb_to_linear, TransparencyBlend
-from . import settings
+from .shaders.rendering import RenderingShader
+from .utils import TransparencyBlend, srgb_to_linear
 
 
 class BaseObject(object):
@@ -53,6 +52,9 @@ class BaseObject(object):
 
     def get_name(self):
         return self.name
+
+    def get_ascii_name(self):
+        return self.name.encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
 
     def set_owner(self, owner):
         self.owner = owner
@@ -376,43 +378,3 @@ class ObjectLabel(VisibleObject):
         self.instance.set_color_scale(LColor(1, 1, 1, 1))
         card_node.setPythonTag('owner', self.label_source)
         self.look_at = self.instance.attachNewNode("dummy")
-
-
-class LabelledObject(CompositeObject):
-    def __init__(self, name):
-        CompositeObject.__init__(self, name)
-        self.label = None
-
-    def check_settings(self):
-        CompositeObject.check_settings(self)
-        if self.label is not None:
-            self.label.check_settings()
-
-    def get_ascii_name(self):
-        return self.name.encode('ascii', 'replace').decode('ascii').replace('?', 'x').lower()
-
-    def create_label_instance(self):
-        return ObjectLabel(self.get_ascii_name() + '-label', self)
-
-    def create_label(self):
-        if self.label is None:
-            self.label = self.create_label_instance()
-            # self.add_component(self.label)
-
-    def remove_label(self):
-        if self.label is not None:
-            self.label.remove_instance()
-            # self.remove_component(self.label)
-            self.label = None
-
-    def show_label(self):
-        if self.label:
-            self.label.show()
-
-    def hide_label(self):
-        if self.label:
-            self.label.hide()
-
-    def toggle_label(self):
-        if self.label:
-            self.label.toggle_shown()

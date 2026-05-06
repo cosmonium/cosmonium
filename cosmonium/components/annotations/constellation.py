@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,28 +18,24 @@
 #
 
 
-from ...bodyclass import bodyClasses
-from ...foundation import LabelledObject
 from ... import settings
-
+from ...bodyclass import bodyClasses
+from ...foundation import CompositeObject
 from .background_label import BackgroundLabel
 
 
-class Constellation(LabelledObject):
+class Constellation(CompositeObject):
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
     def __init__(self, name, center, boundary):
-        LabelledObject.__init__(self, name)
+        CompositeObject.__init__(self, name)
         self.center = center
         self.boundary = boundary
         self.create_components()
 
-    def create_label_instance(self):
-        return BackgroundLabel(self.get_ascii_name() + '-label', self)
-
     def create_components(self):
-        self.create_label()
+        self.label = BackgroundLabel(self.get_ascii_name() + '-label', self)
         self.add_component(self.label)
         self.add_component(self.boundary)
 

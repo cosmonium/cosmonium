@@ -42,7 +42,7 @@ from ...astro import units
 from ...astro.astro import position_to_equatorial
 from ...astro.projection import InfinitePosition
 from ...bodyclass import bodyClasses
-from ...foundation import LabelledObject, VisibleObject
+from ...foundation import CompositeObject, VisibleObject
 from ...scene.sceneanchor import SceneAnchor
 from ...shaders.lighting.flat import FlatLightingModel
 from ...shaders.rendering import RenderingShader
@@ -165,19 +165,16 @@ class Asterism(VisibleObject):
         self.update_vertices()
 
 
-class NamedAsterism(LabelledObject):
+class NamedAsterism(CompositeObject):
     background_level = settings.constellations_depth
     body_class = 'constellation'
 
     def __init__(self, name):
-        LabelledObject.__init__(self, name)
+        CompositeObject.__init__(self, name)
         self.create_components()
 
-    def create_label_instance(self):
-        return BackgroundLabel(self.get_ascii_name() + '-label', self)
-
     def create_components(self):
-        self.create_label()
+        self.label = BackgroundLabel(self.get_ascii_name() + '-label', self)
         self.add_component(self.label)
         self.asterism = Asterism(self.get_name())
         self.add_component(self.asterism)
