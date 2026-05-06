@@ -26,8 +26,6 @@ from .background_label import BackgroundLabel
 
 
 class Constellation(LabelledObject):
-    ignore_light = True
-    default_shown = True
     background_level = settings.constellations_depth
     body_class = 'constellation'
 

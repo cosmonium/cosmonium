@@ -32,8 +32,6 @@ from ... import settings
 
 
 class Grid(VisibleObject):
-    ignore_light = True
-    default_shown = False
     shader = None
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 

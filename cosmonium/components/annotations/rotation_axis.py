@@ -29,8 +29,6 @@ from ... import settings
 
 
 class RotationAxis(VisibleObject):
-    default_shown = False
-    ignore_light = True
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, body):

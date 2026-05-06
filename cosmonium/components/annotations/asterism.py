@@ -166,8 +166,6 @@ class Asterism(VisibleObject):
 
 
 class NamedAsterism(LabelledObject):
-    ignore_light = True
-    default_shown = True
     background_level = settings.constellations_depth
     body_class = 'constellation'
 

@@ -28,8 +28,6 @@ from ... import settings
 
 
 class Halo(VisibleObject):
-    default_shown = True
-    ignore_light = True
     default_camera_mask = VisibleObject.DefaultCameraFlag
     halo_sprite = None
 

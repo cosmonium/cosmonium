@@ -33,8 +33,6 @@ from ... import settings
 
 
 class Boundary(VisibleObject):
-    ignore_light = True
-    default_shown = True
     shader = None
 
     def __init__(self, name, points=[], color=None):

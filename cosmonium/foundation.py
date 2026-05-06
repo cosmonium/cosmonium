@@ -34,7 +34,6 @@ from . import settings
 
 class BaseObject(object):
     context = None
-    default_shown = True
     DefaultCameraFlag = DrawMask.bit(0)
     AnnotationCameraFlag = DrawMask.bit(1)
     NearCameraFlag = DrawMask.bit(2)
@@ -46,7 +45,7 @@ class BaseObject(object):
 
     def __init__(self, name):
         self.name = name
-        self.shown = self.default_shown
+        self.shown = True
         self.visible = False
         self.parent = None
         self.scene_anchor = None
@@ -136,8 +135,6 @@ class BaseObject(object):
 
 
 class VisibleObject(BaseObject):
-    ignore_light = False
-    patchable = False
 
     def __init__(self, name):
         BaseObject.__init__(self, name)
@@ -292,8 +289,6 @@ class CompositeObject(BaseObject):
 
 
 class ObjectLabel(VisibleObject):
-    default_shown = False
-    ignore_light = True
     font_init = False
     font = None
     appearance = None

@@ -35,8 +35,6 @@ class ObjectMarker(VisibleObject):
     accompany the symbol (Not implemented yet).
     """
 
-    default_shown = True
-    ignore_light = True
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, name, marker_source, color, size, symbol, label, occludable):

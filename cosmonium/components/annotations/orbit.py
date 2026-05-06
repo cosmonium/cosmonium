@@ -36,8 +36,6 @@ from ... import settings
 
 
 class Orbit(VisibleObject):
-    ignore_light = True
-    default_shown = False
     selected_color = LColor(1.0, 0.0, 0.0, 1.0)
     appearance = None
     shader = None
