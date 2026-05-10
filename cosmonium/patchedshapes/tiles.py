@@ -191,9 +191,9 @@ class TileFactory(PatchFactory):
 
 class TiledShape(PatchedShapeBase):
 
-    def __init__(self, factory, scale, lod_control):
+    def __init__(self, factory, tile_size, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
-        self.scale = scale
+        self.tile_size = tile_size
 
     def create_culling_frustum(self, scene_manager, camera):
         cam_transform = camera.camera_np.get_net_transform()
@@ -216,7 +216,7 @@ class TiledShape(PatchedShapeBase):
         )
 
     def parametric_to_shape_coord(self, x, y):
-        return (x / self.scale, y / self.scale)
+        return (x / self.tile_size, y / self.tile_size)
 
     def find_patch_at(self, coord):
         (x, y) = coord
@@ -280,7 +280,7 @@ class TiledShape(PatchedShapeBase):
         pass
 
     def add_root_patches(self, patch, update):
-        # print("Create root patches", patch.centre, self.scale)
+        # print("Create root patches", patch.centre, self.tile_size)
         self.add_root_patch(patch.x - 1, patch.y - 1)
         self.add_root_patch(patch.x, patch.y - 1)
         self.add_root_patch(patch.x + 1, patch.y - 1)
@@ -292,9 +292,9 @@ class TiledShape(PatchedShapeBase):
         patch.neighbours.calc_outer_tessellation_level(update)
 
     def xform_cam_to_model(self, camera_pos):
-        model_camera_pos = camera_pos / self.scale
+        model_camera_pos = camera_pos / self.tile_size
         (x, y) = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, LVector3d(), (x, y))
 
     def get_scale(self):
-        return LVector3(self.scale)
+        return LVector3(self.tile_size)

@@ -159,7 +159,9 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
 
     def calc_nb_of_instances(self, patch):
         scale = 1 << patch.lod
-        count = self.count * self.terrain.size * self.terrain.size
+        # TODO: Only TiledShape is supported
+        size = self.terrain.shape.tile_size
+        count = self.count * size * size
         scaled_count = count / (scale * scale)
         return scaled_count
 
@@ -198,7 +200,7 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         tr = []
         tl = []
         # TODO: Terrain scale should be retrieved properly...
-        size = self.terrain.size
+        size = self.terrain.shape.tile_size
         for data in patch.data:
             (x, y, height, scale) = data
             (u, v) = terrain_patch.coord_to_uv((x / size, y / size))
@@ -374,16 +376,18 @@ class ObjectPlacer(object):
 
 class RandomObjectPlacer(ObjectPlacer):
     def place_new(self, terrain, count, patch=None):
+        # TODO: Only TiledShape is supported
+        size = terrain.shape.tile_size
         if patch is not None:
             u = random()
             v = random()
             height = terrain.get_height_patch(patch, u, v)
             x, y = patch.get_xy_for(u, v)
-            x *= terrain.size
-            y *= terrain.size
+            x *= size
+            y *= size
         else:
-            x = uniform(-terrain.size, terrain.size)
-            y = uniform(-terrain.size, terrain.size)
+            x = uniform(-size, size)
+            y = uniform(-size, size)
             height = terrain.get_height((x, y))
         # TODO: Should not have such explicit dependency
         # TODO: Disabled for now

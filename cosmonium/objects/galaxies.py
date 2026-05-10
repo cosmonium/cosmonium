@@ -29,7 +29,7 @@ from random import random, gauss, choice, seed
 
 
 from ..appearances import AppearanceBase
-from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import Surface
 from ..entities.datasource import DataSource
 from ..parameters import AutoUserParameter, UserParameter
 from ..sprites import ExpPointSprite
@@ -37,6 +37,7 @@ from ..shaders.point_control import PointControl
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..shapes.base import Shape
+from ..surface_models.ellipsoid import SphereModel
 from ..textures import TransparentTexture, DirectTextureSource
 from ..utils import TransparencyBlend
 from ..utils import srgb_to_linear
@@ -88,7 +89,8 @@ class Galaxy(OctreeSystem):
         shader.color_picking = False
         if appearance is None:
             appearance = GalaxyAppearance()
-        self.surface = EllipsoidFlatSurface(radius=radius, shape=shape, appearance=appearance, shader=shader)
+        surface_model = SphereModel(radius)
+        self.surface = Surface(model=surface_model, shape=shape, appearance=appearance, shader=shader)
         self.surface.sources.add_source(GalaxyDataSource())
         self.components.add_component(self.surface)
         self.surface.set_body(self)

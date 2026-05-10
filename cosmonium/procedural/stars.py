@@ -22,10 +22,11 @@ from math import pi
 
 from ..appearances import Appearance
 from ..astro import units
-from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import Surface
 from ..objects.surface_factory import SurfaceFactory
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.emission import PureEmissionLightingModel
+from ..surface_models import EllipsoidSurfaceModelFactory
 from ..patchedshapes.lodcontrol import VertexSizeLodControl
 from ..patchedshapes.patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory
 from ..textures import SurfaceTexture
@@ -55,10 +56,9 @@ class ProceduralStarSurfaceFactory(SurfaceFactory):
             radiance = body.anchor.get_radiant_flux() / (4 * pi * pi * body.radius * body.radius / units.m / units.m)
         else:
             radiance = 1.0
-        surface = EllipsoidFlatSurface(
-            radius=body.radius,
-            oblateness=body.oblateness,
-            scale=body.scale,
+        model = EllipsoidSurfaceModelFactory.create(radius=body.radius, oblateness=body.oblateness, scale=body.scale)
+        surface = Surface(
+            model=model,
             appearance=Appearance(
                 colorScale=body.anchor.point_color * radiance,
                 texture=SurfaceTexture(

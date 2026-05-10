@@ -23,13 +23,7 @@ from math import sqrt
 from .. import settings
 from ..catalogs import objectsDB
 from ..components.elements.surface_categories import SurfaceCategory, surfaceCategoryDB
-from ..components.elements.surfaces import (
-    EllipsoidFlatSurface,
-    FlatSurface,
-    HeightmapFlatSurface,
-    HeightmapSurface,
-    MeshSurface,
-)
+from ..components.elements.surfaces import Surface
 from ..heightmap import heightmapRegistry
 from ..opengl import OpenGLConfig
 from ..patchedshapes.lodcontrol import (
@@ -42,6 +36,7 @@ from ..shaders.rendering import RenderingShader
 from ..shaders.tessellation import ConstantTessellationControl
 from ..shaders.vertex_control.displacement import DisplacementVertexControl
 from ..shapes.mesh import MeshShape
+from ..surface_models import EllipsoidSurfaceModelFactory, FlatSurfaceModel, HeightmapSurfaceModel, MeshSurfaceModel
 from .appearancesparser import AppearanceYamlParser
 from .heightmapsparser import HeightmapYamlParser
 from .objectparser import ObjectYamlParser
@@ -114,6 +109,7 @@ class SurfaceYamlParser(YamlModuleParser):
         lighting_model = LightingModelYamlParser.decode(lighting_model, appearance)
         shader_appearance = appearance.get_shader_appearance()
         if shape.is_spherical():
+            model = EllipsoidSurfaceModelFactory.create(radius=radius, oblateness=ellipticity, scale=scale)
             if shape.patchable:
                 if appearance.texture is None or appearance.texture.source.procedural:
                     shape.set_lod_control(
@@ -132,19 +128,10 @@ class SurfaceYamlParser(YamlModuleParser):
                     appearance=shader_appearance,
                     use_model_texcoord=not extra.get('create-uv', False),
                 )
-                surface = EllipsoidFlatSurface(
-                    name,
-                    category=category,
-                    resolution=resolution,
-                    attribution=attribution,
-                    radius=radius,
-                    oblateness=ellipticity,
-                    scale=scale,
-                    shape=shape,
-                    appearance=appearance,
-                    shader=shader,
-                )
             else:
+                model = HeightmapSurfaceModel(
+                    base_model=model, heightmap=heightmap, height_scale=radius, biome=None
+                )
                 data_source = []
                 shape_data_source = shape.get_shader_data_source()
                 if shape_data_source is not None:
@@ -163,34 +150,23 @@ class SurfaceYamlParser(YamlModuleParser):
                     lighting_model=lighting_model,
                     use_model_texcoord=not extra.get('create-uv', False),
                 )
-                surface = HeightmapSurface(
-                    name,
-                    # category=category, resolution=resolution, source=source,
-                    radius=radius,
-                    oblateness=ellipticity,
-                    scale=scale,
-                    height_scale=radius,
-                    shape=shape,
-                    heightmap=heightmap,
-                    biome=None,
-                    appearance=appearance,
-                    shader=shader,
-                )
         else:
             shader = RenderingShader(
                 lighting_model=lighting_model,
                 appearance=shader_appearance,
                 use_model_texcoord=not extra.get('create-uv', False),
             )
-            surface = MeshSurface(
-                name,
-                category=category,
-                resolution=resolution,
-                attribution=attribution,
-                shape=shape,
-                appearance=appearance,
-                shader=shader,
-            )
+            model = MeshSurfaceModel(shape)
+        surface = Surface(
+            name,
+            category=category,
+            resolution=resolution,
+            attribution=attribution,
+            model=model,
+            shape=shape,
+            appearance=appearance,
+            shader=shader,
+        )
         return surface
 
     @classmethod
@@ -254,6 +230,7 @@ class FlatSurfaceParser(YamlModuleParser):
         shader_appearance = appearance.get_shader_appearance()
 
         if shape.is_spherical():
+            model = FlatSurfaceModel()
             if shape.patchable:
                 if hw_tessellation and OpenGLConfig.hardware_tessellation:
                     terrain_layer_factory = GpuPatchTerrainLayerFactory()
@@ -271,7 +248,6 @@ class FlatSurfaceParser(YamlModuleParser):
                     appearance=shader_appearance,
                     use_model_texcoord=not extra.get('create-uv', False),
                 )
-                surface = FlatSurface('surface', shape, appearance, shader, clickable=False)
             else:
                 data_source = []
                 shape_data_source = shape.get_shader_data_source()
@@ -298,16 +274,19 @@ class FlatSurfaceParser(YamlModuleParser):
                     vertex_control=DisplacementVertexControl(heightmap),
                     use_model_texcoord=not extra.get('create-uv', False),
                 )
-                surface = HeightmapFlatSurface(
-                    'surface', tile_size, shape, heightmap, biome, appearance, shader, clickable=False
+                model = HeightmapSurfaceModel(
+                    base_model=model, heightmap=heightmap, height_scale=tile_size, biome=biome
                 )
+            surface = Surface(
+                'surface', model=model, shape=shape, appearance=appearance, shader=shader, clickable=False
+            )
         else:
             shader = RenderingShader(
                 lighting_model=lighting_model,
                 appearance=shader_appearance,
                 use_model_texcoord=not extra.get('create-uv', False),
             )
-            surface = MeshSurface(shape=shape, appearance=appearance, shader=shader)
+            surface = Surface(model=MeshSurfaceModel(shape), shape=shape, appearance=appearance, shader=shader)
 
         return surface
 

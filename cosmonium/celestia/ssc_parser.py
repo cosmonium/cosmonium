@@ -41,7 +41,7 @@ from ..catalogs import objectsDB
 from ..components.elements.atmosphere import Atmosphere
 from ..components.elements.clouds import Clouds
 from ..components.elements.rings import Rings
-from ..components.elements.surfaces import EllipsoidFlatSurface, MeshSurface
+from ..components.elements.surfaces import Surface
 from ..objects.reflective import ReflectiveBody
 from ..objects.rings import StellarRings
 from ..objects.systems import ReferencePoint
@@ -50,6 +50,7 @@ from ..shaders.lighting.lambert import LambertPhongLightingModel
 from ..shaders.rendering import RenderingShader
 from ..shapes.mesh import MeshShape
 from ..shapes.spheres import SphereShape
+from ..surface_models import EllipsoidSurfaceModelFactory, MeshSurfaceModel
 from . import config_parser
 from .celestia_utils import (
     body_path,
@@ -371,19 +372,15 @@ def instanciate_body(universe, context, names, is_planet, data, parent_anchor):
     lighting_model = ShadingLightingModel(lighting_model)
     shader = RenderingShader(lighting_model=lighting_model)
     if model is not None:
-        surface = MeshSurface(
-            shape=shape,
-            appearance=appearance,
-            shader=shader,
-        )
+        surface_model = MeshSurfaceModel(shape)
     else:
-        surface = EllipsoidFlatSurface(
-            shape=shape,
-            radius=radius,
-            oblateness=oblateness,
-            appearance=appearance,
-            shader=shader,
-        )
+        surface_model = EllipsoidSurfaceModelFactory.create(radius=radius, oblateness=oblateness, scale=None)
+    surface = Surface(
+        model=surface_model,
+        shape=shape,
+        appearance=appearance,
+        shader=shader,
+    )
     body = ReflectiveBody(
         names=names,
         source_names=[],

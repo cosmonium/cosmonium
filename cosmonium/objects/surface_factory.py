@@ -19,10 +19,11 @@
 
 
 from ..appearances import Appearance
-from ..components.elements.surfaces import EllipsoidFlatSurface
+from ..components.elements.surfaces import Surface
 from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.flat import FlatLightingModel
 from ..shapes.spheres import SphereShape
+from ..surface_models import EllipsoidSurfaceModelFactory
 
 
 class SurfaceFactory(object):
@@ -39,11 +40,10 @@ class StarTexSurfaceFactory(SurfaceFactory):
         shape = SphereShape()
         appearance = Appearance(emissionColor=body.anchor.point_color, texture=self.texture, context=self.context)
         shader = RenderingShader(lighting_model=FlatLightingModel())
-        return EllipsoidFlatSurface(
+        surface_model = EllipsoidSurfaceModelFactory.create(body.radius, body.oblateness, body.scale)
+        return Surface(
             'surface',
-            radius=body.radius,
-            oblateness=body.oblateness,
-            scale=body.scale,
+            model=surface_model,
             shape=shape,
             appearance=appearance,
             shader=shader,

@@ -279,7 +279,7 @@ class NavigationAutoPilot:
         )
         # Compute the camera offset from the object centre in the object's
         # body-fixed frame, then rotate it into the world frame.
-        offset = target.surface.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
+        offset = target.surface.model.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
         offset = target.anchor._orientation.xform(offset)
         direction = -offset.normalized()
         self.go_to(target, duration, center + offset, direction, up, start_rotation, end_rotation)

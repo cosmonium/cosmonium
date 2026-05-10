@@ -27,7 +27,7 @@ from unittest.mock import create_autospec
 
 from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
-from cosmonium.components.elements.surfaces import FlatSurface
+from cosmonium.components.elements.surfaces import Surface
 from cosmonium.controllers.base import MovementController
 from cosmonium.controllers.position import CartesianMovementController, FlatSurfaceMovementController
 from cosmonium.engine.pyengine.anchors import CartesianAnchor
@@ -48,8 +48,8 @@ def make_mock_anchor():
 
 
 def make_mock_terrain():
-    """Create a bare mock FlatSurface terrain."""
-    return create_autospec(FlatSurface, spec_set=True, instance=True)
+    """Create a bare mock Surface terrain."""
+    return create_autospec(Surface, spec_set=True, instance=True)
 
 
 class TestMovementController:

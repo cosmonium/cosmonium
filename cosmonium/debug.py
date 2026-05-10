@@ -23,11 +23,26 @@ from direct.task.TaskManagerGlobal import taskMgr
 from math import pi
 
 from .astro import units
-from .components.elements.surfaces import EllipsoidSurface
 from .objects.stellarbody import StellarBody
 from .objects.reflective import ReflectiveBody
+from .surface_models import EllipsoidModelInterface, HeightmapSurfaceModel
 from . import settings
 from . import utils
+
+
+def _get_surface_ellipsoid_model(surface):
+    """Returns the EllipsoidSurfaceModel underlying a surface, or None."""
+    model = surface.model
+    if isinstance(model, EllipsoidModelInterface):
+        return model
+    if isinstance(model, HeightmapSurfaceModel) and isinstance(model._base, EllipsoidModelInterface):
+        return model._base
+    return None
+
+
+def _surface_has_geodetic(surface):
+    """Returns True if the surface has an underlying ellipsoid that supports geodetic queries."""
+    return _get_surface_ellipsoid_model(surface) is not None
 
 
 class Debug:
@@ -239,8 +254,8 @@ class Debug:
                         print("Patches:", len(selected.surface.shape.patches))
                 else:
                     print("\tPoint")
-                if selected.surface is not None and isinstance(selected.surface, EllipsoidSurface):
-                    lon, lat, h = selected.surface.cartesian_to_geodetic(
+                if selected.surface is not None and _surface_has_geodetic(selected.surface):
+                    lon, lat, h = _get_surface_ellipsoid_model(selected.surface).cartesian_to_geodetic(
                         selected.local_to_surface_position(observer.get_local_position())
                     )
                     print("\tLongLat:", lon * 180 / pi, lat * 180 / pi)

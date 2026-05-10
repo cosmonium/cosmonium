@@ -301,14 +301,14 @@ class SurfaceMovementController(PositionMovementController):
 
     def calc_surface_position(self):
         """Calculate position on surface"""
-        p = self.body.surface.geodetic_to_cartesian(self.longitude, self.latitude, 0)
+        p = self.body.surface.model.geodetic_to_cartesian(self.longitude, self.latitude, 0)
         height = self.body.surface.get_alt_under(p) + self.altitude
         position = p + p.normalized() * height
         return position
 
     def calc_surface_orientation(self):
         """Calculate orientation aligned to surface"""
-        p = self.body.surface.geodetic_to_cartesian(self.longitude, self.latitude, 0)
+        p = self.body.surface.model.geodetic_to_cartesian(self.longitude, self.latitude, 0)
         (tangent, binormal, normal) = self.body.surface.get_tangent_plane_under(p)
         rotation = LQuaterniond()
         look_at(rotation, binormal, normal)

@@ -765,7 +765,7 @@ class PatchedShapeBase(Shape):
                 .xform(-self.parent.body.anchor.vector_to_obs)
                 * self.parent.body.anchor._height_under
             )
-            self.model_body_center_offset /= self.parent.radius
+            self.model_body_center_offset /= self.parent.model.radius
         else:
             self.model_body_center_offset = LVector3d()
 

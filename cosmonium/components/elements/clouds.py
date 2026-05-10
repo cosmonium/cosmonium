@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,15 +26,15 @@ from ...parameters import AutoUserParameter
 from ...shapes.spheres import SphereShape
 from ... import settings
 
-from .surfaces import EllipsoidFlatSurface
+from .surfaces import Surface
 
 
-class Clouds(EllipsoidFlatSurface):
+class Clouds(Surface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
-        EllipsoidFlatSurface.__init__(
-            self, 'clouds', shape=shape, appearance=appearance, shader=shader, clickable=False
+        Surface.__init__(
+            self, 'clouds', model=None, shape=shape, appearance=appearance, shader=shader, clickable=False
         )
         self.height = height
         self.scale_base = None
@@ -55,11 +55,10 @@ class Clouds(EllipsoidFlatSurface):
 
     def configure_shape(self):
         self.model = self.body.surface.model.copy_extend(self.height)
-        self.radius = self.model.radius
         # TODO : temporary until height_scale is removed from patchedshape
-        self.height_scale = self.radius
+        self.height_scale = self.model.radius
         self.shape.set_axes(self.model.get_shape_axes())
-        self.shape.set_scale(LVector3(self.radius))
+        self.shape.set_scale(LVector3(self.model.radius))
 
     def check_settings(self):
         self.set_shown(settings.show_clouds)
@@ -68,7 +67,7 @@ class Clouds(EllipsoidFlatSurface):
         if self.instance_ready:
             self.instance.set_quat(LQuaternion(*self.body.anchor.get_absolute_orientation()))
 
-            inside = self.body.anchor.distance_to_obs < self.radius
+            inside = self.body.anchor.distance_to_obs < self.model.radius
             if self.inside != inside:
                 if inside:
                     self.instance.setAttrib(CullFaceAttrib.make(CullFaceAttrib.MCullCounterClockwise))
@@ -84,10 +83,10 @@ class Clouds(EllipsoidFlatSurface):
                     if self.appearance.transparency:
                         self.instance.set_depth_write(False)
                 self.inside = inside
-        return EllipsoidFlatSurface.update_instance(self, scene_manager, camera_pos, camera_rot)
+        return Surface.update_instance(self, scene_manager, camera_pos, camera_rot)
 
     def remove_instance(self):
-        EllipsoidFlatSurface.remove_instance(self)
+        Surface.remove_instance(self)
         self.inside = None
 
     def set_height(self, height):

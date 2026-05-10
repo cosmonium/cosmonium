@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,102 +19,125 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from math import sqrt, pi, sin, cos, asin, atan2, copysign
-from panda3d.core import LPoint3d, LVector3d
+from abc import abstractmethod
+from math import asin, atan2, copysign, cos, pi, sin, sqrt
 
-from .ellipse import DistancePointEllipse, PointToGeodetic
-from .ellipsoid import DistancePointEllipsoid, TriaxialGeodeticToCartesian, PointToTriaxialGeodetic
+from panda3d.core import LPoint3d, LVector3, LVector3d
+
+from ..mathutil.ellipse import DistancePointEllipse, PointToGeodetic
+from ..mathutil.ellipsoid import DistancePointEllipsoid, PointToTriaxialGeodetic, TriaxialGeodeticToCartesian
+from ..shaders.shadows.ellipsoid import ShaderSphereSelfShadow
+from ..shadows.sphere import SphereShadowCaster
+from .base import SurfaceModelInterface
 
 
-class EllipsoidModelInterface(ABC):
+class EllipsoidModelInterface(SurfaceModelInterface):
+    """
+    Abstract interface for ellipsoidal surface geometry models (sphere, spheroid, full ellipsoid).
+
+    Specialises :class:`SurfaceModelInterface` with the additional methods required for
+    geodetic coordinate conversion and other ellipsoid-specific operations.
+    """
+
+    # ------------------------------------------------------------------
+    # Ellipsoid-specific interface
+    # ------------------------------------------------------------------
 
     @abstractmethod
     def copy_extend(self, delta: float) -> EllipsoidModelInterface:
         """
-        Create a copy of this model with all the axes increased by delta
-        """
-        raise NotImplementedError
+        Create a copy of this model with all axes increased by *delta*.
 
-    @abstractmethod
-    def get_shape_axes(self) -> LVector3d:
-        """
-        Return the axes to be used to create the shape
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_point_under(self, position: LPoint3d) -> LPoint3d:
-        """
-        Return the surface point closest to the given position.
-        The position is expressed as cartesian body centered coordinates (ECEF)
+        Args:
+            delta: The amount to increase the radius of the ellipsoid by.
+        Returns:
+            A new EllipsoidModelInterface instance with the same shape but increased radius.
         """
         ...
 
     @abstractmethod
     def get_radius_under(self, position: LPoint3d) -> float:
         """
-        Return the distance from center of the ellipsoid to the surface point closest to the given position.
-        The position is expressed as cartesian body centered coordinates (ECEF)
-        """
-        ...
+        Return the distance from centre of the ellipsoid to the surface point
+        closest to the given position.
 
-    @abstractmethod
-    def get_average_radius(self) -> float:
-        """
-        Returns the average radius of the ellipsoid
-        """
-        ...
-
-    @abstractmethod
-    def get_min_radius(self) -> float:
-        """
-        Return the minimum axis of the ellipsoid
-        """
-        ...
-
-    @abstractmethod
-    def get_max_radius(self) -> float:
-        """
-        Return the maximum axis of the ellipsoid
+        Args:
+            position: Position is in ECEF coordinates.
+        Returns:
+            The radius of the ellipsoid at the point below the given position.
         """
         ...
 
     @abstractmethod
     def geodetic_to_cartesian(self, long: float, lat: float, h: float) -> LPoint3d:
-        """
-        Convert the geodetic coordinates into cartesian body centered coordinates (ECEF)
-        """
+        """Convert geodetic coordinates to ECEF cartesian coordinates."""
         ...
 
     @abstractmethod
     def cartesian_to_geodetic(self, position: LPoint3d) -> tuple[float, float, float]:
-        """
-        Convert the cartesian body centered coordinates (ECEF) into geodetic coordinates
-        """
+        """Convert ECEF cartesian coordinates to geodetic coordinates."""
         ...
 
     @abstractmethod
     def parametric_to_cartesian(self, x: float, y: float, h: float) -> LPoint3d:
-        """
-        Convert the parametric coordinates into cartesian body centered coordinates (ECEF)
-        """
+        """Convert parametric coordinates to ECEF cartesian coordinates."""
         ...
 
     @abstractmethod
     def cartesian_to_parametric(self, position: LPoint3d) -> tuple[float, float, float]:
-        """
-        Convert the cartesian body centered coordinates (ECEF) into parametric coordinates
-        """
+        """Convert ECEF cartesian coordinates to parametric coordinates."""
         ...
 
-    @abstractmethod
-    def get_tangent_plane_under(self, position: LPoint3d) -> tuple[LPoint3d, LPoint3d, LPoint3d]:
-        """
-        Returns the tangent, binormal and normal geodetic vectors (n-vector) related to the tangent plane
-        of the closest point on the ellipsoid.
-        """
-        ...
+    # ------------------------------------------------------------------
+    # Common implementations of SurfaceModelInterface
+    # ------------------------------------------------------------------
+
+    # --- Geometry predicates ---
+
+    def is_flat(self) -> bool:
+        return True
+
+    def is_spherical(self) -> bool:
+        return True
+
+    # --- Surface geometry queries ---
+
+    def get_alt_under(self, position, strict: bool = False):
+        return 0
+
+    def get_height_under(self, position, strict: bool = False):
+        return self.get_radius_under(position)
+
+    def get_height_patch(self, patch, u, v, strict: bool = False):
+        return self.get_average_radius()
+
+    # --- Helpers for the heightmap wrapper ---
+
+    def get_base_height(self, position) -> float:
+        return self.get_radius_under(position)
+
+    def position_to_parametric(self, position):
+        (x, y, _h) = self.cartesian_to_parametric(position)
+        return (x, y)
+
+    # --- Shape management ---
+
+    def get_height_scale(self) -> float:
+        return self.get_average_radius()
+
+    def configure_shape(self, shape) -> None:
+        shape.set_axes(self.get_shape_axes())
+        shape.set_scale(LVector3(self.radius))
+
+    # --- Shadow handling ---
+
+    def do_create_shadow_caster_for(self, light_source, surface):
+        return SphereShadowCaster(light_source, surface.body)
+
+    def add_self_shadow(self, light_source, surface) -> None:
+        if surface.body.atmosphere is None and light_source.source not in surface.shadow_casters:
+            surface.create_shadow_caster_for(light_source)
+            surface.shader.add_shadows(ShaderSphereSelfShadow())
 
 
 class SphereModel(EllipsoidModelInterface):
@@ -127,7 +150,7 @@ class SphereModel(EllipsoidModelInterface):
     def get_shape_axes(self) -> LVector3d:
         return LVector3d(self.radius)
 
-    def get_point_under(self, position: LPoint3d) -> LPoint3d:
+    def get_point_under(self, position: LPoint3d, strict: bool = False) -> LPoint3d:
         return position.normalized() * self.radius
 
     def get_radius_under(self, position: LPoint3d) -> float:
@@ -203,7 +226,7 @@ class SpheroidModel(EllipsoidModelInterface):
     def get_shape_axes(self) -> LVector3d:
         return LVector3d(1.0, 1.0, 1.0 - self.ellipticity) * self.radius
 
-    def get_point_under(self, position: LPoint3d) -> LPoint3d:
+    def get_point_under(self, position: LPoint3d, strict: bool = False) -> LPoint3d:
         if position[0] != 0.0:
             phi = atan2(position[1], position[0])
         else:
@@ -303,13 +326,13 @@ class EllipsoidModel(EllipsoidModelInterface):
         self.axes = axes
         self.radius: float = max(axes)
 
-    def copy_extend(self, delta: float) -> SphereModel:
+    def copy_extend(self, delta: float) -> EllipsoidModel:
         return EllipsoidModel(self.axes + LVector3d(delta))
 
     def get_shape_axes(self) -> LVector3d:
         return self.axes
 
-    def get_point_under(self, position: LPoint3d) -> LPoint3d:
+    def get_point_under(self, position: LPoint3d, strict: bool = False) -> LPoint3d:
         x0, x1, x2, _distance = DistancePointEllipsoid(
             *(self.axes / self.radius),
             abs(position[0] / self.radius),
@@ -396,3 +419,18 @@ class EllipsoidModel(EllipsoidModelInterface):
         binormal = normal.cross(tangent)
         binormal.normalize()
         return (tangent, binormal, normal)
+
+
+class EllipsoidSurfaceModelFactory:
+    @staticmethod
+    def create(radius=None, oblateness=None, scale=None) -> EllipsoidModelInterface:
+        if scale is not None:
+            ellipsoid = EllipsoidModel(scale)
+        elif oblateness is not None:
+            ellipsoid = SpheroidModel(radius, oblateness)
+        elif radius is not None:
+            ellipsoid = SphereModel(radius)
+        else:
+            # raise ValueError("At least one of radius, oblateness, or scale must be provided")
+            ellipsoid = None
+        return ellipsoid
