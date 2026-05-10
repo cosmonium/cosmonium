@@ -19,7 +19,7 @@
 
 
 from ..appearances import TexturesBlock
-from ..procedural.appearances import TexturesDictionary
+from cosmonium.procedural.textures_dictionary import TexturesDictionary
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
 from ..textures import NormalMapTexture, OcclusionMapTexture, SurfaceTexture
 from .schemas.texture import TextureDictionaryConfig, TextureDictionaryEntryConfig
