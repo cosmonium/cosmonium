@@ -55,7 +55,9 @@ class ReferenceTextureSourceYamlParser(YamlModuleParser):
 class TextureFileSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
-        texture_source = AutoTextureSource(data.file, data.attribution, YamlModuleParser.context)
+        texture_source = AutoTextureSource(data.file, YamlModuleParser.context)
+        if data.attribution:
+            texture_source.set_attribution(data.attribution)
         texture_offset = data.offset
         return texture_source, texture_offset
 
@@ -65,8 +67,10 @@ class CelestiaVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
         texture_source = CelestiaVirtualTextureSource(
-            data.root, data.ext, data.size, data.prefix, data.offset, data.attribution, YamlModuleParser.context
+            data.root, data.ext, data.size, data.prefix, data.offset, YamlModuleParser.context
         )
+        if data.attribution:
+            texture_source.set_attribution(data.attribution)
         texture_offset = 0
         return texture_source, texture_offset
 
@@ -76,8 +80,10 @@ class SpaceEngineVirtualTextureSourceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, patched_shape=True):
         texture_source = SpaceEngineVirtualTextureSource(
-            data.root, data.ext, data.size, data.color, data.alpha, data.attribution, YamlModuleParser.context
+            data.root, data.ext, data.size, data.color, data.alpha, YamlModuleParser.context
         )
+        if data.attribution:
+            texture_source.set_attribution(data.attribution)
         texture_offset = 0
         return texture_source, texture_offset
 

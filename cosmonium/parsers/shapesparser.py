@@ -119,9 +119,10 @@ class MeshYamlParser(YamlModuleParser):
             data.auto_center,
             data.flatten,
             data.panda,
-            data.attribution,
             context=YamlModuleParser.context,
         )
+        if data.attribution:
+            shape.set_attribution(data.attribution)
         return (shape, {'create-uv': data.create_uv})
 
 

@@ -357,7 +357,6 @@ def instanciate_body(universe, context, names, is_planet, data, parent_anchor):
             auto_center_mesh=False,
             flatten=True,
             panda=False,
-            attribution=None,
             context=context,
         )
     else:

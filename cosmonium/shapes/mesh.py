@@ -39,12 +39,10 @@ class MeshShape(Shape):
         auto_center_mesh,
         flatten,
         panda,
-        attribution,
         context,
     ):
         Shape.__init__(self)
         self.model = model
-        self.attribution = attribution
         self.context = context
         self.offset = offset
         self.source_scale_factor = scale

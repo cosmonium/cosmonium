@@ -38,8 +38,8 @@ class CelestiaVirtualTextureSource(VirtualTextureSource):
     for repositioning the texture origin.
     """
 
-    def __init__(self, root, ext, size, prefix='tx_', offset=0, attribution=None, context=None):
-        VirtualTextureSource.__init__(self, root, ext, size, attribution, context)
+    def __init__(self, root, ext, size, prefix='tx_', offset=0, context=None):
+        VirtualTextureSource.__init__(self, root, ext, size, context)
         self.prefix = prefix
         self.offset = offset
 

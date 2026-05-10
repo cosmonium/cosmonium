@@ -136,11 +136,19 @@ class TextureSource:
     cached = True
     procedural = False
 
-    def __init__(self, attribution=None):
-        """Initialize the texture source with optional attribution metadata."""
+    def __init__(self):
+        """Initialize the texture source."""
         self.loaded = False
         self.texture = None
         self.texture_size = 0
+        self.attribution = None
+
+    def set_attribution(self, attribution):
+        """Set the attribution metadata for this texture source.
+
+        Args:
+            attribution: The attribution string.
+        """
         self.attribution = attribution
 
     def add_as_source(self, shape):

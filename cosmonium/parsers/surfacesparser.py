@@ -161,12 +161,13 @@ class SurfaceYamlParser(YamlModuleParser):
             name,
             category=category,
             resolution=resolution,
-            attribution=attribution,
             model=model,
             shape=shape,
             appearance=appearance,
             shader=shader,
         )
+        if attribution:
+            surface.set_attribution(attribution)
         return surface
 
     @classmethod

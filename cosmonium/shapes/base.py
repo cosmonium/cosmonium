@@ -43,6 +43,14 @@ class Shape:
         # TODO: Used to fix ring textures
         self.vanish_borders = False
 
+    def set_attribution(self, attribution):
+        """Set the attribution metadata for this shape.
+
+        Args:
+            attribution: The attribution string.
+        """
+        self.attribution = attribution
+
     def get_name(self):
         return 'shape ' + self.owner.get_name()
 

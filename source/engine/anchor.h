@@ -78,8 +78,7 @@ public:
       PyObject *ref_object,
       LColor point_color,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   AnchorBase(
@@ -87,8 +86,7 @@ PUBLISHED:
       PyObject *ref_object,
       LColor point_color,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
 
   virtual ~AnchorBase(void);
 
@@ -114,6 +112,7 @@ PUBLISHED:
   std::string get_source_name_at(unsigned int index) const;
   std::string get_c_name(void) const;
   std::string get_description(void) const;
+  void set_description(const std::string &description);
   bool _is_named(const std::string &name_up) const;
   virtual std::string get_fullname(const std::string &separator = "/") const;
 

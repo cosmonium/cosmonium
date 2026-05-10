@@ -31,8 +31,7 @@ public:
       double radius,
       LColor point_color,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   UniverseAnchor(PyObject *ref_object,
@@ -41,8 +40,7 @@ PUBLISHED:
       double radius,
       LColor point_color,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
   virtual std::string get_fullname(const std::string &separator = "/") const;
   virtual void traverse(AnchorTraverser &visitor);
 

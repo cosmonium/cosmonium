@@ -65,7 +65,6 @@ class AnchorBase(ABC):
         point_color: LColor | None = None,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the anchor.
 
@@ -75,7 +74,6 @@ class AnchorBase(ABC):
             point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
         self.content = anchor_class
         self.body = body
@@ -102,7 +100,7 @@ class AnchorBase(ABC):
             # Single name
             self.object_names.add_name(ObjectNames.parse_name(names))
 
-        self.description = description
+        self.description = ''
         # Scene anchor (set by StellarObject or SceneWorld)
         self.scene_anchor = None
         # Flags
@@ -205,6 +203,14 @@ class AnchorBase(ABC):
             The anchor's description string.
         """
         return self.description
+
+    def set_description(self, description: str) -> None:
+        """Set the description of this anchor.
+
+        Args:
+            description: The description string.
+        """
+        self.description = description
 
     def _build_fullname(self, name: str, separator: str) -> str:
         """Build a full hierarchical name given this anchor's local name component.
@@ -590,7 +596,6 @@ class CartesianAnchor(AnchorBase):
         point_color: LColor | None = None,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the Cartesian anchor.
 
@@ -601,9 +606,8 @@ class CartesianAnchor(AnchorBase):
             point_color: Optional color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names, description)
+        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names)
         self.frame = frame
         self._frame_position = LPoint3d()
         self._frame_orientation = LQuaterniond()
@@ -933,7 +937,6 @@ class OriginAnchor(CartesianAnchor):
         body: object,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the OriginAnchor.
 
@@ -942,10 +945,9 @@ class OriginAnchor(CartesianAnchor):
             body: The celestial body associated with this anchor.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
         CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names, description
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names
         )
 
 
@@ -959,7 +961,6 @@ class FlatSurfaceAnchor(OriginAnchor):
         surface: object,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the FlatSurfaceAnchor.
 
@@ -969,9 +970,8 @@ class FlatSurfaceAnchor(OriginAnchor):
             surface: The surface object this anchor is attached to.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        OriginAnchor.__init__(self, anchor_class, body, names, source_names, description)
+        OriginAnchor.__init__(self, anchor_class, body, names, source_names)
         self.surface = surface
 
     def set_surface(self, surface) -> None:
@@ -1013,7 +1013,6 @@ class ObserverAnchor(CartesianAnchor):
         body: object,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the ObserverAnchor.
 
@@ -1022,10 +1021,9 @@ class ObserverAnchor(CartesianAnchor):
             body: The celestial body associated with this anchor.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
         CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names, description
+            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names, source_names
         )
 
     def update(self, time: float, update_id: int) -> None:
@@ -1070,7 +1068,6 @@ class StellarAnchor(AnchorBase):
         point_color: LColor,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the StellarAnchor.
 
@@ -1082,9 +1079,8 @@ class StellarAnchor(AnchorBase):
             point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names, description)
+        AnchorBase.__init__(self, anchor_class, body, point_color, names, source_names)
         self.orbit = orbit
         self.rotation = rotation
         self._equatorial = LQuaterniond.ident_quat()
@@ -1329,7 +1325,6 @@ class SystemAnchor(StellarAnchor):
         point_color: LColor,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the SystemAnchor.
 
@@ -1340,9 +1335,8 @@ class SystemAnchor(StellarAnchor):
             point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        StellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color, names, source_names, description)
+        StellarAnchor.__init__(self, self.System, body, orbit, rotation, point_color, names, source_names)
         self.primary = None
         self.star_system = False
         self.children: list[StellarAnchor] = []
@@ -1554,7 +1548,6 @@ class OctreeAnchor(SystemAnchor):
         point_color: LColor,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the OctreeAnchor.
 
@@ -1566,9 +1559,8 @@ class OctreeAnchor(SystemAnchor):
             point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        SystemAnchor.__init__(self, body, orbit, rotation, point_color, names, source_names, description)
+        SystemAnchor.__init__(self, body, orbit, rotation, point_color, names, source_names)
         self.bounding_radius = radius
         # TODO: Should be configurable
         abs_magnitude = app_to_abs_mag(6.0, radius * sqrt(3))
@@ -1626,7 +1618,6 @@ class UniverseAnchor(OctreeAnchor):
         point_color: LColor,
         names: list[str] | str | None = None,
         source_names: list[str] | None = None,
-        description: str = '',
     ) -> None:
         """Initialize the UniverseAnchor.
 
@@ -1638,9 +1629,8 @@ class UniverseAnchor(OctreeAnchor):
             point_color: Color for point rendering.
             names: Translated name(s) for this anchor. Can be a single name or a list of names.
             source_names: List of source (untranslated) names corresponding to the provided names.
-            description: Optional description for this anchor.
         """
-        OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color, names, source_names, description)
+        OctreeAnchor.__init__(self, body, orbit, rotation, radius, point_color, names, source_names)
         self.visible = True
         self.resolved = True
 

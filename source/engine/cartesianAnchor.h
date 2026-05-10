@@ -34,8 +34,7 @@ public:
       ReferenceFrame *frame,
       LColor point_color,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   CartesianAnchor(
@@ -44,8 +43,7 @@ PUBLISHED:
       ReferenceFrame *frame,
       LColor point_color,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
 
   CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame);
   virtual ~CartesianAnchor(void);
@@ -133,16 +131,14 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   OriginAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
 
 protected:
   MAKE_TYPE("OriginAnchor", CartesianAnchor);
@@ -157,8 +153,7 @@ public:
       PyObject *ref_object,
       PyObject *ref_surface,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   FlatSurfaceAnchor(
@@ -166,8 +161,7 @@ PUBLISHED:
       PyObject *ref_object,
       PyObject *ref_surface,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
   virtual ~FlatSurfaceAnchor(void);
 
   void set_surface(PyObject *ref_surface);
@@ -190,16 +184,14 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   ObserverAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
 
   virtual void update(double time, unsigned long int update_id);
 

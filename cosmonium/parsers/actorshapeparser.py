@@ -58,7 +58,8 @@ class ActorShapeYamlParser(YamlModuleParser):
             config.auto_center,
             config.flatten,
             config.panda,
-            config.attribution,
             context=YamlModuleParser.context,
         )
+        if config.attribution:
+            shape.set_attribution(config.attribution)
         return shape, {}

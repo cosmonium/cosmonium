@@ -262,14 +262,14 @@ class Appearance(AppearanceBase):
         if texture is not None and not isinstance(texture, TextureBase):
             if transparency:
                 texture = TransparentTexture(
-                    AutoTextureSource(texture, None, context),
+                    AutoTextureSource(texture, context),
                     tint,
                     level=transparency_level,
                     blend=transparency_blend,
                     srgb=self.srgb,
                 )
             else:
-                texture = SurfaceTexture(AutoTextureSource(texture, None, context), tint, srgb=self.srgb)
+                texture = SurfaceTexture(AutoTextureSource(texture, context), tint, srgb=self.srgb)
             texture.set_offset(offset)
         self.texture = texture
         self.transparency = transparency
@@ -280,29 +280,29 @@ class Appearance(AppearanceBase):
     def set_emission_texture(self, emission_texture, tint=None, context=None):
         if emission_texture is not None and not isinstance(emission_texture, TextureBase):
             emission_texture = EmissionTexture(
-                AutoTextureSource(emission_texture, None, context), tint, srgb=self.srgb
+                AutoTextureSource(emission_texture, context), tint, srgb=self.srgb
             )
         self.emission_texture = emission_texture
 
     def set_normal_map(self, normal_map, context=None):
         if normal_map is not None and not isinstance(normal_map, TextureBase):
-            normal_map = NormalMapTexture(AutoTextureSource(normal_map, None, context))
+            normal_map = NormalMapTexture(AutoTextureSource(normal_map, context))
         self.normal_map = normal_map
 
     def set_specular_map(self, specular_map, context=None):
         if specular_map is not None and not isinstance(specular_map, TextureBase):
-            specular_map = SpecularMapTexture(AutoTextureSource(specular_map, None, context))
+            specular_map = SpecularMapTexture(AutoTextureSource(specular_map, context))
         self.specular_map = specular_map
 
     def set_bump_map(self, bump_map, bump_height, context=None):
         if bump_map is not None and not isinstance(bump_map, TextureBase):
-            bump_map = BumpMapTexture(AutoTextureSource(bump_map, None, context))
+            bump_map = BumpMapTexture(AutoTextureSource(bump_map, context))
         self.bump_map = bump_map
         self.bump_height = bump_height
 
     def set_occlusion_map(self, occlusion_map, context=None):
         if occlusion_map is not None and not isinstance(occlusion_map, TextureBase):
-            occlusion_map = OcclusionMapTexture(AutoTextureSource(occlusion_map, None, context))
+            occlusion_map = OcclusionMapTexture(AutoTextureSource(occlusion_map, context))
         self.occlusion_map = occlusion_map
 
     def calc_indexes(self):

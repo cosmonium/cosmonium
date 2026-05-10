@@ -59,8 +59,7 @@ TypeHandle AnchorBase::_type_handle;
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
                        const pvector<std::string> names,
-                       const pvector<std::string> source_names,
-                       const std::string &description) :
+                       const pvector<std::string> source_names) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -94,7 +93,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   // Owning system anchor
   _system(nullptr),
   // Name management
-  description(description)
+  description("")
 {
   Py_INCREF(ref_object);
 
@@ -116,8 +115,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
                        PyObject *names,
-                       PyObject *source_names,
-                       const std::string &description) :
+                       PyObject *source_names) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -151,7 +149,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   // If this anchor is the primary body of a stellar system, this will point to the system anchor
   _system(nullptr),
   // Name management
-  description(description)
+  description("")
 {
   Py_INCREF(ref_object);
 
@@ -376,6 +374,12 @@ std::string
 AnchorBase::get_description(void) const
 {
   return description;
+}
+
+void
+AnchorBase::set_description(const std::string &description)
+{
+  this->description = description;
 }
 
 bool

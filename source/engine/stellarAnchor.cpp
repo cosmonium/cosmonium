@@ -37,9 +37,8 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     RotationBase *rotation,
     LColor point_color,
     const pvector<std::string> names,
-    const pvector<std::string> source_names,
-    const std::string &description) :
-    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
+    const pvector<std::string> source_names) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names),
     orbit(orbit),
     rotation(rotation),
     _equatorial(LQuaterniond::ident_quat())
@@ -52,9 +51,8 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     RotationBase *rotation,
     LColor point_color,
     PyObject *names,
-    PyObject *source_names,
-    const std::string &description) :
-    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
+    PyObject *source_names) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names),
     orbit(orbit),
     rotation(rotation),
     _equatorial(LQuaterniond::ident_quat())
@@ -76,7 +74,7 @@ StellarAnchor::get_or_create_system(void)
   PT(ReferenceFrame) system_frame = new J2000BarycentricEclipticReferenceFrame();
   PT(FixedRotation) system_rotation = new FixedRotation(LQuaterniond::ident_quat(), system_frame);
   // TODO: The system name should be translated correctly
-  _system = new SystemAnchor(nullptr, orbit, system_rotation, LColor(0), name_strings, pvector<std::string>(), "");
+  _system = new SystemAnchor(nullptr, orbit, system_rotation, LColor(0), name_strings, pvector<std::string>());
   _system->set_primary(this);
   if (parent != nullptr) {
     DCAST(SystemAnchor, parent)->add_child(_system);

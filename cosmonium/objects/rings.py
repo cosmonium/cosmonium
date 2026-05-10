@@ -28,9 +28,9 @@ class StellarRings(StellarObject):
     spread_object = True
 
     def __init__(
-        self, names, source_names, rings_object, orbit, rotation, frame, body_class, point_color, description=''
+        self, names, source_names, rings_object, orbit, rotation, frame, body_class, point_color
     ):
-        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
+        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color)
         self.rings_object = rings_object
         self.rings_object.set_body(self)
         self.rings_object.set_owner(self)

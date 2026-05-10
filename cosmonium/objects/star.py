@@ -46,7 +46,6 @@ class Star(EmissiveBody):
         clouds=None,
         body_class='star',
         point_color=None,
-        description='',
     ):
         if spectral_type is None:
             self.spectral_type = SpectralType()
@@ -86,5 +85,4 @@ class Star(EmissiveBody):
             clouds=clouds,
             body_class=body_class,
             point_color=point_color,
-            description=description,
         )

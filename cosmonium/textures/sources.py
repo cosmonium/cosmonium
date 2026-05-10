@@ -50,14 +50,13 @@ class AutoTextureSource(TextureSource):
 
     factories = []
 
-    def __init__(self, filename, attribution=None, context=None):
+    def __init__(self, filename, context=None):
         """Initialize the auto texture source with the given filename and context.
         Args:
             filename: The file path or identifier for the texture to load.
-            attribution: Optional attribution string for the texture source.
             context: Directory context for resolving texture file paths.
         """
-        TextureSource.__init__(self, attribution)
+        TextureSource.__init__(self)
         assert context is not None, "Context is required for AutoTextureSource"
         self.filename = filename
         self.context = context
@@ -185,8 +184,8 @@ class TextureFileSource(TextureSource):
 
     cached = True
 
-    def __init__(self, filename, attribution=None, context=None):
-        TextureSource.__init__(self, attribution)
+    def __init__(self, filename, context=None):
+        TextureSource.__init__(self)
         self.filename = filename
         self.context = context
         self.loaded = False
@@ -242,7 +241,7 @@ class TextureFileSourceFactory(TextureSourceFactory):
     """Factory that creates ``TextureFileSource`` instances for any file extension."""
 
     def create_source(self, filename, context=None):
-        return TextureFileSource(filename, None, context)
+        return TextureFileSource(filename, context)
 
 
 # TODO: Should be done in cosmonium class
@@ -285,17 +284,16 @@ class VirtualTextureSource(TextureSource):
 
     cached = False
 
-    def __init__(self, root, ext, size, attribution=None, context=None):
+    def __init__(self, root, ext, size, context=None):
         """Initialize the virtual texture source with the given root directory, file extension, and texture size.
 
         Args:
             root: Root directory containing the textures organised by LOD.
             ext: File extension for the texture files (e.g. 'png').
             size: Texture size in pixels (assumed square).
-            attribution: Optional attribution string for the texture source.
             context: Directory context for resolving texture file paths.
         """
-        TextureSource.__init__(self, attribution)
+        TextureSource.__init__(self)
         assert context is not None, "Context is required for VirtualTextureSource"
         self.map_patch = {}
         self.root = root

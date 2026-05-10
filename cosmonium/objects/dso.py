@@ -43,7 +43,6 @@ class DeepSpaceObject(EmissiveBody):
         frame=None,
         body_class=None,
         point_color=None,
-        description='',
     ):
         radius = radius * radius_units
         EmissiveBody.__init__(
@@ -58,7 +57,6 @@ class DeepSpaceObject(EmissiveBody):
             abs_magnitude=abs_magnitude,
             body_class=body_class,
             point_color=point_color,
-            description=description,
         )
 
     def get_height_under(self, position):

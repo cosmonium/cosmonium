@@ -326,7 +326,7 @@ class TextureHeightmap(TextureHeightmapBase):
 
     def set_data_source(self, data_source, context):
         if data_source is not None and not isinstance(data_source, TextureBase):
-            data_source = HeightMapTexture(AutoTextureSource(data_source, None, context))
+            data_source = HeightMapTexture(AutoTextureSource(data_source, context))
         self.data_source = data_source
 
     async def load(self, shape):

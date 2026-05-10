@@ -61,7 +61,6 @@ class StellarObject:
         frame=None,
         body_class=None,
         point_color=None,
-        description='',
     ):
         self.body_class = body_class
         if point_color is None:
@@ -71,7 +70,7 @@ class StellarObject:
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         # else:
         self.anchor = self.create_anchor(
-            self.anchor_class, orbit, rotation, frame, point_color, names, source_names, description
+            self.anchor_class, orbit, rotation, frame, point_color, names, source_names
         )
         self.anchor.scene_anchor = SceneAnchor(
             self.get_ascii_name() + '-scene-anchor',
@@ -126,6 +125,9 @@ class StellarObject:
     def get_description(self):
         return self.anchor.get_description()
 
+    def set_description(self, description):
+        self.anchor.set_description(description)
+
     @property
     def visible(self):
         return self.anchor.visible
@@ -143,12 +145,12 @@ class StellarObject:
         self.lights = lights
         self.components.set_lights(lights)
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names, description):
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names):
         if rotation is None and orbit is None:
-            return CartesianAnchor(anchor_class, self, frame, point_color, names, source_names, description)
+            return CartesianAnchor(anchor_class, self, frame, point_color, names, source_names)
         else:
             return DynamicStellarAnchor(
-                anchor_class, self, orbit, rotation, point_color, names, source_names, description
+                anchor_class, self, orbit, rotation, point_color, names, source_names
             )
 
     def is_system(self):

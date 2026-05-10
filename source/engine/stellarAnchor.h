@@ -35,8 +35,7 @@ public:
       RotationBase *rotation,
       LColor point_color,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   StellarAnchor(unsigned int anchor_class,
@@ -45,8 +44,7 @@ PUBLISHED:
       RotationBase *rotation,
       LColor point_color,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
   virtual ~StellarAnchor(void);
 
   virtual bool is_stellar(void) const;

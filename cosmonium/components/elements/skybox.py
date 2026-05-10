@@ -39,7 +39,6 @@ class SkyBox(Entity):
                 auto_center_mesh=False,
                 panda=True,
                 flatten=True,
-                attribution=None,
                 context=context,
             )
         if appearance is None:

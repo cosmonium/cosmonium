@@ -46,7 +46,6 @@ class Surface(Entity):
         name=None,
         category=None,
         resolution=None,
-        attribution=None,
         model: SurfaceModelInterface = None,
         shape=None,
         appearance=None,
@@ -56,7 +55,7 @@ class Surface(Entity):
         Entity.__init__(self, name, shape, appearance, shader, clickable)
         self.category = category
         self.resolution = resolution
-        self.attribution = attribution
+        self.attribution = None
         self.body = None
         self.model = model
         if model is not None:
@@ -69,6 +68,14 @@ class Surface(Entity):
     # ------------------------------------------------------------------
     # ------------------------------------------------------------------
     # Surface configuration
+
+    def set_attribution(self, attribution):
+        """Set the attribution metadata for this surface.
+
+        Args:
+            attribution: The attribution string.
+        """
+        self.attribution = attribution
 
     def get_component_name(self):
         """Returns a human-readable name for this component, used in the UI and logs."""

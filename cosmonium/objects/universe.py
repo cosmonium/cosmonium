@@ -38,11 +38,11 @@ class Universe(OctreeSystem):
             orbit=AbsoluteFixedPosition(absolute_reference_point=LPoint3d(), frame=AbsoluteReferenceFrame()),
             rotation=FixedRotation(LQuaterniond(), frame=AbsoluteReferenceFrame()),
             radius=radius,
-            description='Universe',
         )
+        self.anchor.set_description('Universe')
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
-        return UniverseAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names):
+        return UniverseAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names)
 
     def find_by_path(self, path, separator='/'):
         # TODO: Should probably moved outsidde Of Universe class

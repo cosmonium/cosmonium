@@ -32,8 +32,7 @@ public:
       RotationBase *rotation,
       LColor point_color,
       const pvector<std::string> names,
-      const pvector<std::string> source_names,
-      const std::string &description);
+      const pvector<std::string> source_names);
 
 PUBLISHED:
   SystemAnchor(PyObject *ref_object,
@@ -41,8 +40,7 @@ PUBLISHED:
       RotationBase *rotation,
       LColor point_color,
       PyObject *names = nullptr,
-      PyObject *source_names = nullptr,
-      const std::string &description = "");
+      PyObject *source_names = nullptr);
 
 private:
   SystemAnchor(SystemAnchor const &other);

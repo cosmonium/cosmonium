@@ -61,7 +61,7 @@ class SimpleTexture(TextureBase):
     def __init__(self, source, srgb=False, offset=0):
         TextureBase.__init__(self)
         if source is not None and not isinstance(source, TextureSource):
-            source = AutoTextureSource(source, attribution=None)
+            source = AutoTextureSource(source)
         self.srgb = srgb
         self.source = source
         self.offset = offset
@@ -162,7 +162,7 @@ class DataTexture(TextureBase):
     def __init__(self, source):
         TextureBase.__init__(self)
         if source is not None and not isinstance(source, TextureSource):
-            source = AutoTextureSource(source, attribution=None)
+            source = AutoTextureSource(source)
         self.source = source
 
     async def load(self, tasks_tree, patch, texture_config):

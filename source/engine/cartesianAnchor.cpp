@@ -31,9 +31,8 @@ TypeHandle CartesianAnchor::_type_handle;
 
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color,
                                  const pvector<std::string> names,
-                                 const pvector<std::string> source_names,
-                                 const std::string &description) :
-    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
+                                 const pvector<std::string> source_names) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names),
     frame(frame),
     _frame_position(0.0),
     _frame_orientation(LQuaterniond::ident_quat())
@@ -42,9 +41,8 @@ CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object
 
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color,
                                  PyObject *names,
-                                 PyObject *source_names,
-                                 const std::string &description) :
-    AnchorBase(anchor_class, ref_object, point_color, names, source_names, description),
+                                 PyObject *source_names) :
+    AnchorBase(anchor_class, ref_object, point_color, names, source_names),
     frame(frame),
     _frame_position(0.0),
     _frame_orientation(LQuaterniond::ident_quat())
@@ -52,7 +50,7 @@ CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object
 }
 
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame) :
-    AnchorBase(anchor_class, ref_object, LColor(0), pvector<std::string>(), pvector<std::string>(), ""),
+    AnchorBase(anchor_class, ref_object, LColor(0), pvector<std::string>(), pvector<std::string>()),
     frame(frame),
     _frame_position(0.0),
     _frame_orientation(LQuaterniond::ident_quat())
@@ -305,9 +303,8 @@ OriginAnchor::OriginAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
         const pvector<std::string> names,
-        const pvector<std::string> source_names,
-        const std::string &description) :
-    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names, description)
+        const pvector<std::string> source_names) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names)
 {
 }
 
@@ -315,9 +312,8 @@ OriginAnchor::OriginAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
         PyObject *names,
-        PyObject *source_names,
-        const std::string &description) :
-    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names, description)
+        PyObject *source_names) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names)
 {
 }
 
@@ -329,9 +325,8 @@ FlatSurfaceAnchor::FlatSurfaceAnchor(
         PyObject *ref_object,
         PyObject *ref_surface,
         const pvector<std::string> names,
-        const pvector<std::string> source_names,
-        const std::string &description) :
-    OriginAnchor(anchor_class, ref_object, names, source_names, description),
+        const pvector<std::string> source_names) :
+    OriginAnchor(anchor_class, ref_object, names, source_names),
     ref_surface(ref_surface)
 {
   if (ref_surface != nullptr) {
@@ -344,9 +339,8 @@ FlatSurfaceAnchor::FlatSurfaceAnchor(
         PyObject *ref_object,
         PyObject *ref_surface,
         PyObject *names,
-        PyObject *source_names,
-        const std::string &description) :
-    OriginAnchor(anchor_class, ref_object, names, source_names, description),
+        PyObject *source_names) :
+    OriginAnchor(anchor_class, ref_object, names, source_names),
     ref_surface(ref_surface)
 {
   if (ref_surface != nullptr) {
@@ -403,9 +397,8 @@ ObserverAnchor::ObserverAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
         const pvector<std::string> names,
-        const pvector<std::string> source_names,
-        const std::string &description) :
-    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names, description)
+        const pvector<std::string> source_names) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names)
 {
 }
 
@@ -413,9 +406,8 @@ ObserverAnchor::ObserverAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
         PyObject *names,
-        PyObject *source_names,
-        const std::string &description) :
-    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names, description)
+        PyObject *source_names) :
+    CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names, source_names)
 {
 }
 

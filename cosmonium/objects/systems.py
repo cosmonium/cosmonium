@@ -43,16 +43,15 @@ class StellarSystem(StellarObject):
         frame=None,
         body_class=None,
         point_color=None,
-        description='',
     ):
-        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color, description)
+        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color)
         self.primary = None
         self.has_halo = False
         self.anchor.star_system = star_system
         self.set_primary(primary)
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names, description):
-        return SystemAnchor(self, orbit, rotation, point_color, names, source_names, description)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, source_names):
+        return SystemAnchor(self, orbit, rotation, point_color, names, source_names)
 
     @property
     def star_system(self):
@@ -160,7 +159,6 @@ class OctreeSystem(StellarSystem):
         body_class=None,
         radius=None,
         point_color=None,
-        description='',
     ):
         self.radius = radius
         StellarSystem.__init__(
@@ -172,11 +170,10 @@ class OctreeSystem(StellarSystem):
             frame=frame,
             body_class=body_class,
             point_color=point_color,
-            description=description,
         )
 
-    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names, description):
-        return OctreeAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names, description)
+    def create_anchor(self, anchor_class, orbit, rotation, frame, point_color, names, sources_names):
+        return OctreeAnchor(self, orbit, rotation, self.radius, point_color, names, sources_names)
 
     def dumpOctree(self):
         self.anchor.dump_octree()

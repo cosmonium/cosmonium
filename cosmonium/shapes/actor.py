@@ -34,7 +34,6 @@ class ActorShape(MeshShape):
         auto_center_mesh,
         flatten,
         panda,
-        attribution,
         context=None,
     ):
         MeshShape.__init__(
@@ -47,7 +46,6 @@ class ActorShape(MeshShape):
             auto_center_mesh,
             flatten,
             panda,
-            attribution,
             context,
         )
         self.animations = animations
