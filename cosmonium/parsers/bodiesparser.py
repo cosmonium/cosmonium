@@ -40,7 +40,7 @@ class ReflectiveYamlParser(YamlModuleParser):
 
     def decode(self, data, parent=None):
         name = data.name
-        translated_names, source_names = self.translate_names(name)
+        translated_names, source_names = self.translate_names(name, reflective=True)
         parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:

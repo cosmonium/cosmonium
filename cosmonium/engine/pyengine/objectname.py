@@ -237,6 +237,7 @@ class ObjectName:
     NT_catalog = 3
     NT_variable_star = 4
     NT_custom = 5
+    NT_minor_planet = 6
 
     def __init__(self, value: str, name_type: int, catalog_id: int = 0, translatable: bool = True) -> None:
         self.value = value
@@ -263,6 +264,11 @@ class ObjectName:
     def make_catalog(cls, catalog_id: int, value: str) -> ObjectName:
         """Create a catalog name."""
         return ObjectName(value, cls.NT_catalog, catalog_id, False)
+
+    @classmethod
+    def make_minor_planet(cls, name: str) -> ObjectName:
+        """Create a minor planet / asteroid designation name."""
+        return ObjectName(name, cls.NT_minor_planet, 0, True)
 
     def get_full_name(self) -> str:
         """Get the full name, reconstructing catalog names if needed."""
@@ -363,9 +369,17 @@ class ObjectNames:
         self._names[index].value = translated
 
     @classmethod
-    def parse_name(cls, name: str) -> ObjectName:
+    def parse_name(cls, name: str, reflective: bool = False) -> ObjectName:
         """
         Parse a name string and auto-detect its type.
+
+        Args:
+            name: The name string to parse.
+            reflective: When True the body is a reflective body.
+                When True, the minor-planet designation pattern is tested and Flamsteed
+                pattern is ignored.
+                When False, Flamsteed pattern is tested and the minor-planet designation
+                pattern is ignored.
 
         Returns an ObjectName with appropriate type, catalog_id, and translatable flag.
         """
@@ -408,12 +422,19 @@ class ObjectNames:
                     if rest in CONSTELLATIONS:
                         return ObjectName.make_bayer(name)
 
-            # Check for Flamsteed (e.g., "51 Peg")
+            # "NUMBER Word" patterns: Flamsteed (stars) vs minor-planet (reflective bodies)
             if prefix.isdigit():
                 rest = name[space_pos + 1 :]
-                # Check if rest is a 2-4 letter word (constellation)
-                if 2 <= len(rest) <= 4 and rest.isalpha():
-                    return ObjectName.make_flamsteed(name)
+                if rest.isalpha():
+                    if reflective:
+                        # Reflective bodies (minor planets, asteroids): any alphabetic name
+                        # after the number is a minor-planet designation.
+                        return ObjectName.make_minor_planet(name)
+                    else:
+                        # Stars / stellar systems: a 2-4 letter word is a constellation
+                        # abbreviation → Flamsteed designation.
+                        if 2 <= len(rest) <= 4:
+                            return ObjectName.make_flamsteed(name)
 
         # Default to vernacular name (translatable)
         return ObjectName.make_vernacular(name)

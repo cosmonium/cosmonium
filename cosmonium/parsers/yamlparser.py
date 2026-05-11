@@ -30,7 +30,7 @@ The validation layer is in schemavalidator.py.
 
 from pydantic import BaseModel
 
-from ..engine.objectname import ObjectName, ObjectNames
+from ..engine.objectname import ObjectNames
 from .yamlloader import YamlLoader
 
 
@@ -127,7 +127,7 @@ class YamlModuleParser(YamlParser):
             return cls.translation.gettext(name)
 
     @classmethod
-    def translate_names(cls, names, context=None):
+    def translate_names(cls, names, reflective: bool = False, context=None):
         translated_names = []
         source_names = []
         if not isinstance(names, list):
@@ -135,10 +135,10 @@ class YamlModuleParser(YamlParser):
 
         for name in names:
             # Parse the name to determine its type
-            parsed = ObjectNames.parse_name(name)
+            parsed = ObjectNames.parse_name(name, reflective)
 
             # Only translate vernacular (common) names
-            if parsed.translatable and parsed.type == ObjectName.NT_vernacular:
+            if parsed.translatable:
                 if context is not None:
                     translated = cls.translation.pgettext(context, name)
                 else:

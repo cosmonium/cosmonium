@@ -125,11 +125,46 @@ class TestObjectNameParsing:
         assert name.translatable is False
 
     def test_parse_flamsteed(self, registry):
-        """Test parsing Flamsteed designations."""
+        """Test parsing Flamsteed designations (stars only, reflective=False)."""
         name = ObjectNames.parse_name("51 Peg")
         assert name.type == ObjectName.NT_flamsteed
         assert name.translatable is False
         assert name.value == "51 Peg"
+
+    def test_parse_flamsteed_requires_non_reflective(self, registry):
+        """Flamsteed pattern is skipped for reflective bodies."""
+        # With reflective=True a "NUMBER short-word" is treated as minor planet
+        name = ObjectNames.parse_name("51 Peg", reflective=True)
+        assert name.type == ObjectName.NT_minor_planet
+        assert name.translatable is True
+
+    def test_parse_minor_planet_designation(self, registry):
+        """Test parsing minor planet designations (reflective=True)."""
+        name = ObjectNames.parse_name("1 Ceres", reflective=True)
+        assert name.type == ObjectName.NT_minor_planet
+        assert name.translatable is True
+        assert name.value == "1 Ceres"
+        assert name.get_full_name() == "1 Ceres"
+
+    def test_parse_minor_planet_designation_larger_number(self, registry):
+        """Test parsing minor planet designations with multi-digit numbers."""
+        name = ObjectNames.parse_name("52 Europa", reflective=True)
+        assert name.type == ObjectName.NT_minor_planet
+        assert name.translatable is True
+        assert name.value == "52 Europa"
+
+    def test_parse_minor_planet_ignored_for_non_reflective(self, registry):
+        """Minor-planet pattern is skipped for non-reflective (stellar) bodies."""
+        # "4 Vesta" without reflective flag → vernacular (not minor planet, not Flamsteed)
+        name = ObjectNames.parse_name("4 Vesta")
+        assert name.type == ObjectName.NT_vernacular
+        assert name.translatable is True
+
+    def test_parse_minor_planet_short_name(self, registry):
+        """Short alphabetic names after a number are also minor-planet designations."""
+        # Even a short name like "4 Pax" is a minor-planet designation for reflective bodies
+        name = ObjectNames.parse_name("4 Pax", reflective=True)
+        assert name.type == ObjectName.NT_minor_planet
 
     def test_parse_empty_name(self, registry):
         """Test parsing empty name."""

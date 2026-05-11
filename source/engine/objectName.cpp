@@ -130,7 +130,7 @@ ObjectName::make_vernacular(const std::string &name)
 ObjectName
 ObjectName::make_flamsteed(const std::string &name)
 {
-  return ObjectName(name, ObjectName::NameType::NT_flamsteed, 0, true);
+  return ObjectName(name, ObjectName::NameType::NT_flamsteed, 0, false);
 }
 
 ObjectName
@@ -143,6 +143,12 @@ ObjectName
 ObjectName::make_catalog(uint8_t catalog_id, const std::string &id)
 {
   return ObjectName(id, ObjectName::NameType::NT_catalog, catalog_id, false);
+}
+
+ObjectName
+ObjectName::make_minor_planet(const std::string &name)
+{
+  return ObjectName(name, ObjectName::NameType::NT_minor_planet, 0, true);
 }
 
 std::string
@@ -287,7 +293,7 @@ ObjectNames::set_translated(unsigned int index, const std::string &translated)
 }
 
 ObjectName
-ObjectNames::parse_name(const std::string &name)
+ObjectNames::parse_name(const std::string &name, bool reflective)
 {
   if (name.empty()) {
     return ObjectName::make_vernacular(name);
@@ -361,7 +367,7 @@ ObjectNames::parse_name(const std::string &name)
       }
     }
 
-    // Check for Flamsteed (e.g., "51 Peg")
+    // "NUMBER Word" patterns: Flamsteed (stars) vs minor-planet (reflective bodies)
     bool is_number = true;
     for (char c : prefix) {
       if (!std::isdigit(c)) {
@@ -372,17 +378,27 @@ ObjectNames::parse_name(const std::string &name)
 
     if (is_number) {
       std::string rest = name.substr(space_pos + 1);
-      // Check if rest is a 2-4 letter word (constellation)
-      if (rest.length() >= 2 && rest.length() <= 4) {
-        bool is_word = true;
-        for (char c : rest) {
-          if (!std::isalpha(c)) {
-            is_word = false;
-            break;
-          }
+
+      // Check that rest is entirely alphabetic
+      bool is_word = true;
+      for (char c : rest) {
+        if (!std::isalpha(c)) {
+          is_word = false;
+          break;
         }
-        if (is_word) {
-          return ObjectName::make_flamsteed(name);
+      }
+
+      if (is_word) {
+        if (reflective) {
+          // Reflective bodies (minor planets, asteroids): any alphabetic name
+          // after the number is a minor-planet designation.
+          return ObjectName::make_minor_planet(name);
+        } else {
+          // Stars / stellar systems: a 2-4 letter word is a constellation
+          // abbreviation → Flamsteed designation.
+          if (rest.length() >= 2 && rest.length() <= 4) {
+            return ObjectName::make_flamsteed(name);
+          }
         }
       }
     }

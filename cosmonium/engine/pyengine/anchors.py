@@ -58,6 +58,11 @@ class AnchorBase(ABC):
     Anchors form the foundation of the graph for simulation and rendering.
     """
 
+    Emissive: int = 1
+    Reflective: int = 2
+    System: int = 4
+    OctreeAnchor: int = 8
+
     def __init__(
         self,
         anchor_class: int,
@@ -83,6 +88,7 @@ class AnchorBase(ABC):
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         self.point_color = point_color
         # Name management
+        reflective = (anchor_class & self.Reflective) != 0
         self.object_names = ObjectNames()
         if names is None:
             self.object_names.add_name(ObjectNames.parse_name(''))
@@ -90,7 +96,7 @@ class AnchorBase(ABC):
             # Parse names and associate with source_names if provided
             source_list = source_names if source_names is not None else []
             for i, name in enumerate(names):
-                parsed = ObjectNames.parse_name(name)
+                parsed = ObjectNames.parse_name(name, reflective)
                 # If there's a corresponding source name, use it as the original
                 if i < len(source_list):
                     self.object_names.add_name(parsed, source_list[i])
@@ -98,7 +104,7 @@ class AnchorBase(ABC):
                     self.object_names.add_name(parsed)
         else:
             # Single name
-            self.object_names.add_name(ObjectNames.parse_name(names))
+            self.object_names.add_name(ObjectNames.parse_name(names, reflective))
 
         self.description = ''
         # Scene anchor (set by StellarObject or SceneWorld)
@@ -145,15 +151,16 @@ class AnchorBase(ABC):
         Args:
             names: Single name, list of names, or None.
         """
+        reflective = (self.content & self.Reflective) != 0
         # Rebuild object_names from scratch
         self.object_names = ObjectNames()
         if names is None:
             self.object_names.add_name(ObjectNames.parse_name(''))
         elif isinstance(names, (list, tuple)):
             for name in names:
-                self.object_names.add_name(ObjectNames.parse_name(name))
+                self.object_names.add_name(ObjectNames.parse_name(name, reflective))
         else:
-            self.object_names.add_name(ObjectNames.parse_name(names))
+            self.object_names.add_name(ObjectNames.parse_name(names, reflective))
 
     def get_source_names(self) -> list[str]:
         """Get the original (untranslated) names.
@@ -1053,11 +1060,6 @@ class StellarAnchor(AnchorBase):
     dynamics. It includes support for luminosity calculations, both intrinsic
     (for stars) and reflected (for planets/moons).
     """
-
-    Emissive: int = 1
-    Reflective: int = 2
-    System: int = 4
-    OctreeAnchor: int = 8
 
     def __init__(
         self,

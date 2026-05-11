@@ -98,11 +98,12 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   Py_INCREF(ref_object);
 
   // Parse and add names
+  bool reflective = (anchor_class & AnchorClass::Reflective) != 0;
   if (names.empty()) {
     object_names.add_name(ObjectName::make_vernacular(""));
   } else {
     for (size_t i = 0; i < names.size(); ++i) {
-      ObjectName parsed = ObjectNames::parse_name(names[i]);
+      ObjectName parsed = ObjectNames::parse_name(names[i], reflective);
       // If there's a corresponding source name, use it as the original
       if (i < source_names.size()) {
         object_names.add_name(parsed, source_names[i]);
@@ -198,11 +199,12 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   }
 
   // Parse and add names with originals
+  bool reflective = (anchor_class & AnchorClass::Reflective) != 0;
   if (name_strings.empty()) {
     object_names.add_name(ObjectName::make_vernacular(""));
   } else {
     for (size_t i = 0; i < name_strings.size(); ++i) {
-      ObjectName parsed = ObjectNames::parse_name(name_strings[i]);
+      ObjectName parsed = ObjectNames::parse_name(name_strings[i], reflective);
       // If there's a corresponding source name, use it as the original
       if (i < source_name_strings.size()) {
         object_names.add_name(parsed, source_name_strings[i]);
@@ -324,11 +326,12 @@ AnchorBase::set_names(const pvector<std::string> names)
   object_names = ObjectNames();
 
   // Parse and add new names
+  bool reflective = (content & AnchorClass::Reflective) != 0;
   if (names.empty()) {
     object_names.add_name(ObjectName::make_vernacular(""));
   } else {
     for (const auto &name : names) {
-      object_names.add_name(ObjectNames::parse_name(name));
+      object_names.add_name(ObjectNames::parse_name(name, reflective));
     }
   }
 }

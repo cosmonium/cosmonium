@@ -96,8 +96,9 @@ PUBLISHED:
     NT_bayer = 1,
     NT_flamsteed = 2,
     NT_catalog = 3,
-    NT_variableStar = 4,
-    NT_custom = 5
+    NT_variable_star = 4,
+    NT_custom = 5,
+    NT_minor_planet = 6
   };
 
   ObjectName(const std::string &val, NameType t, uint8_t cat_id, bool trans)
@@ -121,6 +122,10 @@ PUBLISHED:
   /// Create an ObjectName for a catalog entry.
   static ObjectName
   make_catalog(uint8_t catalog_id, const std::string &id);
+
+  /// Create an ObjectName for a minor planet / asteroid designation.
+  static ObjectName
+  make_minor_planet(const std::string &name);
 
   /// Return the full name string including catalog prefix if applicable.
   std::string
@@ -177,8 +182,10 @@ PUBLISHED:
   set_translated(unsigned int index, const std::string &translated);
 
   /// Parse a string to create an ObjectName.
+  /// When reflective is true the minor-planet designation pattern is used
+  /// instead of Flamsteed detection.
   static ObjectName
-  parse_name(const std::string &name);
+  parse_name(const std::string &name, bool reflective);
 
 public:
   /// Return all names as a vector of strings.
