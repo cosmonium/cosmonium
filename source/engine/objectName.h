@@ -131,6 +131,10 @@ PUBLISHED:
   std::string
   get_full_name() const;
 
+  /// Return the display-ready (decoded) name.
+  std::string
+  decode() const;
+
 PUBLISHED:
   std::string value;
   NameType type;
@@ -160,6 +164,20 @@ PUBLISHED:
   /// Return the name entry at the specified index.
   const ObjectName&
   get_name_entry(unsigned int index) const;
+
+  /// Return the name at the specified index.
+  std::string
+  get_name_at(unsigned int index) const;
+
+  /// Sequence of names for Python exposure.
+  MAKE_SEQ(get_all_names, get_num_names, get_name_at);
+
+  /// Return the decoded name at the specified index.
+  std::string
+  get_decoded_name_at(unsigned int index) const;
+
+  /// Sequence of decoded names for Python exposure.
+  MAKE_SEQ(get_decoded_names, get_num_names, get_decoded_name_at);
 
   /// Return the untranslated primary name.
   std::string
@@ -191,6 +209,11 @@ public:
   /// Return all names as a vector of strings.
   pvector<std::string>
   get_all_names() const;
+
+  /// Return all names decoded for display, applying any type-specific
+  /// transformations.
+  pvector<std::string>
+  get_decoded_names() const;
 
   /// Return the source names (original forms).
   pvector<std::string>

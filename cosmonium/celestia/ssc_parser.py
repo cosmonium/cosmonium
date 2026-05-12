@@ -175,7 +175,7 @@ def instanciate_rings(name, data, context, parent):
     frame = EquatorialReferenceFrame(actual_parent.anchor)
     orbit = LocalFixedPosition(frame_position=LPoint3d(), frame=frame)
     rotation = FixedRotation(LQuaterniond(), frame)
-    name = actual_parent.get_names()[0] + "'s rings"
+    name = actual_parent.get_names().get_name() + "'s rings"
     body = StellarRings(
         names=[name],
         source_names=[],

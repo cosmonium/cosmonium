@@ -175,7 +175,7 @@ class Debug:
         print("\tCamera vector", observer.anchor.camera_vector)
         print("\tFrame position", observer.get_frame_position(), "rotation", observer.get_frame_orientation())
         if selected:
-            print("Selected:", utils.join_names(selected.get_names()))
+            print("Selected:", utils.join_names(selected.get_names().get_all_names()))
             print("\tType:", selected.__class__.__name__)
             print("\tDistance:", selected.anchor.distance_to_obs / units.Km, 'Km')
             print(

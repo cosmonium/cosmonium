@@ -22,7 +22,7 @@ from abc import ABC, abstractmethod
 import builtins
 from direct.showbase.ShowBaseGlobal import globalClock
 
-from ...astro import bayer, units
+from ...astro import units
 from ...bodyclass import bodyClasses
 from ...objects.star import Star
 from ... import settings
@@ -99,7 +99,7 @@ class ObjectProvider(ABC):
 
     @property
     def list_of_names(self):
-        return utils.join_names(bayer.decode_names(self._object.get_names()))
+        return utils.join_names(self._object.get_names().get_decoded_names())
 
     @property
     def phase(self):

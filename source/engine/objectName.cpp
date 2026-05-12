@@ -19,7 +19,109 @@
 
 #include "objectName.h"
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
+
+static std::string
+bayer_decode_name(const std::string &name)
+{
+  // Canonical SIMBAD greek abbreviations -> UTF-8 strings (always encoded as
+  // UTF-8 byte sequences so the source file stays ASCII).
+  static const std::unordered_map<std::string, std::string> greek_utf8_map = {
+      {"ALF", "\xce\xb1"},  // α
+      {"BET", "\xce\xb2"},  // β
+      {"GAM", "\xce\xb3"},  // γ
+      {"DEL", "\xce\xb4"},  // δ
+      {"EPS", "\xce\xb5"},  // ε
+      {"ZET", "\xce\xb6"},  // ζ
+      {"ETA", "\xce\xb7"},  // η
+      {"TET", "\xce\xb8"},  // θ
+      {"IOT", "\xce\xb9"},  // ι
+      {"KAP", "\xce\xba"},  // κ
+      {"LAM", "\xce\xbb"},  // λ
+      {"MU.", "\xce\xbc"},  // μ
+      {"NU.", "\xce\xbd"},  // ν
+      {"KSI", "\xce\xbe"},  // ξ
+      {"OMI", "\xce\xbf"},  // ο
+      {"PI.", "\xcf\x80"},  // π
+      {"RHO", "\xcf\x81"},  // ρ
+      {"SIG", "\xcf\x83"},  // σ
+      {"TAU", "\xcf\x84"},  // τ
+      {"UPS", "\xcf\x85"},  // υ
+      {"PHI", "\xcf\x86"},  // φ
+      {"KHI", "\xcf\x87"},  // χ
+      {"PSI", "\xcf\x88"},  // ψ
+      {"OME", "\xcf\x89"},  // ω
+  };
+
+  // Unicode superscript digits 0-9 as UTF-8 strings
+  static const std::string superscripts[10] = {
+      "\xe2\x81\xb0",  // ⁰
+      "\xc2\xb9",      // ¹
+      "\xc2\xb2",      // ²
+      "\xc2\xb3",      // ³
+      "\xe2\x81\xb4",  // ⁴
+      "\xe2\x81\xb5",  // ⁵
+      "\xe2\x81\xb6",  // ⁶
+      "\xe2\x81\xb7",  // ⁷
+      "\xe2\x81\xb8",  // ⁸
+      "\xe2\x81\xb9",  // ⁹
+  };
+
+  if (name.empty()) return name;
+
+  // Find the space that separates "GREEK[digits]" from "Constellation"
+  size_t space_pos = name.find(' ');
+  if (space_pos == std::string::npos) return name;
+
+  // Split the prefix into greek letters and optional trailing digits
+  std::string prefix = name.substr(0, space_pos);
+  std::string greek_part;
+  std::string number_part;
+  for (size_t i = 0; i < prefix.size(); ++i) {
+    if (std::isdigit((unsigned char)prefix[i])) {
+      greek_part  = prefix.substr(0, i);
+      number_part = prefix.substr(i);
+      break;
+    }
+  }
+  if (number_part.empty()) {
+    greek_part = prefix;
+  }
+
+  // Uppercase the greek part for the map lookup
+  std::string greek_upper = greek_part;
+  for (char &c : greek_upper) {
+    c = std::toupper((unsigned char)c);
+  }
+
+  auto letter = greek_utf8_map.find(greek_upper);
+  if (letter == greek_utf8_map.end()) {
+    // Not a Bayer name
+    return name;
+  }
+
+  // Build the result: replace digits with superscripts first (higher index),
+  // then replace the greek letters at position 0.
+  std::string result = name;
+
+  if (!number_part.empty()) {
+    std::string superscript_str;
+    for (char c : number_part) {
+      int digit = c - '0';
+      if (digit >= 0 && digit <= 9) {
+        superscript_str += superscripts[digit];
+      }
+    }
+    // number_part starts right after greek_part in the original string
+    result.replace(greek_part.length(), number_part.length(), superscript_str);
+  }
+
+  // Replace greek abbreviation at position 0
+  result.replace(0, greek_part.length(), letter->second);
+
+  return result;
+}
 
 // CatalogRegistry implementation
 CatalogRegistry *CatalogRegistry::_instance = nullptr;
@@ -163,6 +265,15 @@ ObjectName::get_full_name() const
   return value;
 }
 
+std::string
+ObjectName::decode() const
+{
+  if (type == ObjectName::NameType::NT_bayer) {
+    return bayer_decode_name(get_full_name());
+  }
+  return get_full_name();
+}
+
 // ObjectNames implementation
 ObjectNames::ObjectNames()
 {
@@ -186,6 +297,20 @@ unsigned int
 ObjectNames::get_num_names() const
 {
   return _names.size();
+}
+
+std::string
+ObjectNames::get_name_at(unsigned int index) const
+{
+  // Return the name at the specified index
+  return index >= _names.size() ? "" : _names[index].get_full_name();
+}
+
+std::string
+ObjectNames::get_decoded_name_at(unsigned int index) const
+{
+  // Return the name at the specified index
+  return index >= _names.size() ? "" : _names[index].decode();
 }
 
 const ObjectName&
@@ -218,6 +343,16 @@ ObjectNames::get_all_names() const
   pvector<std::string> result;
   for (const auto &name : _names) {
     result.push_back(name.get_full_name());
+  }
+  return result;
+}
+
+pvector<std::string>
+ObjectNames::get_decoded_names() const
+{
+  pvector<std::string> result;
+  for (const auto &name : _names) {
+    result.push_back(name.decode());
   }
   return result;
 }

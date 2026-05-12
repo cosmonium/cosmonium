@@ -182,7 +182,7 @@ class GlobalObjectsDB:
         self.oids.append(body)
 
         # Route names to appropriate indexes
-        all_names = set(body.get_names() + body.get_source_names())
+        all_names = set(body.get_names().get_all_names() + body.get_source_names())
         for name in all_names:
             # Check if it's a catalog name (PREFIX + space + ID)
             space_pos = name.find(' ')
@@ -235,7 +235,7 @@ class GlobalObjectsDB:
         self.oids[old_body.oid] = None  # Clear old body reference
 
         # Update catalog indexes: replace old_body with new_body for all names
-        all_names = set(new_body.get_names() + new_body.get_source_names())
+        all_names = set(new_body.get_names().get_all_names() + new_body.get_source_names())
         for name in all_names:
             space_pos = name.find(' ')
             if space_pos > 0:

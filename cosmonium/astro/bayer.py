@@ -19,7 +19,6 @@
 #
 
 
-from .. import settings
 import re
 
 # The greek letter encoding follows gthe SIMBAD convention : http://simbad.u-strasbg.fr/guide/chA.htx
@@ -195,8 +194,6 @@ superscripts = [u'⁰', u'¹', u'²', u'³', u'⁴', u'⁵', u'⁶', u'⁷', u'�
 
 
 def canonize_name(name):
-    if not settings.convert_utf8:
-        return name
     try:
         match = greek_abv_match.match(name)
         if match:
@@ -211,8 +208,6 @@ def canonize_name(name):
 
 
 def decode_name(name):
-    if not settings.convert_utf8:
-        return name
     match = greek_abv_match.match(name)
     if match:
         (greek, number, const) = match.groups()

@@ -20,7 +20,6 @@
 
 from math import pi
 
-from ..astro import bayer
 from ..astro import units
 from ..astro.astro import orientation_to_equatorial
 from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FunctionOrbit
@@ -187,7 +186,7 @@ def stellar_object(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.get_names()))
+    names = utils.join_names(body.get_names().get_decoded_names())
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
     if body.get_description() != '':
@@ -201,7 +200,7 @@ def stellar_body(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.get_names()))
+    names = utils.join_names(body.get_names().get_decoded_names())
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
     if body.oblateness is None or body.oblateness == 0.0:
@@ -244,7 +243,7 @@ def star(body):
     texts = []
     general = []
     texts.append([_("General"), general])
-    names = utils.join_names(bayer.decode_names(body.get_names()))
+    names = utils.join_names(body.get_names().get_decoded_names())
     general.append([_("Names"), names])
     general.append([_("Category"), body.body_class])
     general.append(

@@ -313,12 +313,6 @@ AnchorBase::update_all(double time, CameraAnchor &observer, unsigned long int up
 }
 
 // Name management methods implementation
-pvector<std::string>
-AnchorBase::_get_names(void) const
-{
-  return object_names.get_all_names();
-}
-
 void
 AnchorBase::set_names(const pvector<std::string> names)
 {
@@ -342,16 +336,10 @@ AnchorBase::get_name(void) const
   return object_names.get_name();
 }
 
-unsigned int
-AnchorBase::get_num_names(void) const
+ObjectNames const *
+AnchorBase::get_names(void) const
 {
-  return object_names.get_num_names();
-}
-
-std::string
-AnchorBase::get_name_at(unsigned int index) const
-{
-  return object_names.get_name_entry(index).get_full_name();
+  return &object_names;
 }
 
 unsigned int

@@ -81,7 +81,7 @@ SystemAnchor::add_child(AnchorBase *child)
     children.push_back(child);
     child->parent = this;
     // Register all names in the fast-lookup map
-    pvector<std::string> all_names = child->_get_names();
+    pvector<std::string> all_names = child->get_names()->get_all_names();
     for (const auto &n : all_names) {
         std::string key = n;
         std::transform(key.begin(), key.end(), key.begin(), ::toupper);
@@ -100,7 +100,7 @@ SystemAnchor::remove_child(AnchorBase *child)
       children.erase(it);
       child->parent = nullptr;
       // Remove all name entries from the fast-lookup map
-      pvector<std::string> all_names = child->_get_names();
+      pvector<std::string> all_names = child->get_names()->get_all_names();
       for (const auto &n : all_names) {
           std::string key = n;
           std::transform(key.begin(), key.end(), key.begin(), ::toupper);

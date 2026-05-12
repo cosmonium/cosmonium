@@ -21,27 +21,30 @@
 import pytest
 
 from cosmonium.catalogs import CatalogIndex, NameIndex, GlobalObjectsDB
-from cosmonium.engine.objectname import CatalogRegistry
+from cosmonium.engine.objectname import CatalogRegistry, ObjectNames
 
 
 class MockBody:
     """Mock object to simulate a celestial body for testing."""
 
     def __init__(self, names, source_names=None):
-        self._names = names if isinstance(names, list) else [names]
+        raw_names = names if isinstance(names, list) else [names]
         self._source_names = source_names if source_names else []
         self.oid = None
         self.oid_color = None
+        self._object_names = ObjectNames()
+        for name in raw_names:
+            self._object_names.add_name(ObjectNames.parse_name(name))
 
     def get_names(self):
-        return self._names
+        return self._object_names
 
     def get_source_names(self):
         return self._source_names
 
     def get_name_from_upper(self, upper_name):
         """Return the original name case from an uppercase version."""
-        for name in self._names + self._source_names:
+        for name in self._object_names.get_all_names() + self._source_names:
             if name.upper() == upper_name:
                 return name
         return upper_name

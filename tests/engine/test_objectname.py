@@ -278,3 +278,51 @@ class TestFactoryMethods:
         assert name.translatable is False
         assert name.catalog_id == registry.get_id('HIP')
         assert name.get_full_name() == "HIP 32349"
+
+
+class TestObjectNameDecode:
+    """Test ObjectName.decode() method."""
+
+    def test_decode_vernacular(self, registry):
+        """Vernacular names are returned unchanged."""
+        name = ObjectName.make_vernacular("Sirius")
+        assert name.decode() == "Sirius"
+
+    def test_decode_catalog(self, registry):
+        """Catalog names are returned as their full name."""
+        name = ObjectName.make_catalog(registry.get_id('HIP'), "32349")
+        assert name.decode() == "HIP 32349"
+
+    def test_decode_flamsteed(self, registry):
+        """Flamsteed names are returned unchanged."""
+        name = ObjectName.make_flamsteed("9 CMa")
+        assert name.decode() == "9 CMa"
+
+    def test_decode_bayer(self, registry):
+        """Bayer names are passed through the bayer decode function."""
+        name = ObjectName.make_bayer("ALF CMa")
+        assert name.decode() == u'\u03b1 CMa'
+
+
+class TestObjectNamesGetDecodedNames:
+    """Test ObjectNames.get_decoded_names() method."""
+
+    def test_get_decoded_names_no_bayer(self, registry):
+        """Non-Bayer names pass through unchanged."""
+        names = ObjectNames()
+        names.add_name(ObjectNames.parse_name("Sirius"))
+        names.add_name(ObjectNames.parse_name("HIP 32349"))
+        decoded = names.get_decoded_names()
+        assert decoded == ["Sirius", "HIP 32349"]
+
+    def test_get_decoded_names_empty(self, registry):
+        """Empty collection returns empty list."""
+        names = ObjectNames()
+        assert names.get_decoded_names() == []
+
+    def test_get_decoded_names_with_bayer(self, registry):
+        names = ObjectNames()
+        names.add_name(ObjectNames.parse_name("Sirius"))
+        names.add_name(ObjectName.make_bayer("ALF CMa"))
+        decoded = names.get_decoded_names()
+        assert decoded == ["Sirius", u'\u03b1 CMa']

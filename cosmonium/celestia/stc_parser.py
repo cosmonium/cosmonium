@@ -154,7 +154,7 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
     if app_magnitude is not None and distance is not None:
         if distance <= 0:
             logger.warning(
-                "Star %s has non-positive distance %s (parent: %s)", names, distance, parent.anchor.body.get_names()
+                "Star %s has non-positive distance %s (parent: %s)", names, distance, parent.anchor.body.get_name()
             )
             return None
         abs_magnitude = app_to_abs_mag(app_magnitude, distance)
@@ -167,7 +167,7 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
     existing_star = objectsDB.get(names[0]) if names else None
     if existing_star is not None:
         # Merge all names from the existing star, preserving new names first and deduplicating
-        existing_names = existing_star.get_names() + existing_star.get_source_names()
+        existing_names = existing_star.get_names().get_all_names() + existing_star.get_source_names()
         names_set = set(names)
         for n in existing_names:
             if n not in names_set:
@@ -240,7 +240,7 @@ def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
     if existing_star is not None:
         # print("Replacing star", names, "with barycenter")
         # Merge all names from the existing star, preserving new names first and deduplicating
-        existing_names = existing_star.get_names() + existing_star.get_source_names()
+        existing_names = existing_star.get_names().get_all_names() + existing_star.get_source_names()
         names_set = set(names)
         for n in existing_names:
             if n not in names_set:

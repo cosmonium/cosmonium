@@ -137,13 +137,13 @@ class AnchorBase(ABC):
         # If this anchor is the primary body of a stellar system, this will point to the system anchor
         self.system: SystemAnchor | None = None
 
-    def get_names(self) -> list[str]:
-        """Get all translated names for this anchor.
+    def get_names(self) -> ObjectNames:
+        """Get the ObjectNames collection for this anchor.
 
         Returns:
-            List of translated name strings.
+            The ObjectNames instance holding all names for this anchor.
         """
-        return self.object_names.get_all_names()
+        return self.object_names
 
     def set_names(self, names: list[str] | str | None) -> None:
         """Set the anchor's translated names.
@@ -179,7 +179,7 @@ class AnchorBase(ABC):
         Returns:
             True if any translated or source name matches.
         """
-        for name in self.get_names():
+        for name in self.get_names().get_all_names():
             if name.upper() == name_up:
                 return True
         for name in self.get_source_names():
@@ -1392,7 +1392,7 @@ class SystemAnchor(StellarAnchor):
             child: The child anchor to add.
         """
         self.children.append(child)
-        for name in child.get_names():
+        for name in child.get_names().get_all_names():
             self.children_map[name.upper()] = child
         child.parent = self
         if not self.rebuild_needed:
@@ -1410,7 +1410,7 @@ class SystemAnchor(StellarAnchor):
             pass
         else:
             child.parent = None
-            for name in child.get_names():
+            for name in child.get_names().get_all_names():
                 del self.children_map[name.upper()]
         if not self.rebuild_needed:
             self.set_rebuild_needed()

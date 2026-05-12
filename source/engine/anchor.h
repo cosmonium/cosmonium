@@ -103,11 +103,9 @@ PUBLISHED:
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
   // Name management methods
-  pvector<std::string> _get_names(void) const;
-  void set_names(const pvector<std::string> names);
   std::string get_name(void) const;
-  unsigned int get_num_names(void) const;
-  std::string get_name_at(unsigned int index) const;
+  ObjectNames const *get_names(void) const;
+  void set_names(const pvector<std::string> names);
   unsigned int get_num_source_names(void) const;
   std::string get_source_name_at(unsigned int index) const;
   std::string get_c_name(void) const;
@@ -116,7 +114,6 @@ PUBLISHED:
   bool _is_named(const std::string &name_up) const;
   virtual std::string get_fullname(const std::string &separator = "/") const;
 
-  MAKE_SEQ(get_names, get_num_names, get_name_at);
   MAKE_SEQ(get_source_names, get_num_source_names, get_source_name_at);
 
   virtual bool is_stellar(void) const = 0;

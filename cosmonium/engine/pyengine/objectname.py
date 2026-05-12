@@ -278,6 +278,19 @@ class ObjectName:
                 return f"{prefix} {self.value}"
         return self.value
 
+    def decode(self) -> str:
+        """Get the decoded/display-ready name, applying any type-specific transformations.
+
+        For Bayer designations, the Greek letter abbreviation is converted to its
+        Unicode character (e.g. "ALF CMa" becomes "α CMa").
+        For all other name types the full name is returned unchanged.
+        """
+        full_name = self.get_full_name()
+        if self.type == self.NT_bayer:
+            from cosmonium.astro import bayer as _bayer
+            return _bayer.decode_name(full_name)
+        return full_name
+
     def __repr__(self) -> str:
         return (
             f"ObjectName(value='{self.value}', type={self.type}, "
@@ -320,6 +333,13 @@ class ObjectNames:
     def get_all_names(self) -> list[str]:
         """Get all names as a list of strings."""
         return [name.get_full_name() for name in self._names]
+
+    def get_decoded_names(self) -> list[str]:
+        """Get all names decoded for display, applying any type-specific transformations.
+
+        For example, Bayer designations are converted to Unicode Greek letters.
+        """
+        return [name.decode() for name in self._names]
 
     def get_source_names(self) -> list[str]:
         """Get source names (non-translatable names and originals of translated ones)."""

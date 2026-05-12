@@ -24,6 +24,7 @@ from panda3d.core import LColor, LVector3d
 
 from ..astro.frame import AbsoluteReferenceFrame
 from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from ..engine.objectname import ObjectNames
 from ..foundation import CompositeObject
 
 from .sceneanchor import SceneAnchorCollection
@@ -261,7 +262,7 @@ class SceneWorld:
     def get_names(self):
         if self.anchor:
             return self.anchor.get_names()
-        return ['']
+        return ObjectNames()
 
     def set_names(self, names):
         if self.anchor:
