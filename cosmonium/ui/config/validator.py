@@ -26,7 +26,7 @@ from typing import Type, TypeVar, Union
 
 from pydantic import BaseModel, ValidationError
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 
 logger = logging.getLogger('ui')
 
@@ -77,8 +77,7 @@ class ConfigValidator:
         filepath = Path(filepath)
 
         # Load YAML file
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath)
+        data = YamlLoader.load_file(filepath)
 
         # Validate against model
         try:

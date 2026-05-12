@@ -19,17 +19,12 @@
 
 
 """
-Tests for the loading and parsing infrastructure.
-
-Tests the YAML related classes:
-1. YamlLoader - YAML I/O
-3. YamlParser - Object instantiation
+Tests for the YAML loading and parsing infrastructure.
 """
 
 import io
 
 from cosmonium.parsers.yamlloader import YamlLoader
-from cosmonium.parsers.yamlparser import YamlParser
 
 
 class TestYamlLoader:
@@ -71,30 +66,3 @@ class TestYamlLoader:
         result = YamlLoader.parse(stream)
 
         assert result == original
-
-
-class TestYamlParser:
-    """Test YamlParser layer (deprecated))."""
-
-    def test_decode_passthrough(self):
-        """Test basic YamlParser decode."""
-        parser = YamlParser()
-        data = {'key': 'value'}
-
-        result = parser.decode(data)
-        assert result == data
-
-    def test_backward_compatible_wrappers(self):
-        """Test backward compatibility wrappers delegate to YamlLoader."""
-        parser = YamlParser()
-
-        # Test parse wrapper
-        yaml_text = "key: value"
-        result = parser.parse(yaml_text)
-        assert result == {'key': 'value'}
-
-        # Test store wrapper
-        stream = io.StringIO()
-        parser.store({'test': 123}, stream)
-        stream.seek(0)
-        assert stream.read() == "test: 123\n"

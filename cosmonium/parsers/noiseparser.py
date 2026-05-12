@@ -32,10 +32,10 @@ from ..procedural.sources.simple import NoiseConst, NoiseCoord
 from ..procedural.sources.sincos import SinCosNoise
 from ..procedural.sources.stegu import SteGuCellular3D, SteGuCellularDiff3D, SteGuPerlin3D
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import TypedYamlParser, YamlParser
+from .yamlparser import TypedYamlParser
 
 
-class NoiseYamlParser(YamlParser):
+class NoiseYamlParser:
     parsers = {}
 
     def __init__(self, length_scale=1.0):

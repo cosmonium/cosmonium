@@ -22,26 +22,29 @@ import os
 
 from .. import settings
 from ..bodyclass import bodyClasses
-from .yamlparser import YamlParser
+from ..parsers.yamlloader import YamlLoader
 
 
-class ConfigParser(YamlParser):
+class ConfigParser:
     data_version = 1
 
     def __init__(self, config_file):
-        YamlParser.__init__(self)
         self.config_file = config_file
 
     def load(self):
         if os.path.exists(self.config_file):
             print("Loading config file", self.config_file)
-            self.load_and_parse(self.config_file, use_splash=False)
+            data = YamlLoader.load_file(self.config_file, use_splash=False)
+            if data is not None:
+                self.decode(data)
 
     def save(self):
         config_dir = os.path.dirname(self.config_file)
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
-        self.encode_and_store(self.config_file)
+        data = self.encode()
+        if data is not None:
+            YamlLoader.save_file(data, self.config_file)
 
     def decode_body_class(self, data):
         for name, body_class in bodyClasses.classes.items():

@@ -19,10 +19,9 @@
 
 from ..scattering.fog.fog import FogScattering
 from .scatteringparser import ScatteringYamlParser
-from .yamlparser import YamlParser
 
 
-class FogScatterYamlParser(YamlParser):
+class FogScatterYamlParser:
 
     @classmethod
     def decode(cls, data):

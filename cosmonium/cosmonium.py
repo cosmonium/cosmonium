@@ -73,7 +73,8 @@ from .opengl import OpenGLConfig
 from .parsers.configparser import configParser
 from .parsers.parsers import register_parsers
 from .parsers.catalogsparser import load_catalogs
-from .parsers.yamlparser import YamlLoader, YamlModuleParser
+from .parsers.yamlloader import YamlLoader
+from .parsers.yamlparser import YamlModuleParser
 from .parsers.objectparser import ObjectYamlParser, universeYamlParser
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat

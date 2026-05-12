@@ -24,7 +24,7 @@ import sys
 from panda3d.core import ExecutionEnvironment
 
 from .. import settings
-from ..parsers.yamlparser import YamlParser
+from ..parsers.yamlloader import YamlLoader
 
 
 class CosmoniumConfig:
@@ -98,16 +98,17 @@ class CosmoniumConfig:
         self.test_start = args.test_start
 
 
-class CosmoniumConfigParser(YamlParser):
+class CosmoniumConfigParser:
     def __init__(self, config_file):
-        YamlParser.__init__(self)
         self.config_file = config_file
         self.config = CosmoniumConfig()
 
     def load(self):
         if os.path.exists(self.config_file):
             print("Loading app config file", self.config_file)
-            self.load_and_parse(self.config_file)
+            data = YamlLoader.load_file(self.config_file)
+            if data is not None:
+                self.decode(data)
         return self.config
 
     def decode_celestia(self, data):

@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from ..config.models import MenubarConfigModel, MenuEntryConfig, PopupMenuConfig
 from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenubarEntry, MenuConfig, MenuSeparator, SubMenuEntry
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
@@ -132,8 +132,7 @@ class MenuLoader(BaseComponentLoader):
         Returns:
             Tuple with named menus dict and MenubarConfig instance
         """
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
 
         # Validate menubar configuration
         validated = self.validator.validate_dict(data, MenubarConfigModel)
@@ -165,8 +164,7 @@ class MenuLoader(BaseComponentLoader):
         Returns:
             MenuConfig instance
         """
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
 
         # Validate popup configuration
         validated = self.validator.validate_dict(data, PopupMenuConfig)

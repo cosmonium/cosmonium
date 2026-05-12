@@ -23,10 +23,9 @@ from panda3d.core import LVector3d
 from ..scattering.oneil.oneil import ONeilScattering, ONeilSimpleScattering
 from .scatteringparser import ScatteringYamlParser
 from .schemas.atmosphere import ONeilAtmosphereConfig, ONeilSimpleAtmosphereConfig
-from .yamlparser import YamlParser
 
 
-class ONeilSimpleScatteringYamlParser(YamlParser):
+class ONeilSimpleScatteringYamlParser:
     @classmethod
     def decode(cls, data):
         scattering = ONeilSimpleScattering(
@@ -48,7 +47,7 @@ class ONeilSimpleScatteringYamlParser(YamlParser):
         return scattering
 
 
-class ONeilScatteringYamlParser(YamlParser):
+class ONeilScatteringYamlParser:
     @classmethod
     def decode(cls, data):
         height = data.height

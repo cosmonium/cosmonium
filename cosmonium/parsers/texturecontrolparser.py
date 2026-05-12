@@ -40,12 +40,11 @@ from .schemas.texturecontrol import (
     SlopeTextureEntryConfig,
 )
 from .utilsparser import DistanceUnitsYamlParser
-from .yamlparser import YamlModuleParser, YamlParser
+from .yamlparser import YamlModuleParser
 
 
-class HeightColorControlYamlParser(YamlParser):
+class HeightColorControlYamlParser:
     def __init__(self):
-        YamlParser.__init__(self)
         self.colormap_id = 0
         self.percentage = False
         self.float_values = False
@@ -90,9 +89,8 @@ class HeightColorControlYamlParser(YamlParser):
         return self.decode_height_control(config.entries)
 
 
-class MixTextureControlYamlParser(YamlParser):
+class MixTextureControlYamlParser:
     def __init__(self):
-        YamlParser.__init__(self)
         self.slope_id = 0
         self.height_id = 0
         self.height_scale = 0.0

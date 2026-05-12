@@ -9,7 +9,6 @@ This directory contains unit tests covering functionalities related to YAML pars
 Tests for the loading and parsing infrastructure:
 
 - **TestYamlLoader**: Tests YamlLoader I/O layer.
-- **TestYamlParser**: Tests YamlParser layer (deprecated).
 
 ### 2. Object Parser Validation Tests (`test_object_parser_validation.py`)
 

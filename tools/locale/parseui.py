@@ -6,7 +6,7 @@ filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 
-from cosmonium.parsers.yamlparser import YamlParser  # noqa: E402
+from cosmonium.parsers.yamlloader import YamlLoader  # noqa: E402
 
 
 class UIPotExtractor:
@@ -53,9 +53,8 @@ msgstr ""
             self.msgs[msgid] = rule
 
     def parse(self, ui_config_file):
-        parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
-        data = parser.load_and_parse(ui_config_file)
+        data = YamlLoader.load_file(ui_config_file)
         menubar_file = data.get('menubar')
         if menubar_file is not None:
             if not os.path.isabs(menubar_file):
@@ -78,8 +77,7 @@ msgstr ""
                 self.parse_submenu(entries)
 
     def parse_menubar(self, menubar_file):
-        parser = YamlParser()
-        data = parser.load_and_parse(menubar_file)
+        data = YamlLoader.load_file(menubar_file)
         for name, entries in data.get('menus', {}).items():
             submenu = self.parse_submenu(entries)
         for menu_entry in data.get('menubar', []):
@@ -89,8 +87,7 @@ msgstr ""
             submenu = self.parse_submenu(submenu)
 
     def parse_popup(self, popup_file):
-        parser = YamlParser()
-        data = parser.load_and_parse(popup_file)
+        data = YamlLoader.load_file(popup_file)
         self.parse_submenu(data.get('popup'))
 
 

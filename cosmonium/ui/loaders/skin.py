@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from ..config.models import SkinEntryConfig, SkinSelectorConfig
 from ..skin import ParentSelector, Selector, UISkin, UISkinEntry
 from .base import BaseComponentLoader
@@ -139,7 +139,6 @@ class SkinLoader(BaseComponentLoader):
         Returns:
             UISkin instance
         """
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
         skin = self.load_skin_entries(data)
         return skin

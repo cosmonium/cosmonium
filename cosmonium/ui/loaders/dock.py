@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from ..config.models import DockConfig
 from ..dock.dock import Dock
 from ..dock.layouts import LayoutDockWidget
@@ -109,8 +109,7 @@ class DockLoader(BaseComponentLoader):
         Returns:
             List of dock widgets
         """
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
         docks = []
         for dock_config in data.get('dock'):
             dock = self.load_dock_config(dock_config)

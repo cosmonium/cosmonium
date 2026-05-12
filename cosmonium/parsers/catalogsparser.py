@@ -18,8 +18,8 @@
 
 
 from ..engine.objectname import CatalogRegistry
+from ..parsers.yamlloader import YamlLoader
 from .schemas.misc import CatalogsConfig
-from .yamlparser import YamlParser
 
 
 def load_catalogs(yaml_path):
@@ -36,7 +36,7 @@ def load_catalogs(yaml_path):
         return
 
     try:
-        data = YamlParser().load_and_parse(yaml_path, use_splash=False)
+        data = YamlLoader.load_file(yaml_path, use_splash=False)
         config = CatalogsConfig.model_validate(data)
         for catalog in config.catalogs:
             registry.register_catalog(catalog.prefix, catalog.description)

@@ -27,7 +27,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Optional
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from ..config.models import UIConfigModel
 from ..config.validator import ConfigValidator
 from .dock import DockLoader
@@ -117,9 +117,8 @@ class UIConfigLoader:
         Args:
             ui_config_file: Path to main UI configuration file
         """
-        parser = YamlParser()
         basedir = os.path.dirname(ui_config_file)
-        raw_data = parser.load_and_parse(ui_config_file, use_splash=False)
+        raw_data = YamlLoader.load_file(ui_config_file, use_splash=False)
 
         # Validate main config
         data = UIConfigModel.model_validate(raw_data)

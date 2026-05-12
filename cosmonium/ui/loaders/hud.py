@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Any, List
 
 from panda3d.core import TextNode
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from ..config.models import HUDWidgetConfig
 from ..hud.dynamictextblock import DynamicTextBlock, DynamicTextBlockEntries, DynamicTextBlockEntry
 from ..templates.expression import PythonExpressionParser
@@ -173,7 +173,6 @@ class HUDLoader(BaseComponentLoader):
         Returns:
             Dictionary mapping anchor names to lists of DynamicTextBlock widgets
         """
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
         hud = self.load_hud_widgets(data.get('hud', []))
         return hud

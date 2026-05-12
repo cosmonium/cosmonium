@@ -34,81 +34,14 @@ from ..engine.objectname import ObjectNames
 from .yamlloader import YamlLoader
 
 
-class YamlParser:
-    """
-    Base parser class - handles domain object instantiation.
-
-    This class is responsible for:
-    - Converting validated data into domain objects (decode)
-
-    For backward compatibility, this class provides wrapper methods
-    that delegate to YamlLoader.
-    """
-
-    def __init__(self):
-        pass
-
-    def decode(self, data):
-        """
-        Convert validated data into domain object.
-
-        Args:
-            data: Validated Pydantic model or raw dictionary
-
-        Returns:
-            Domain object, or processed data
-        """
-        return data
-
-    # ===== Backward Compatibility Wrappers =====
-    # These methods delegate to YamlLoader for backward compatibility.
-    # New code should use YamlLoader directly.
-
-    def parse(self, stream, stream_name=None):
-        """
-        DEPRECATED: Use YamlLoader.parse() instead.
-        Parse YAML text into dictionary.
-        """
-        return YamlLoader.parse(stream, stream_name)
-
-    def store(self, data, stream):
-        """
-        DEPRECATED: Use YamlLoader.store() instead.
-        Store dictionary as YAML.
-        """
-        return YamlLoader.store(data, stream)
-
-    def encode_and_store(self, filename):
-        """
-        DEPRECATED: Use YamlLoader.save_file() instead.
-        Encode and store to file.
-        """
-        data = self.encode()
-        if data is not None:
-            return YamlLoader.save_file(data, filename)
-        return False
-
-    def load_and_parse(self, filename, use_splash=True):
-        """
-        DEPRECATED: Use YamlLoader + decode separately.
-        Load file, parse, and decode.
-        """
-        data = YamlLoader.load_file(filename, use_splash=use_splash)
-        if data is not None:
-            data = self.decode(data)
-        return data
-
-
-class YamlModuleParser(YamlParser):
+class YamlModuleParser:
     """
     Module parser with context management and translation support.
 
-    This class extends YamlParser with:
+    This class provides:
     - Directory context management for relative paths
     - Translation support for internationalization
     - Loading with context (delegates to YamlLoader)
-
-    This provides backward compatibility while using the new architecture.
     """
 
     context = None

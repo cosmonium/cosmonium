@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Tuple
 
-from ...parsers.yamlparser import YamlParser
+from ...parsers.yamlloader import YamlLoader
 from .base import BaseComponentLoader
 
 if TYPE_CHECKING:
@@ -64,8 +64,7 @@ class ShortcutsLoader(BaseComponentLoader):
             List of (event, shortcuts) tuples
         """
         shortcuts_items = []
-        parser = YamlParser()
-        data = parser.load_and_parse(filepath, use_splash=False)
+        data = YamlLoader.load_file(filepath, use_splash=False)
 
         for event, shortcuts in data.items():
             if not isinstance(shortcuts, list):
