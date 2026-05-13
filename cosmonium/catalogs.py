@@ -19,7 +19,7 @@
 import bisect
 from typing import Any, Optional
 
-from .engine.objectname import CatalogRegistry
+from .engine.objectname import CatalogRegistry, ObjectName
 from .utils import int_to_color
 
 
@@ -91,19 +91,46 @@ class CatalogIndex:
 
 
 class NameIndex:
-    """Index for name entries with efficient sorted search."""
+    """Index for name entries with efficient sorted search.
 
-    def __init__(self) -> None:
+    Args:
+        unique: When True, adding a name that already exists in the index will
+            update the stored entry without adding a duplicate key to the sorted
+            list.
+            When False (the default), duplicate keys are allowed.
+    """
+
+    def __init__(self, unique: bool = False) -> None:
         self._sorted_keys: list[str] = []  # Sorted list of upper-cased names for prefix search
-        self._name_to_entry: dict[str, tuple[str, Any]] = {}  # upper_name -> (original_name, body)
+        self._name_to_entry: dict[str, tuple[str, Any]] = {}  # upper_name -> (display_name, body)
         self._dirty: bool = False
+        self._unique: bool = unique
 
-    def add(self, name: str, body: Any) -> None:
-        """Add a name entry."""
+    def add(self, name: str, body: Any, display_name: Optional[str] = None) -> None:
+        """Add a name entry.
+
+        Args:
+            name: The lookup key (case-insensitive).
+            body: The body to associate with this name.
+            display_name: The name returned by :meth:`startswith`.  When
+                omitted, *name* itself is used as the display name.  This is
+                useful when the search key differs from the canonical name you
+                want to show to the user (e.g. an alias "Ceres" whose
+                display name is the full designation "1 Ceres").
+
+        When *unique* is ``True`` and the key already exists, the sorted-keys
+        list is not modified but the dictionary entry is silently overwritten.
+        """
         upper_name = name.upper()
-        self._sorted_keys.append(upper_name)
-        self._name_to_entry[upper_name] = (name, body)
-        self._dirty = True
+        stored_name = display_name if display_name is not None else name
+        if self._unique:
+            if upper_name not in self._name_to_entry:
+                self._sorted_keys.append(upper_name)
+                self._dirty = True
+        else:
+            self._sorted_keys.append(upper_name)
+            self._dirty = True
+        self._name_to_entry[upper_name] = (stored_name, body)
 
     def replace(self, name: str, new_body: Any) -> bool:
         """Replace the body associated with a name.
@@ -176,6 +203,22 @@ class GlobalObjectsDB:
         # General name index for non-catalog names
         self.name_index: NameIndex = NameIndex()
 
+        # Alias name index
+        self.alias_name_index: NameIndex = NameIndex(unique=True)
+
+    def _sync_minor_planet_aliases(self, body: Any) -> None:
+        """Add or update word-part aliases for any NT_minor_planet names in body."""
+        object_names = body.get_names()
+        for i in range(object_names.get_num_names()):
+            name_entry = object_names.get_name_entry(i)
+            if name_entry.type == ObjectName.NT_minor_planet:
+                full_name = name_entry.get_full_name()
+                space_pos = full_name.find(' ')
+                if space_pos > 0:
+                    alias = full_name[space_pos + 1 :]
+                    if not self.alias_name_index.replace(alias, body):
+                        self.alias_name_index.add(alias, body, display_name=full_name)
+
     def add(self, body: Any) -> None:
         body.oid = len(self.oids)
         body.oid_color = int_to_color(body.oid)
@@ -196,7 +239,10 @@ class GlobalObjectsDB:
             # Add to general name index
             self.name_index.add(name, body)
 
-    def add_name_for(self, body: Any, name: str) -> None:
+        # Add aliases for minor planet names
+        self._sync_minor_planet_aliases(body)
+
+    def add_name_for(self, body: Any, name: str, object_name: ObjectName) -> None:
         # Check if it's a catalog name (PREFIX + space + ID)
         space_pos = name.find(' ')
         if space_pos > 0:
@@ -207,6 +253,15 @@ class GlobalObjectsDB:
 
         # Add to general name index
         self.name_index.add(name, body)
+
+        # If it's a minor planet name, also add or update the alias index so that
+        # the translated word-part (e.g. "Cérès" from "1 Cérès") is searchable.
+        if object_name.type == ObjectName.NT_minor_planet:
+            alias_space = name.find(' ')
+            if alias_space > 0:
+                alias = name[alias_space + 1 :]
+                if not self.alias_name_index.replace(alias, body):
+                    self.alias_name_index.add(alias, body, display_name=name)
 
     def get(self, name: str) -> Optional[Any]:
         """Get body by exact name using indexes (O(log N) lookup)."""
@@ -221,8 +276,14 @@ class GlobalObjectsDB:
                 catalog_id = name[space_pos + 1 :]
                 return self.catalog_indexes[prefix].get(catalog_id)
 
-        # Otherwise search in the name index
-        return self.name_index.get(name)
+        # Search in the primary name index first
+        result = self.name_index.get(name)
+        if result is not None:
+            return result
+
+        # Fall back to the alias index
+        # This ensures aliases never hide objects with the same primary name
+        return self.alias_name_index.get(name)
 
     def get_oid(self, oid: int) -> Optional[Any]:
         if oid < len(self.oids):
@@ -268,6 +329,9 @@ class GlobalObjectsDB:
             if not self.name_index.replace(name, new_body):
                 self.name_index.add(name, new_body)
 
+        # Update alias index for minor planet names
+        self._sync_minor_planet_aliases(new_body)
+
     def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
         """
         Find objects whose names start with the given text.
@@ -311,9 +375,20 @@ class GlobalObjectsDB:
         name_results = self.name_index.startswith(text, max_results - len(result))
         result.extend(name_results)
 
-        # Sort and limit results
-        result.sort(key=lambda x: x[0].upper())
-        return result[:max_results]
+        # Search in alias name index
+        alias_results = self.alias_name_index.startswith(text, max_results - len(result))
+        result.extend(alias_results)
+
+        # Sort and deduplicate by body identity, then limit results
+        seen_bodies: set[int] = set()
+        deduped = []
+        for name, body in result:
+            body_id = id(body)
+            if body_id not in seen_bodies:
+                seen_bodies.add(body_id)
+                deduped.append((name, body))
+        deduped.sort(key=lambda x: x[0].upper())
+        return deduped[:max_results]
 
 
 objectsDB = GlobalObjectsDB()

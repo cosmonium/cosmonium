@@ -84,7 +84,7 @@ class YamlModuleParser:
                 translated = translate_fn(name_entry.value)
                 if translated != name_entry.value:
                     object_names.set_translated(i, translated)
-                    objectsDB.add_name_for(body, translated)
+                    objectsDB.add_name_for(body, translated, name_entry)
 
     def load_and_parse(self, filename, parent=None, context=None):
         """

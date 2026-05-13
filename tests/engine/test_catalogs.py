@@ -21,20 +21,20 @@
 import pytest
 
 from cosmonium.catalogs import CatalogIndex, NameIndex, GlobalObjectsDB
-from cosmonium.engine.objectname import CatalogRegistry, ObjectNames
+from cosmonium.engine.objectname import CatalogRegistry, ObjectName, ObjectNames
 
 
 class MockBody:
     """Mock object to simulate a celestial body for testing."""
 
-    def __init__(self, names, source_names=None):
+    def __init__(self, names, source_names=None, reflective=False):
         raw_names = names if isinstance(names, list) else [names]
         self._source_names = source_names if source_names else []
         self.oid = None
         self.oid_color = None
         self._object_names = ObjectNames()
         for name in raw_names:
-            self._object_names.add_name(ObjectNames.parse_name(name))
+            self._object_names.add_name(ObjectNames.parse_name(name, reflective=reflective))
 
     def get_names(self):
         return self._object_names
@@ -344,3 +344,231 @@ class TestGlobalObjectsDB:
         assert body2.oid == 1
         assert db.get_oid(0) == body1
         assert db.get_oid(1) == body2
+
+
+class TestAliasNameIndex:
+    """Test the NameIndex class used as an alias index (unique=True)."""
+
+    def test_add_and_get(self):
+        """Test adding and retrieving alias entries."""
+        index = NameIndex(unique=True)
+        body = MockBody("1 Ceres", reflective=True)
+        index.add("Ceres", body, display_name="1 Ceres")
+
+        assert index.get("Ceres") == body
+        assert index.get("CERES") == body  # Case-insensitive
+        assert index.get("ceres") == body
+        assert index.get("Vesta") is None
+
+    def test_startswith(self):
+        """Test startswith returns display_name, not alias."""
+        index = NameIndex(unique=True)
+        body1 = MockBody("1 Ceres", reflective=True)
+        body2 = MockBody("4 Vesta", reflective=True)
+        index.add("Ceres", body1, display_name="1 Ceres")
+        index.add("Vesta", body2, display_name="4 Vesta")
+
+        results = index.startswith("C")
+        assert len(results) == 1
+        assert results[0][0] == "1 Ceres"
+        assert results[0][1] == body1
+
+    def test_startswith_case_insensitive(self):
+        """Test that startswith is case-insensitive."""
+        index = NameIndex(unique=True)
+        body = MockBody("1 Ceres", reflective=True)
+        index.add("Ceres", body, display_name="1 Ceres")
+
+        results = index.startswith("cer")
+        assert len(results) == 1
+        assert results[0][0] == "1 Ceres"
+
+    def test_replace(self):
+        """Test replacing a body in the alias index."""
+        index = NameIndex(unique=True)
+        body1 = MockBody("1 Ceres", reflective=True)
+        body2 = MockBody("1 Ceres", reflective=True)
+        index.add("Ceres", body1, display_name="1 Ceres")
+
+        assert index.replace("Ceres", body2) is True
+        assert index.get("Ceres") == body2
+
+    def test_replace_nonexistent(self):
+        """Test replacing a non-existent alias returns False."""
+        index = NameIndex(unique=True)
+        body = MockBody("1 Ceres", reflective=True)
+        assert index.replace("Ceres", body) is False
+
+    def test_unique_no_duplicate_keys(self):
+        """Adding the same alias twice must not create a duplicate key."""
+        index = NameIndex(unique=True)
+        body1 = MockBody("1 Ceres", reflective=True)
+        body2 = MockBody("1 Ceres", reflective=True)
+        index.add("Ceres", body1, display_name="1 Ceres")
+        index.add("Ceres", body2, display_name="1 Ceres")  # second add, same key
+
+        # Only one entry in sorted_keys
+        assert index._sorted_keys.count("CERES") == 1
+        # Latest body wins
+        assert index.get("Ceres") == body2
+
+    def test_non_unique_allows_duplicate_keys(self):
+        """Default NameIndex (unique=False) appends duplicate keys."""
+        index = NameIndex()  # unique=False
+        body1 = MockBody("Sirius")
+        body2 = MockBody("Sirius")
+        index.add("Sirius", body1)
+        index.add("Sirius", body2)
+
+        # Two entries in sorted_keys (duplicates allowed)
+        assert index._sorted_keys.count("SIRIUS") == 2
+        # get() returns the last-written body
+        assert index.get("Sirius") == body2
+        # startswith() returns two separate entries
+        results = index.startswith("Sirius")
+        assert len(results) == 2
+
+
+class TestMinorPlanetAliases:
+    """Test minor planet alias search in GlobalObjectsDB."""
+
+    @pytest.fixture
+    def registry(self):
+        """Create a fresh CatalogRegistry."""
+        registry = CatalogRegistry.get_instance()
+        registry.clear()
+        registry.register_catalog("HIP", "Hipparcos Catalog")
+        return registry
+
+    @pytest.fixture
+    def db(self):
+        """Create a fresh GlobalObjectsDB for each test."""
+        return GlobalObjectsDB()
+
+    def test_get_by_full_name(self, db, registry):
+        """Minor planet can be found by its full name."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        db.add(ceres)
+        assert db.get("1 Ceres") == ceres
+
+    def test_get_by_alias(self, db, registry):
+        """Minor planet can be found by its word-part alias."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        db.add(ceres)
+        assert db.get("Ceres") == ceres
+        assert db.get("ceres") == ceres  # Case-insensitive
+
+    def test_alias_does_not_hide_primary_name(self, db, registry):
+        """When a primary-named object shares a name with a minor planet alias,
+        the primary name wins in exact-match search."""
+        moon_europa = MockBody("Europa")
+        asteroid_europa = MockBody("52 Europa", reflective=True)
+
+        db.add(moon_europa)
+        db.add(asteroid_europa)
+
+        # Exact search for "Europa" must return the moon, not the asteroid
+        assert db.get("Europa") == moon_europa
+        # Full name still finds the asteroid
+        assert db.get("52 Europa") == asteroid_europa
+
+    def test_startswith_by_alias_prefix(self, db, registry):
+        """Prefix search finds a minor planet via its alias."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        db.add(ceres)
+
+        results = db.startswith("Cere")
+        result_names = [r[0] for r in results]
+        assert "1 Ceres" in result_names
+
+    def test_startswith_includes_both_moon_and_asteroid(self, db, registry):
+        """Prefix search returns both the moon and the asteroid when
+        the search text matches both."""
+        moon_europa = MockBody("Europa")
+        asteroid_europa = MockBody("52 Europa", reflective=True)
+
+        db.add(moon_europa)
+        db.add(asteroid_europa)
+
+        results = db.startswith("Europa")
+        result_names = [r[0] for r in results]
+        assert "Europa" in result_names
+        assert "52 Europa" in result_names
+
+    def test_startswith_alias_deduplication(self, db, registry):
+        """A minor planet found by both its full name prefix and alias
+        should appear only once in the results."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        db.add(ceres)
+
+        # "1 " won't match alias "Ceres", so no duplicate here
+        results_alias = db.startswith("Cere")
+        bodies = [r[1] for r in results_alias]
+        assert bodies.count(ceres) == 1
+
+    def test_no_alias_for_non_minor_planet(self, db, registry):
+        """Regular vernacular names do not produce aliases."""
+        star = MockBody("Sirius")
+        db.add(star)
+
+        # There should be no alias entry
+        assert db.alias_name_index.get("Sirius") is None
+        assert db.get("Sirius") == star
+
+    def test_multiple_minor_planets(self, db, registry):
+        """Multiple minor planets can each be found by their alias."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        vesta = MockBody("4 Vesta", reflective=True)
+        pallas = MockBody("2 Pallas", reflective=True)
+
+        db.add(ceres)
+        db.add(vesta)
+        db.add(pallas)
+
+        assert db.get("Ceres") == ceres
+        assert db.get("Vesta") == vesta
+        assert db.get("Pallas") == pallas
+
+    def test_startswith_multiple_aliases(self, db, registry):
+        """Prefix search finds multiple minor planets sharing a prefix."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        cerberus = MockBody("1865 Cerberus", reflective=True)
+        db.add(ceres)
+        db.add(cerberus)
+
+        results = db.startswith("Cer")
+        result_names = [r[0] for r in results]
+        assert "1 Ceres" in result_names
+        assert "1865 Cerberus" in result_names
+
+    def test_add_name_for_minor_planet_registers_alias(self, db, registry):
+        """add_name_for() with an NT_minor_planet ObjectName must add the translated
+        word-part alias so that the body can be found by the translated alias."""
+        ceres = MockBody("1 Ceres", reflective=True)
+        object_name_entry = ObjectName.make_minor_planet("1 Ceres")
+        db.add(ceres)
+
+        translated_name = "1 Cérès"
+        db.add_name_for(ceres, translated_name, object_name_entry)
+
+        # The translated full name must be retrievable directly
+        assert db.get("1 Cérès") == ceres
+        # The translated alias (word-part after the number) must be registered
+        assert db.alias_name_index.get("Cérès") == ceres
+        assert db.get("Cérès") == ceres
+        # Prefix search via translated alias must also work
+        results = db.startswith("Cérè")
+        result_names = [r[0] for r in results]
+        assert "1 Cérès" in result_names
+
+    def test_add_name_for_non_minor_planet_no_alias(self, db, registry):
+        """add_name_for() with a non-minor-planet one must not add anything to
+        the alias index."""
+        star = MockBody("Sirius")
+        object_name_entry = ObjectName.make_vernacular("Sirius")
+        db.add(star)
+
+        db.add_name_for(star, "Sirios", object_name_entry)
+
+        assert db.alias_name_index.get("Sirios") is None
+        assert db.get("Sirios") == star
