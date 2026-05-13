@@ -40,7 +40,6 @@ class ReflectiveYamlParser(YamlModuleParser):
 
     def decode(self, data, parent=None):
         name = data.name
-        translated_names, source_names = self.translate_names(name, reflective=True)
         parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
@@ -63,8 +62,7 @@ class ReflectiveYamlParser(YamlModuleParser):
             orbit = None
             rotation = None
         body = ReflectiveBody(
-            names=translated_names,
-            source_names=source_names,
+            names=name,
             body_class=body_class,
             radius=radius,
             oblateness=ellipticity,
@@ -77,6 +75,7 @@ class ReflectiveYamlParser(YamlModuleParser):
             point_color=point_color,
             albedo=albedo,
         )
+        self.translate_object_names(body, body.anchor.get_names())
         if data.surfaces is None:
             surfaces = []
             surface_data = {

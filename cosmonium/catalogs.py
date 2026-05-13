@@ -196,6 +196,18 @@ class GlobalObjectsDB:
             # Add to general name index
             self.name_index.add(name, body)
 
+    def add_name_for(self, body: Any, name: str) -> None:
+        # Check if it's a catalog name (PREFIX + space + ID)
+        space_pos = name.find(' ')
+        if space_pos > 0:
+            prefix = name[:space_pos].upper()
+            if prefix in self.catalog_indexes:
+                catalog_id = name[space_pos + 1 :]
+                self.catalog_indexes[prefix].add(catalog_id, body)
+
+        # Add to general name index
+        self.name_index.add(name, body)
+
     def get(self, name: str) -> Optional[Any]:
         """Get body by exact name using indexes (O(log N) lookup)."""
         if not name:

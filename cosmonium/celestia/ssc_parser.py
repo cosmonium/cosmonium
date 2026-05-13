@@ -178,7 +178,6 @@ def instanciate_rings(name, data, context, parent):
     name = actual_parent.get_names().get_name() + "'s rings"
     body = StellarRings(
         names=[name],
-        source_names=[],
         body_class="rings",
         rings_object=rings_object,
         orbit=orbit,
@@ -382,7 +381,6 @@ def instanciate_body(universe, context, names, is_planet, data, parent_anchor):
     )
     body = ReflectiveBody(
         names=names,
-        source_names=[],
         radius=radius,
         # surface=surface,
         oblateness=oblateness,
@@ -491,7 +489,7 @@ def instanciate_reference_point(universe, context, names, is_planet, data, paren
         rotation = FixedRotation(LQuaterniond(), frame=body_frame)
     elif not custom_rotation:
         rotation.set_frame(body_frame)
-    ref = ReferencePoint(names=names, source_names=[], orbit=orbit, rotation=rotation, body_class=body_class)
+    ref = ReferencePoint(names=names, orbit=orbit, rotation=rotation, body_class=body_class)
     return ref
 
 

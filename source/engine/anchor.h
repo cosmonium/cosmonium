@@ -77,16 +77,14 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       LColor point_color,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   AnchorBase(
       unsigned int anchor_class,
       PyObject *ref_object,
       LColor point_color,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
   virtual ~AnchorBase(void);
 
@@ -104,7 +102,7 @@ PUBLISHED:
 
   // Name management methods
   std::string get_name(void) const;
-  ObjectNames const *get_names(void) const;
+  ObjectNames *get_names(void);
   void set_names(const pvector<std::string> names);
   unsigned int get_num_source_names(void) const;
   std::string get_source_name_at(unsigned int index) const;

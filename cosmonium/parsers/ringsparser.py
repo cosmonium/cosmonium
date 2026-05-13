@@ -40,7 +40,6 @@ class StellarRingsYamlParser(YamlModuleParser):
 
     def decode(self, data, parent=None):
         name = data.name
-        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.parent
         parent, _explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
@@ -58,8 +57,7 @@ class StellarRingsYamlParser(YamlModuleParser):
         shader = RenderingShader(lighting_model=lighting_model)
         rings_object = Rings(data.inner_radius.scaled_value, data.outer_radius.scaled_value, appearance, shader)
         body = StellarRings(
-            names=translated_names,
-            source_names=source_names,
+            names=name,
             body_class=body_class,
             rings_object=rings_object,
             orbit=orbit,
@@ -67,6 +65,7 @@ class StellarRingsYamlParser(YamlModuleParser):
             frame=None,
             point_color=point_color,
         )
+        self.translate_object_names(body, body.anchor.get_names())
         parent.add_child_fast(body)
         return body
 

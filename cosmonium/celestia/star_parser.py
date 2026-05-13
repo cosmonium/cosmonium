@@ -63,7 +63,6 @@ def parse_line(line, names, universe):
         abs_magnitude = app_to_abs_mag(float(app_magnitude), float(distance) * units.KmPerLy)
         star = Star(
             name,
-            source_names=[],
             radius=None,
             surface_factory=celestiaStarSurfaceFactory,
             spectral_type=spectralTypeStringDecoder.decode(spectral_type),
@@ -126,7 +125,6 @@ def do_load_bin(filepath, names, universe):
         )
         star = Star(
             name,
-            source_names=[],
             surface_factory=celestiaStarSurfaceFactory,
             spectral_type=spectralTypeIntDecoder.decode(spectral_type),
             abs_magnitude=abs_magnitude / 256.0,

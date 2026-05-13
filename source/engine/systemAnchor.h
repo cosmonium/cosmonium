@@ -31,16 +31,14 @@ public:
       OrbitBase *orbit,
       RotationBase *rotation,
       LColor point_color,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   SystemAnchor(PyObject *ref_object,
       OrbitBase *orbit,
       RotationBase *rotation,
       LColor point_color,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
 private:
   SystemAnchor(SystemAnchor const &other);

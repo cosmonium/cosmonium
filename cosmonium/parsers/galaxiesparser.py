@@ -196,7 +196,6 @@ class GalaxyShapeYamlParser(YamlModuleParser):
 class GalaxyYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
         name = data.name
-        translated_names, source_names = self.translate_names(name)
         parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
@@ -209,8 +208,7 @@ class GalaxyYamlParser(YamlModuleParser):
         appearance = GalaxyAppearanceYamlParser.decode(data.appearance)
         shape = GalaxyShapeYamlParser.decode(data.shape, shape_type)
         galaxy = Galaxy(
-            translated_names,
-            source_names=source_names,
+            name,
             body_class=body_class,
             shape_type=shape_type,
             shape=shape,
@@ -220,6 +218,7 @@ class GalaxyYamlParser(YamlModuleParser):
             orbit=orbit,
             rotation=rotation,
         )
+        self.translate_object_names(galaxy, galaxy.anchor.get_names())
         ObjectYamlParser.decode_objects_list(data.children, parent=galaxy)
         parent.add_child_fast(galaxy)
         return galaxy

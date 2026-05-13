@@ -31,7 +31,6 @@ from .yamlparser import YamlModuleParser
 class NebulaYamlParser(YamlModuleParser):
     def decode(self, data, parent=None):
         name = data.name
-        (translated_names, source_names) = self.translate_names(name)
         parent_name = data.parent
         parent, _explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
@@ -42,14 +41,14 @@ class NebulaYamlParser(YamlModuleParser):
         orbit = OrbitYamlParser.decode(data.orbit, None, parent)
         rotation = RotationYamlParser.decode(data.rotation, None, parent)
         nebula = EmissiveBody(
-            translated_names,
-            source_names,
+            name,
             body_class=body_class,
             abs_magnitude=abs_magnitude,
             radius=radius,
             orbit=orbit,
             rotation=rotation,
         )
+        self.translate_object_names(nebula, nebula.anchor.get_names())
         nebula.has_resolved_halo = False
         if data.surfaces is None:
             # Create inline surface from shape/appearance if available

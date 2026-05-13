@@ -61,7 +61,6 @@ class Galaxy(OctreeSystem):
     def __init__(
         self,
         names,
-        source_names,
         radius=None,
         abs_magnitude=None,
         shape_type=None,
@@ -73,7 +72,7 @@ class Galaxy(OctreeSystem):
         body_class='galaxy',
         point_color=None,
     ):
-        super().__init__(names, source_names, orbit, rotation, frame, body_class, radius, point_color)
+        super().__init__(names, orbit, rotation, frame, body_class, radius, point_color)
         # TODO: This should be done in create_anchor
         self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         self.shape_type = shape_type

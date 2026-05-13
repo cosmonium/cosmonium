@@ -32,8 +32,7 @@ public:
       RotationBase *rotation,
       double radius,
       LColor point_color,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   OctreeAnchor(PyObject *ref_object,
@@ -41,8 +40,7 @@ PUBLISHED:
       RotationBase *rotation,
       double radius,
       LColor point_color,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
   virtual void traverse(AnchorTraverser &visitor);
   virtual void rebuild(void);

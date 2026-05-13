@@ -35,8 +35,7 @@ class StellarBody(StellarObject):
     def __init__(
         self,
         names,
-        source_names,
-        radius,
+        radius=None,
         oblateness=None,
         scale=None,
         surface=None,
@@ -49,7 +48,7 @@ class StellarBody(StellarObject):
         body_class=None,
         point_color=None,
     ):
-        StellarObject.__init__(self, names, source_names, orbit, rotation, frame, body_class, point_color)
+        StellarObject.__init__(self, names, orbit, rotation, frame, body_class, point_color)
         self.surface = None
         self.clouds = clouds
         self.atmosphere = atmosphere
@@ -92,7 +91,6 @@ class StellarBody(StellarObject):
             # TODO: The system name should be translated correctly
             system = StellarSystem(
                 [self.get_name() + " System"],
-                source_names=[],
                 primary=self,
                 orbit=system_orbit,
                 rotation=system_rotation,

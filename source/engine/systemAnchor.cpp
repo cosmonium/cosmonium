@@ -30,9 +30,8 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color,
-    const pvector<std::string> names,
-    const pvector<std::string> source_names) :
-    StellarAnchor(System, ref_object, orbit, rotation, point_color, names, source_names),
+    const pvector<std::string> names) :
+    StellarAnchor(System, ref_object, orbit, rotation, point_color, names),
     _primary(nullptr),
     _star_system(false)
 {
@@ -42,9 +41,8 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color,
-    PyObject *names,
-    PyObject *source_names) :
-    StellarAnchor(System, ref_object, orbit, rotation, point_color, names, source_names),
+    PyObject *names) :
+    StellarAnchor(System, ref_object, orbit, rotation, point_color, names),
     _primary(nullptr),
     _star_system(false)
 {

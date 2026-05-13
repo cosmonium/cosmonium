@@ -30,9 +30,8 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
     RotationBase *rotation,
     double radius,
     LColor point_color,
-    const pvector<std::string> names,
-    const pvector<std::string> source_names) :
-    SystemAnchor(ref_object, orbit, rotation, point_color, names, source_names),
+    const pvector<std::string> names) :
+    SystemAnchor(ref_object, orbit, rotation, point_color, names),
     recreate_octree(true)
 {
     bounding_radius = radius;
@@ -57,9 +56,8 @@ OctreeAnchor::OctreeAnchor(PyObject *ref_object,
     RotationBase *rotation,
     double radius,
     LColor point_color,
-    PyObject *names,
-    PyObject *source_names) :
-    SystemAnchor(ref_object, orbit, rotation, point_color, names, source_names),
+    PyObject *names) :
+    SystemAnchor(ref_object, orbit, rotation, point_color, names),
     recreate_octree(true)
 {
     bounding_radius = radius;

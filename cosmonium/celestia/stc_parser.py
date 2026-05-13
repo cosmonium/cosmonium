@@ -178,7 +178,6 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
             existing_star.parent.remove_child_fast(existing_star)
     star = Star(
         names,
-        source_names=[],
         surface_factory=surface_factory,
         abs_magnitude=abs_magnitude,
         temperature=temperature,
@@ -259,7 +258,7 @@ def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
         orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=frame)
     else:
         orbit.set_frame(frame)
-    barycenter = Barycenter(names, source_names=[], orbit=orbit, rotation=rotation)
+    barycenter = Barycenter(names, orbit=orbit, rotation=rotation)
     parent.add_child_fast(barycenter)
     if existing_star is not None:
         objectsDB.replace(existing_star, barycenter)

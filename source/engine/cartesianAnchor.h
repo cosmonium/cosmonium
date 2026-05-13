@@ -33,8 +33,7 @@ public:
       PyObject *ref_object,
       ReferenceFrame *frame,
       LColor point_color,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   CartesianAnchor(
@@ -42,8 +41,7 @@ PUBLISHED:
       PyObject *ref_object,
       ReferenceFrame *frame,
       LColor point_color,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
   CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame);
   virtual ~CartesianAnchor(void);
@@ -130,15 +128,13 @@ public:
   OriginAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   OriginAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
 protected:
   MAKE_TYPE("OriginAnchor", CartesianAnchor);
@@ -152,16 +148,14 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       PyObject *ref_surface,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   FlatSurfaceAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
       PyObject *ref_surface,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
   virtual ~FlatSurfaceAnchor(void);
 
   void set_surface(PyObject *ref_surface);
@@ -183,15 +177,13 @@ public:
   ObserverAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      const pvector<std::string> names,
-      const pvector<std::string> source_names);
+      const pvector<std::string> names);
 
 PUBLISHED:
   ObserverAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      PyObject *names = nullptr,
-      PyObject *source_names = nullptr);
+      PyObject *names = nullptr);
 
   virtual void update(double time, unsigned long int update_id);
 

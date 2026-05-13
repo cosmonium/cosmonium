@@ -30,7 +30,6 @@ class Star(EmissiveBody):
     def __init__(
         self,
         names,
-        source_names,
         radius=None,
         oblateness=None,
         scale=None,
@@ -71,7 +70,6 @@ class Star(EmissiveBody):
         EmissiveBody.__init__(
             self,
             names=names,
-            source_names=source_names,
             radius=radius,
             oblateness=oblateness,
             scale=scale,

@@ -445,7 +445,7 @@ class CartesianWorld(SimpleWorld):
         self.anchor.set_bounding_radius(self.get_bounding_radius())
 
     def create_anchor(self, name):
-        return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame(), LColor(), [name], [])
+        return CartesianAnchor(self.anchor_class, self, AbsoluteReferenceFrame(), LColor(), [name])
 
     def create_scene_anchor(self):
         return SceneAnchor(self.get_ascii_name() + '-scene-anchor', self.anchor, False, LColor(), True)
@@ -462,7 +462,7 @@ class OriginCenteredWorld(SimpleWorld):
         SimpleWorld.__init__(self, name)
 
     def create_anchor(self, name):
-        return OriginAnchor(0, self, [name], [])
+        return OriginAnchor(0, self, [name])
 
     def create_scene_anchor(self):
         return AbsoluteSceneAnchor(self.anchor)
@@ -475,7 +475,7 @@ class FlatTerrainWorld(OriginCenteredWorld):
         self.model_body_center_offset = 0.0
 
     def create_anchor(self, name):
-        return FlatSurfaceAnchor(0, self, self.surface, [name], [])
+        return FlatSurfaceAnchor(0, self, self.surface, [name])
 
     def set_terrain(self, surface):
         self.remove_component(self.surface)
@@ -508,7 +508,7 @@ class ObserverCenteredWorld(SimpleWorld):
         self.components.visible = True
 
     def create_anchor(self, name):
-        return ObserverAnchor(0, self, [name], [])
+        return ObserverAnchor(0, self, [name])
 
     def create_scene_anchor(self):
         return ObserverSceneAnchor(self.anchor, background=self.background)

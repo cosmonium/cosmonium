@@ -58,8 +58,7 @@ AnchorTreeBase::set_rebuild_needed(void)
 TypeHandle AnchorBase::_type_handle;
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
-                       const pvector<std::string> names,
-                       const pvector<std::string> source_names) :
+                       const pvector<std::string> names) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -104,19 +103,13 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   } else {
     for (size_t i = 0; i < names.size(); ++i) {
       ObjectName parsed = ObjectNames::parse_name(names[i], reflective);
-      // If there's a corresponding source name, use it as the original
-      if (i < source_names.size()) {
-        object_names.add_name(parsed, source_names[i]);
-      } else {
-        object_names.add_name(parsed);
-      }
+      object_names.add_name(parsed);
     }
   }
 }
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
-                       PyObject *names,
-                       PyObject *source_names) :
+                       PyObject *names) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -181,23 +174,6 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
     }
   }
 
-  // Extract source_names from Python list
-  pvector<std::string> source_name_strings;
-  if (source_names != nullptr && PyList_Check(source_names)) {
-    Py_ssize_t size = PyList_Size(source_names);
-    for (Py_ssize_t i = 0; i < size; ++i) {
-      PyObject *item = PyList_GetItem(source_names, i);
-      if (item != nullptr && PyUnicode_Check(item)) {
-          const char *str;
-          Py_ssize_t str_len;
-          str = PyUnicode_AsUTF8AndSize(item, &str_len);
-        if (str != nullptr) {
-          source_name_strings.push_back(std::string(str, str_len));
-        }
-      }
-    }
-  }
-
   // Parse and add names with originals
   bool reflective = (anchor_class & AnchorClass::Reflective) != 0;
   if (name_strings.empty()) {
@@ -205,12 +181,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   } else {
     for (size_t i = 0; i < name_strings.size(); ++i) {
       ObjectName parsed = ObjectNames::parse_name(name_strings[i], reflective);
-      // If there's a corresponding source name, use it as the original
-      if (i < source_name_strings.size()) {
-        object_names.add_name(parsed, source_name_strings[i]);
-      } else {
-        object_names.add_name(parsed);
-      }
+      object_names.add_name(parsed);
     }
   }
 }
@@ -336,8 +307,8 @@ AnchorBase::get_name(void) const
   return object_names.get_name();
 }
 
-ObjectNames const *
-AnchorBase::get_names(void) const
+ObjectNames *
+AnchorBase::get_names(void)
 {
   return &object_names;
 }

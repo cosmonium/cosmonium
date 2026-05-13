@@ -37,7 +37,6 @@ class StarYamlParser(YamlModuleParser):
 
     def decode(self, data, parent):
         name = data.name
-        translated_names, source_names = self.translate_names(name)
         parent_name = data.parent
         parent, explicit_parent = check_parent(name, parent, parent_name)
         if parent is None:
@@ -55,8 +54,7 @@ class StarYamlParser(YamlModuleParser):
         clouds = CloudsYamlParser.decode(data.clouds)
         # rings = RingsYamlParser.decode(data.rings)
         star = Star(
-            translated_names,
-            source_names=source_names,
+            name,
             body_class=body_class,
             radius=radius,
             oblateness=ellipticity,
@@ -69,6 +67,7 @@ class StarYamlParser(YamlModuleParser):
             temperature=data.temperature,
             spectral_type=data.spectral_type,
         )
+        self.translate_object_names(star, star.anchor.get_names())
         surfaces = data.surfaces
         if surfaces is not None:
             surfaces = SurfaceYamlParser.decode(data.surfaces, star)
