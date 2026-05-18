@@ -99,9 +99,9 @@ class UISkinEntry:
         font_family = self.font_family
         font_style = Font.STYLE_NORMAL
         if self.font_style == 'italic':
-            font_style = Font.STYLE_ITALIC
+            font_style |= Font.STYLE_ITALIC
         if self.font_weight == 'bold':
-            font_style = Font.STYLE_BOLD
+            font_style |= Font.STYLE_BOLD
         font_size = self.font_size(element, True, skin)
         if ui_scale is None:
             ui_scale = (1, 1)

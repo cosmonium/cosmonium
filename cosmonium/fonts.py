@@ -27,11 +27,11 @@ import os
 
 
 class Font:
+    STYLE_NORMAL = 0x00
     STYLE_UNKNOWN = 0x01
-    STYLE_NORMAL = 0x02
-    STYLE_BOLD = 0x04
-    STYLE_ITALIC = 0x08
-    STYLE_SOLID = 0x10
+    STYLE_BOLD = 0x02
+    STYLE_ITALIC = 0x04
+    STYLE_SOLID = 0x08
 
     def __init__(self, family, style, filename):
         self.family = family
