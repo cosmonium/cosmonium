@@ -21,9 +21,12 @@
 from __future__ import annotations
 
 import builtins
-from panda3d.core import Filename, DynamicTextFont
-
+import logging
 import os
+
+from panda3d.core import DynamicTextFont, Filename
+
+logger = logging.getLogger('fonts')
 
 
 class Font:
@@ -80,10 +83,11 @@ class FontsManager:
             family = base
             style = Font.STYLE_NORMAL
         entry = self.families.setdefault(family, [])
-        # print("Adding font '%s' style %x" % (family, style))
         entry.append(Font(family, style, filename))
 
     def register_fonts(self, path: str) -> None:
+        if path is None:
+            return
         for entry in os.listdir(path):
             if entry.endswith('.ttf') or entry.endswith('.otf'):
                 self.register_font(os.path.join(path, entry))
@@ -94,13 +98,13 @@ class FontsManager:
             for font in entry:
                 if font.style == style:
                     return font
-            print(f"Requested style not found for '{family}', search similar style")
+            logger.warning("Requested style not found for '%s', search similar style", family)
             for font in entry:
                 if (font.style & style) == style:
                     return font
-            print(f"Requested style not found for '{family}'")
+            logger.warning("Requested style not found for '%s'", family)
         else:
-            print(f"Font family '{family}' unknown")
+            logger.warning("Font family '%s' unknown", family)
         return None
 
     def load_font(self, family: str, style: str) -> Font | None:
