@@ -196,9 +196,13 @@ class GlobalObjectsDB:
 
         # Catalog indexes for known catalogs
         registry = CatalogRegistry.get_instance()
-        self.catalog_indexes: dict[str, CatalogIndex] = {}
+        self._catalog_indexes: dict[str, CatalogIndex] = {}
+        self._catalog_indexes_by_id: dict[int, CatalogIndex] = {}
         for catalog_prefix in registry.get_all_prefixes():
-            self.catalog_indexes[catalog_prefix] = CatalogIndex(catalog_prefix)
+            catalog_index = CatalogIndex(catalog_prefix)
+            self._catalog_indexes[catalog_prefix] = catalog_index
+            catalog_id = registry.get_id(catalog_prefix)
+            self._catalog_indexes_by_id[catalog_id] = catalog_index
 
         # General name index for non-catalog names
         self.name_index: NameIndex = NameIndex()
@@ -225,33 +229,36 @@ class GlobalObjectsDB:
         self.oids.append(body)
 
         # Route names to appropriate indexes
-        all_names = set(body.get_names().get_all_names() + body.get_source_names())
-        for name in all_names:
-            # Check if it's a catalog name (PREFIX + space + ID)
-            space_pos = name.find(' ')
-            if space_pos > 0:
-                prefix = name[:space_pos].upper()
-                if prefix in self.catalog_indexes:
-                    catalog_id = name[space_pos + 1 :]
-                    self.catalog_indexes[prefix].add(catalog_id, body)
+        object_names = body.get_names()
+        for i in range(object_names.get_num_names()):
+            name_entry = object_names.get_name_entry(i)
+            if name_entry.type == ObjectName.NT_catalog:
+                catalog_index = self._catalog_indexes_by_id.get(name_entry.catalog_id)
+                if catalog_index is not None:
+                    catalog_index.add(name_entry.value, body)
                     continue
+            self.name_index.add(name_entry.get_full_name(), body)
 
-            # Add to general name index
-            self.name_index.add(name, body)
+        # Also index pre-translation originals so they remain searchable.
+        # get_source_names() returns both non-translatable full names (already handled
+        # above via ObjectName entries) and originals of translated names. Only the
+        # latter differ from get_all_names(),
+        current_names = set(object_names.get_all_names())
+        for source_name in body.get_source_names():
+            if source_name not in current_names:
+                self.name_index.add(source_name, body)
 
         # Add aliases for minor planet names
         self._sync_minor_planet_aliases(body)
 
     def add_name_for(self, body: Any, name: str, object_name: ObjectName) -> None:
-        # Check if it's a catalog name (PREFIX + space + ID)
-        space_pos = name.find(' ')
-        if space_pos > 0:
-            prefix = name[:space_pos].upper()
-            if prefix in self.catalog_indexes:
-                catalog_id = name[space_pos + 1 :]
-                self.catalog_indexes[prefix].add(catalog_id, body)
+        # Route name to appropriate index
+        if object_name.type == ObjectName.NT_catalog:
+            catalog_index = self._catalog_indexes_by_id.get(object_name.catalog_id)
+            if catalog_index is not None:
+                catalog_index.add(object_name.value, body)
 
-        # Add to general name index
+        # Always add to general name index (the translated form must be searchable).
         self.name_index.add(name, body)
 
         # If it's a minor planet name, also add or update the alias index so that
@@ -272,9 +279,9 @@ class GlobalObjectsDB:
         space_pos = name.find(' ')
         if space_pos > 0:
             prefix = name[:space_pos].upper()
-            if prefix in self.catalog_indexes:
+            if prefix in self._catalog_indexes:
                 catalog_id = name[space_pos + 1 :]
-                return self.catalog_indexes[prefix].get(catalog_id)
+                return self._catalog_indexes[prefix].get(catalog_id)
 
         # Search in the primary name index first
         result = self.name_index.get(name)
@@ -307,27 +314,29 @@ class GlobalObjectsDB:
         """
         self.oids[old_body.oid] = None  # Clear old body reference
 
-        # Update catalog indexes: replace old_body with new_body for all names
-        all_names = set(new_body.get_names().get_all_names() + new_body.get_source_names())
-        for name in all_names:
-            space_pos = name.find(' ')
-            if space_pos > 0:
-                prefix = name[:space_pos].upper()
-                if prefix in self.catalog_indexes:
-                    catalog_id = name[space_pos + 1 :]
-                    catalog_index = self.catalog_indexes[prefix]
-                    upper_id = catalog_id.upper()
+        # Update indexes
+        object_names = new_body.get_names()
+        for i in range(object_names.get_num_names()):
+            name_entry = object_names.get_name_entry(i)
+            if name_entry.type == ObjectName.NT_catalog:
+                catalog_index = self._catalog_indexes_by_id.get(name_entry.catalog_id)
+                if catalog_index is not None:
+                    upper_id = name_entry.value.upper()
                     if upper_id in catalog_index._id_to_body:
-                        # Catalog ID already exists, replace the body
-                        catalog_index.replace(catalog_id, new_body)
+                        catalog_index.replace(name_entry.value, new_body)
                     else:
-                        # New catalog ID, add it to the index
-                        catalog_index.add(catalog_id, new_body)
+                        catalog_index.add(name_entry.value, new_body)
                     continue
+            full_name = name_entry.get_full_name()
+            if not self.name_index.replace(full_name, new_body):
+                self.name_index.add(full_name, new_body)
 
-            # Update or add the name index
-            if not self.name_index.replace(name, new_body):
-                self.name_index.add(name, new_body)
+        # Update pre-translation originals (same filter logic as add()).
+        current_names = set(object_names.get_all_names())
+        for source_name in new_body.get_source_names():
+            if source_name not in current_names:
+                if not self.name_index.replace(source_name, new_body):
+                    self.name_index.add(source_name, new_body)
 
         # Update alias index for minor planet names
         self._sync_minor_planet_aliases(new_body)
@@ -344,29 +353,29 @@ class GlobalObjectsDB:
         upper_text = text.upper()
         result = []
 
-        # Check if it's a catalog query (e.g., "HIP 32", "HIP ", "HI")
+        # Check if it's a catalog query (e.g., "HIP 32")
         space_pos = text.find(' ')
         if space_pos > 0:
             prefix = text[:space_pos].upper()
-            if prefix in self.catalog_indexes:
+            if prefix in self._catalog_indexes:
                 # It's a catalog query with ID prefix
                 id_prefix = text[space_pos + 1 :]
-                return self.catalog_indexes[prefix].startswith(id_prefix, max_results)
+                return self._catalog_indexes[prefix].startswith(id_prefix, max_results)
 
         # Check if the text itself is a catalog prefix (e.g., "HIP")
-        if upper_text in self.catalog_indexes:
+        if upper_text in self._catalog_indexes:
             # Return first entries from that catalog
-            result.extend(self.catalog_indexes[upper_text].startswith('', max_results))
+            result.extend(self._catalog_indexes[upper_text].startswith('', max_results))
             if len(result) >= max_results:
                 return result[:max_results]
 
         # Check for partial catalog prefix match (e.g., "HI" matches "HIP")
-        for catalog_prefix in self.catalog_indexes:
+        for catalog_prefix in self._catalog_indexes:
             if catalog_prefix.startswith(upper_text):
                 # Add some results from this catalog
                 # Use a small fraction of max_results to allow results from multiple matching catalogs
                 catalog_sample_size = max_results // 3
-                catalog_results = self.catalog_indexes[catalog_prefix].startswith('', catalog_sample_size)
+                catalog_results = self._catalog_indexes[catalog_prefix].startswith('', catalog_sample_size)
                 result.extend(catalog_results)
                 if len(result) >= max_results:
                     return result[:max_results]

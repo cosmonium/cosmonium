@@ -29,22 +29,22 @@ class MockBody:
 
     def __init__(self, names, source_names=None, reflective=False):
         raw_names = names if isinstance(names, list) else [names]
-        self._source_names = source_names if source_names else []
+        extra_names = source_names if source_names else []
         self.oid = None
         self.oid_color = None
         self._object_names = ObjectNames()
-        for name in raw_names:
+        for name in raw_names + extra_names:
             self._object_names.add_name(ObjectNames.parse_name(name, reflective=reflective))
 
     def get_names(self):
         return self._object_names
 
     def get_source_names(self):
-        return self._source_names
+        return self._object_names.get_source_names()
 
     def get_name_from_upper(self, upper_name):
         """Return the original name case from an uppercase version."""
-        for name in self._object_names.get_all_names() + self._source_names:
+        for name in self._object_names.get_all_names() + self._object_names.get_source_names():
             if name.upper() == upper_name:
                 return name
         return upper_name
@@ -251,8 +251,8 @@ class TestGlobalObjectsDB:
         return registry
 
     @pytest.fixture
-    def db(self):
-        """Create a fresh GlobalObjectsDB for each test."""
+    def db(self, registry):
+        """Create a fresh GlobalObjectsDB for each test (after registry is set up)."""
         return GlobalObjectsDB()
 
     def test_add_and_get(self, db, registry):
@@ -279,9 +279,9 @@ class TestGlobalObjectsDB:
         db.add(body3)
 
         assert db.get("HIP 32349") == body1
-        assert db.catalog_indexes["HIP"].get("32349") == body1
+        assert db._catalog_indexes["HIP"].get("32349") == body1
         assert db.get("NGC 224") == body2
-        assert db.catalog_indexes["NGC"].get("224") == body2
+        assert db._catalog_indexes["NGC"].get("224") == body2
         assert db.get("Sirius") == body3
         assert db.name_index.get("Sirius") == body3
 
