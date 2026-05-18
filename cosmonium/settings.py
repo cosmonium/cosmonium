@@ -103,7 +103,6 @@ shadows_pcf_16 = True
 shadows_snap_cam = False
 debug_shadow_map_texture = False
 
-hud_font = 'DejaVuSans'
 label_font = 'DejaVuSans'
 
 label_size = 12

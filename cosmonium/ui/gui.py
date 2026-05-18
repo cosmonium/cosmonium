@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 import os
 from panda3d.core import LVector2
 
-from ..fonts import fontsManager, Font
 from ..catalogs import objectsDB
 from .. import settings
 
@@ -83,11 +82,6 @@ class Gui(object):
         self.cosmonium.p2dBottomRight = cosmonium.pixel2d.attach_new_node('p2dBottomRight')
 
         self.update_size(self.screen_width, self.screen_height)
-        font = fontsManager.get_font(settings.hud_font, Font.STYLE_NORMAL)
-        if font is not None:
-            self.font = font.load()
-        else:
-            self.font = None
         self.skin = None
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
