@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 
 from panda3d.core import LVector3, LVector3d
 
-from ...foundation import ObjectLabel
 from ... import settings
+from .object_label import ObjectLabel
 
 
 class BackgroundLabel(ObjectLabel):

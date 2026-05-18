@@ -18,17 +18,9 @@
 #
 
 
-from panda3d.core import BitMask32, CardMaker, DrawMask, LColor, LVecBase3, NodePath, OmniBoundingVolume, TextNode
+from panda3d.core import DrawMask, LColor, LVecBase3
 
-from . import settings
-from .appearances import ModelAppearance
-from .astro import bayer
-from .bodyclass import bodyClasses
-from .fonts import Font, fontsManager
 from .parameters import ParametersGroup
-from .shaders.lighting.flat import FlatLightingModel
-from .shaders.rendering import RenderingShader
-from .utils import TransparencyBlend, srgb_to_linear
 
 
 class BaseObject(object):
@@ -288,93 +280,3 @@ class CompositeObject(BaseObject):
     def remove_instance(self):
         for component in self.components:
             component.remove_instance()
-
-
-class ObjectLabel(VisibleObject):
-    font_init = False
-    font = None
-    appearance = None
-    shader = None
-    color_picking = True
-    default_camera_mask = VisibleObject.AnnotationCameraFlag
-
-    def __init__(self, name, label_source):
-        VisibleObject.__init__(self, name)
-        self.fade = 1.0
-        self.label_source = label_source
-
-    @classmethod
-    def create_shader(cls):
-        cls.appearance = ModelAppearance()
-        cls.appearance.has_attribute_color = True
-        cls.appearance.has_material = False
-        cls.appearance.texture = True
-        cls.appearance.texture_index = 0
-        cls.appearance.nb_textures = 1
-        cls.appearance.transparency = True
-        cls.appearance.transparency_blend = TransparencyBlend.TB_Alpha
-        cls.appearance.alpha_mask = True
-        cls.shader = RenderingShader(lighting_model=FlatLightingModel())
-        cls.shader.color_picking = settings.color_picking and cls.color_picking
-        cls.shader.create(None, cls.appearance)
-
-    def check_settings(self):
-        if self.label_source.body_class is None:
-            print("No class for", self.label_source.get_name())
-            return
-        self.set_shown(bodyClasses.get_show_label(self.label_source.body_class))
-
-    @classmethod
-    def load_font(cls):
-        font = fontsManager.get_font(settings.label_font, Font.STYLE_NORMAL)
-        if font is not None:
-            cls.font = font.load()
-        else:
-            cls.font = None
-        cls.font_init = True
-
-    def create_instance(self):
-        # print("Create label for", self.get_name())
-        self.label = TextNode(self.label_source.get_ascii_name() + '-label')
-        if not self.font_init:
-            self.load_font()
-        if self.font is not None:
-            self.label.set_font(self.font)
-        name = bayer.decode_name(self.label_source.get_label_text())
-        self.label.setText(name)
-        self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
-        # node=label.generate()
-        # self.instance.setBillboardPointEye()
-        # node.setIntoCollideMask(GeomNode.getDefaultCollideMask())
-        # node.setPythonTag('owner', self.label_source)
-        cardMaker = CardMaker(self.label_source.get_ascii_name() + '-labelcard')
-        cardMaker.setFrame(self.label.getFrameActual())
-        cardMaker.setColor(0, 0, 0, 0)
-        card_node = cardMaker.generate()
-        self.label_instance = NodePath(card_node)
-        self.label_instance.attachNewNode(self.label)
-        # self.label_instance.setTransparency(TransparencyAttrib.MAlpha)
-        # card.setEffect(DecalEffect.make())
-        # Using look_at() instead of billboard effect to also rotate the collision solid
-        # card.setBillboardPointEye()
-        # Using a card holder as look_at() is changing the hpr parameters
-        self.instance = NodePath('label-holder')
-        self.label_instance.reparentTo(self.instance)
-        self.instance.reparent_to(self.scene_anchor.unshifted_instance)
-        self.instance_ready = True
-        self.instance.node().setBounds(OmniBoundingVolume())
-        self.instance.node().setFinal(True)
-        self.instance.hide(self.AllCamerasMask)
-        self.instance.show(self.default_camera_mask)
-
-        if self.shader is None:
-            self.create_shader()
-        self.appearance.apply(self, self.instance)
-        self.shader.apply(self.instance)
-        TransparencyBlend.apply(self.appearance.transparency_blend, self.instance)
-
-        self.instance.set_collide_mask(BitMask32.bit(settings.mouse_click_collision_bit))
-        self.instance.set_depth_write(False)
-        self.instance.set_color_scale(LColor(1, 1, 1, 1))
-        card_node.setPythonTag('owner', self.label_source)
-        self.look_at = self.instance.attachNewNode("dummy")

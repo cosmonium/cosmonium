@@ -19,11 +19,11 @@
 
 
 from direct.showbase.PythonUtil import clamp
-from panda3d.core import LPoint3d, LVector3d, LVector3, LColor, LPoint3
+from panda3d.core import LColor, LPoint3, LPoint3d, LVector3, LVector3d
 
-from ...astro.astro import radiance_to_mag
-from ...foundation import ObjectLabel
 from ... import settings
+from ...astro.astro import radiance_to_mag
+from .object_label import ObjectLabel
 
 
 class StellarBodyLabel(ObjectLabel):
