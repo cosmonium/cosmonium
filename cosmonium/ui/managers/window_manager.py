@@ -89,8 +89,7 @@ class WindowManager:
     def close_last_open(self):
         """Close last opened window."""
         if self.open_windows:
-            window = self.open_windows.pop()
-            self.close_window(window)
+            self.close_window(self.open_windows[-1])
 
     def window_closed(self, window):
         """Callback when a window is closed by user.

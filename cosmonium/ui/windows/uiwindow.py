@@ -82,6 +82,8 @@ class UIWindow(FloatingUIElement):
             self.window.destroy()
             self.window = None
             self.layout = None
+            if self.parent is not None:
+                self.parent.window_closed(self)
 
     def shown(self):
         return self.window is not None
