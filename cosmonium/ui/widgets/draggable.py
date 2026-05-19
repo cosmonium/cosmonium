@@ -50,6 +50,13 @@ class DraggableWidgetMixin:
         drag_widget.bind(DGG.B1PRESS, self._start_drag)
         drag_widget.bind(DGG.B1RELEASE, self._stop_drag)
 
+    def cleanup_drag(self):
+        """Cancel any running drag task and reset drag state."""
+        if self.drag_task_name is not None:
+            self.base.taskMgr.remove(self.drag_task_name)
+            self.drag_task_name = None
+        self.drag_start = None
+
     def _start_drag(self, event):
         """Start dragging operation."""
         if not self.draggable:
@@ -66,8 +73,9 @@ class DraggableWidgetMixin:
             current_pos = self.instance.parent.get_relative_point(self.base.render2d, (mpos.get_x(), 0, mpos.get_y()))
             self.drag_start = current_pos - self.instance.get_pos()
 
-            # Add drag task
-            self.base.taskMgr.add(self._drag_task, "drag-widget-task", -1)
+            # Add drag task with a unique name to avoid conflicts when multiple windows are open
+            self.drag_task_name = "drag-widget-task-{}".format(id(self))
+            self.base.taskMgr.add(self._drag_task, self.drag_task_name, -1)
 
     def _drag_task(self, task):
         """Drag task that runs each frame."""
@@ -96,7 +104,9 @@ class DraggableWidgetMixin:
 
     def _stop_drag(self, event):
         """Stop dragging operation."""
-        self.base.taskMgr.remove("drag-widget-task")
+        if self.drag_task_name is not None:
+            self.base.taskMgr.remove(self.drag_task_name)
+            self.drag_task_name = None
 
     def set_draggable(self, draggable):
         """

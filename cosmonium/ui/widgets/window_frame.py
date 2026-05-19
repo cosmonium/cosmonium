@@ -192,6 +192,7 @@ class WindowFrame(DraggableWidgetMixin):
         self.destroy()
 
     def destroy(self):
+        self.cleanup_drag()
         if self.frame is not None:
             self.frame.destroy()
         self.frame = None
