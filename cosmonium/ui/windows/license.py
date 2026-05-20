@@ -29,7 +29,7 @@ def _show_license_window():
     if not window_manager.get_window_by_id('license'):
         window = TextWindow('License', parent=window_manager.gui)
         window.load('COPYING.md')
-        window_manager.open_window(window)
+        window_manager.open_window(window, 'license')
 
 
 def register_license_window():
