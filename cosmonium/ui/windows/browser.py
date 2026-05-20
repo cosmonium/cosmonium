@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,16 +62,8 @@ class Browser(UIWindow):
             return
         UIWindow.show(self)
 
-    def hide(self):
-        if self.window is not None:
+    def destroy(self):
+        if self.renderer is not None:
             self.renderer.load_url("about:blank")
             self.renderer.use_mouse = False
-            self.layout.destroy()
-        UIWindow.hide(self)
-
-    def window_closed(self, window):
-        if window is self.window:
-            self.renderer.load_url("about:blank")
-            self.renderer.use_mouse = False
-            self.layout.destroy()
-        UIWindow.window_closed(self, window)
+        super().destroy()

@@ -188,7 +188,6 @@ class WindowFrame(DraggableWidgetMixin):
     def close_window(self, event=None):
         if self.parent is not None:
             self.parent.window_closed()
-        self.destroy()
 
     def destroy(self):
         self.cleanup_drag()

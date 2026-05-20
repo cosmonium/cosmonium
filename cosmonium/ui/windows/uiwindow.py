@@ -78,22 +78,25 @@ class UIWindow(FloatingUIElement):
 
     def hide(self):
         if self.window is not None:
-            self.last_pos = self.window.getPos()
-            self.window.destroy()
-            self.window = None
-            self.layout = None
-            if self.parent is not None:
-                self.parent.window_closed(self)
+            self.destroy()
 
     def shown(self):
         return self.window is not None
 
-    def window_closed(self):
-        self.last_pos = self.window.getPos()
-        self.window = None
-        self.layout = None
+    def destroy(self):
+        super().destroy()
+        if self.window is not None:
+            self.last_pos = self.window.getPos()
+            self.window.destroy()
+            self.window = None
+        if self.layout is not None:
+            self.layout.destroy()
+            self.layout = None
         if self.parent is not None:
             self.parent.window_closed(self)
+
+    def window_closed(self):
+        self.destroy()
 
     def update_instance(self):
         """Update the visual instance."""
