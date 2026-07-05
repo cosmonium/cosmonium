@@ -396,7 +396,7 @@ class SquarePatchBase(PatchBase):
 
     # Face rotations mapping the base z=1 patch plane to each cube face.
     # Convention: all side faces have v pointing up (+Z), u going right when
-    # viewed from outside the sphere. Top/bottom: u=+X, v=±Y.
+    # viewed from outside the sphere. Top/bottom: u=+X, v=+/-Y.
     # This matches the OpenGL cubemap s,t convention (with t negated).
     #
     # Face       | Normal | u      | v

@@ -38,7 +38,7 @@ class PopulatorConfig(ConfigBase):
     """Configuration for a terrain object populator layer."""
 
     type: Optional[str] = Field(None, description="Populator implementation type ('cpu' or 'gpu')")
-    density: float = Field(250.0, description="Object density (objects per km²)")
+    density: float = Field(250.0, description="Object density (objects per square kilometer)")
     max_instances: int = Field(1000, description="Maximum number of object instances")
     min_lod: int = Field(0, description="Minimum level of detail at which to show this layer")
     shape: Optional[Any] = Field(None, description="Shape configuration for the instanced objects")

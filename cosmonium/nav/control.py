@@ -42,7 +42,7 @@ class ControlNav(InteractiveNavigationController):
     * **Left / Right** — rotate the body left / right.
     * **Home / End** (or mouse-wheel) — altitude change (no-op by default, but
       subclasses or external logic can override :meth:`change_altitude`).
-    * **a** (hold) — fast movement (10× base speed).
+    * **a** (hold) — fast movement (10x base speed).
 
     Requires a movement controller to be set via :meth:`set_controller`.
     """
@@ -131,7 +131,7 @@ class ControlNav(InteractiveNavigationController):
         event_ctrl.ignore("a-up")
 
     def fast(self) -> None:
-        """Engage fast movement (10× base speed)."""
+        """Engage fast movement (10x base speed)."""
         self.speed_factor = 10.0
 
     def slow(self) -> None:

@@ -49,7 +49,7 @@ class WalkNav(InteractiveNavigationController):
     * **Shift + Left / Right** — additional yaw (same as Left / Right).
     * **Ctrl + Left / Right** (or **Alt** on macOS) — roll.
     * **Home / End** (or mouse-wheel) — increase / decrease altitude.
-    * **a** (hold) — activate fast movement (10× speed).
+    * **a** (hold) — activate fast movement (10x speed).
 
     Requires a target body to be set via :meth:`set_target`.
     """
@@ -173,7 +173,7 @@ class WalkNav(InteractiveNavigationController):
         event_ctrl.ignore("a-up")
 
     def fast(self) -> None:
-        """Engage fast movement (10× base speed)."""
+        """Engage fast movement (10x base speed)."""
         self.speed_factor = 10.0
 
     def slow(self) -> None:

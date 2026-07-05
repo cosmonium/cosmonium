@@ -254,10 +254,7 @@ def UVPatchedSphere(radius: float = 1, rings: int = 8, sectors: int = 16, lod: i
         NodePath containing all patches as children.
 
     Notes:
-        - Total patches = 2^lod × 2^(lod+1) = 2^(2*lod+1).
-        - LOD 1: 4 patches (2 rings × 2 sectors).
-        - LOD 2: 16 patches (4 rings × 4 sectors).
-        - LOD 3: 64 patches (8 rings × 8 sectors).
+        - Total patches = 2^lod x 2^(lod+1) = 2^(2*lod+1).
     """
     # Import here to avoid circular dependency
     from .patches import UVPatch
@@ -285,13 +282,8 @@ def IcoSphere(radius: float = 1, subdivisions: int = 1) -> NodePath:
 
     Args:
         radius: Radius of the sphere. Default is 1.
-        subdivisions: Number of subdivision iterations. Each subdivision
-            quadruples the triangle count:
-            - 0 subdivisions: 20 triangles (base icosahedron).
-            - 1 subdivision: 80 triangles.
-            - 2 subdivisions: 320 triangles.
-            - 3 subdivisions: 1,280 triangles.
-            - N subdivisions: 20 × 4^N triangles.
+        subdivisions: Number of subdivision iterations.
+            Triangle count for N subdivisions: 20 x 4^N triangles.
             Default is 1.
 
     Returns:

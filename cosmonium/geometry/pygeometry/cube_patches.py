@@ -149,9 +149,9 @@ def SquaredDistanceSquarePatch(
 
     The squared distance formula maps cube coordinates (x,y,z) to sphere
     coordinates using:
-        x' = x * sqrt(1 - y²/2 - z²/2 + y²z²/3)
-        y' = y * sqrt(1 - z²/2 - x²/2 + z²x²/3)
-        z' = z * sqrt(1 - x²/2 - y²/2 + x²y²/3)
+        x' = x * sqrt(1 - y^2/2 - z^2/2 + y^2z^2/3)
+        y' = y * sqrt(1 - z^2/2 - x^2/2 + z^2x^2/3)
+        z' = z * sqrt(1 - x^2/2 - y^2/2 + x^2y^2/3)
 
     Args:
         axes: LVector3d containing the ellipsoid semi-axes (radius_x, radius_y, radius_z).

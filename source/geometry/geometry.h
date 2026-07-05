@@ -119,7 +119,7 @@ PUBLISHED:
    * @param x1 Maximum U coordinate (longitude, 0-1)
    * @param y1 Maximum V coordinate (latitude, 0-1)
    * @param global_texture If true, texture coordinates map to global sphere
-   * @param offset Offset distance from surface
+   * @param offset Offset magnitude from patch center
    * @param use_patch_adaptation If true, enable adaptive edge tessellation to
    *        match neighbouring patches with different LOD levels
    * @param use_patch_skirts If true, generate edge skirts
@@ -205,7 +205,7 @@ private:
    * @param axes Original semi-axes for tangent/binormal computation
    * @param normal_coefs Normal scaling coefficients
    * @param apply_offset Whether to apply the offset vector
-   * @param offset_vector Offset vector to subtract from point
+   * @param offset_vector Offset vector to subtract from point if apply_offset is true
    */
   void
   make_point(unsigned int r, unsigned int s, double u, double v,
@@ -393,7 +393,7 @@ PUBLISHED:
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
    * @param has_offset If true, apply offset to geometry
-   * @param offset Offset distance from surface
+   * @param offset Offset magnitude from patch center if has_offset is True
    * @param use_patch_adaptation If true, enable adaptive tessellation
    * @param use_patch_skirts If true, generate edge skirts
    * @param skirt_size Size of edge skirts (as fraction of patch size)
@@ -499,7 +499,7 @@ PUBLISHED:
    * @param x1 Maximum X coordinate on cube face (-1 to 1)
    * @param y1 Maximum Y coordinate on cube face (-1 to 1)
    * @param has_offset If true, apply offset to geometry
-   * @param offset Offset distance from surface
+   * @param offset Offset magnitude from patch center if has_offset is True
    * @param use_patch_adaptation If true, enable adaptive tessellation
    * @param use_patch_skirts If true, generate edge skirts
    * @param skirt_size Size of edge skirts (as fraction of patch size)

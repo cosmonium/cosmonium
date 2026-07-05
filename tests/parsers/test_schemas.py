@@ -553,7 +553,7 @@ class TestSurfaceAndBodyDistanceFields:
         """Star radius accepts explicit AU unit."""
         config = StarConfig.model_validate({"type": "star", "name": "Sun", "radius": [0.00465, "au"]})
         assert config.radius.unit == 'au'
-        # 0.00465 au × 149597870.7 km/au ≈ 695629 km
+        # 0.00465 au x 149597870.7 km/au ≈ 695629 km
         assert abs(config.radius.scaled_value - 0.00465 * 149597870.7) < 1.0
 
     def test_planet_diameter_converts_to_km(self):

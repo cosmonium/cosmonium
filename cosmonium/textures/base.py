@@ -102,13 +102,13 @@ class TextureBase:
         return (1, 1, 1, 1)
 
     def create_default_image(self):
-        """Create a 1×1 PNMImage filled with this texture's default color, used if the texture is unavailable."""
+        """Create a 1x1 PNMImage filled with this texture's default color, used if the texture is unavailable."""
         image = PNMImage(1, 1, self.get_default_nb_components(), self.get_default_max_val())
         image.setXelA(0, 0, self.get_default_color())
         return image
 
     def create_default_texture(self):
-        """Create a fallback 1×1 texture used when the real texture is unavailable.
+        """Create a fallback 1x1 texture used when the real texture is unavailable.
 
         Returns:
             Tuple of (Texture, texture_size, texture_lod).
