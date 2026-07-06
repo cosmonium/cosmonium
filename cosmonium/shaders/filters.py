@@ -100,7 +100,7 @@ vec4 texture_smoothstep_filter( sampler2D sam, vec2 p )
 
     vec2 i = floor(p);
     vec2 f = fract(p);
-    f = smoothstep(0, 1, f);://f*f*(3.0-2.0*f);
+    f = smoothstep(0, 1, f);  //f*f*(3.0-2.0*f);
     p = i + f;
 
     p = (p - 0.5)/res;
