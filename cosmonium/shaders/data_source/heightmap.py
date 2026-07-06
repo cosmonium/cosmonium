@@ -100,11 +100,11 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
             code += [
                 '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
-    vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap, 0).xxx;
-    float u0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.yzz).xy, params);
-    float u1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.xzz).xy, params);
-    float v0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zyz).xy, params);
-    float v1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zxz).xy, params);
+    vec2 texel_size = 1.0 / vec2(textureSize(heightmap, 0));
+    float u0 = get_terrain_height_%s(heightmap, texcoord + vec2(-texel_size.x, 0), params);
+    float u1 = get_terrain_height_%s(heightmap, texcoord + vec2( texel_size.x, 0), params);
+    float v0 = get_terrain_height_%s(heightmap, texcoord + vec2(0, -texel_size.y), params);
+    float v1 = get_terrain_height_%s(heightmap, texcoord + vec2(0,  texel_size.y), params);
     float deltax = u1 - u0;
     float deltay = v1 - v0;
     vec3 tangent = normalize(vec3(2 * params.u_scale, 0, deltax));
@@ -138,11 +138,11 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, Heightmap
             code += [
                 '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, HeightmapParameters params) {
-    vec3 pixel_size = vec3(1.0, -1.0, 0) / textureSize(heightmap, 0).xxx;
-    float u0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.yzz).xy, params);
-    float u1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.xzz).xy, params);
-    float v0 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zyz).xy, params);
-    float v1 = get_terrain_height_%s(heightmap, texcoord + (pixel_size.zxz).xy, params);
+    vec2 texel_size = 1.0 / vec2(textureSize(heightmap, 0));
+    float u0 = get_terrain_height_%s(heightmap, texcoord + vec2(-texel_size.x, 0), params);
+    float u1 = get_terrain_height_%s(heightmap, texcoord + vec2( texel_size.x, 0), params);
+    float v0 = get_terrain_height_%s(heightmap, texcoord + vec2(0, -texel_size.y), params);
+    float v1 = get_terrain_height_%s(heightmap, texcoord + vec2(0,  texel_size.y), params);
     float deltax = u1 - u0;
     float deltay = v1 - v0;
     vec3 tangent = J * vec3(2 * params.u_scale, 0, deltax);
