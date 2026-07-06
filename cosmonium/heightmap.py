@@ -397,7 +397,7 @@ class TexturePatchedHeightmap(PatchedHeightmapBase):
         self.data_source.use(count)
 
     def release(self, count=1):
-        PatchedHeightmapBase.use(self, count)
+        PatchedHeightmapBase.release(self, count)
         self.data_source.release(count)
 
     def do_create_patch_data(self, patch):
