@@ -289,10 +289,14 @@ class TextureHeightmapBase(HeightmapBase, TextureShapeDataBase):
         height = self.filter.get_value(self.texture_peeker, new_x, new_y)
         return height * self.height_scale + self.height_offset
 
-    def configure_texture(self, texture):
-        texture.set_wrap_u(Texture.WMClamp)
-        texture.set_wrap_v(Texture.WMClamp)
-        self.filter.configure_texture(texture)
+    def create_texture_config(self):
+        texture_config = TextureConfiguration(wrap_u=Texture.WMClamp, wrap_v=Texture.WMClamp)
+        self.filter.update_texture_config(texture_config)
+        return texture_config
+
+    def retrieve_texture_data(self, texture):
+        texture_config = self.create_texture_config()
+        texture_config.apply(texture)
         self.texture_peeker = self.texture.peek()
         data = self.texture.getRamImage()
         np_buffer = numpy.frombuffer(data, numpy.float32)
