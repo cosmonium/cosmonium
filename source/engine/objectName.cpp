@@ -19,6 +19,7 @@
 
 #include "objectName.h"
 #include <algorithm>
+#include <cctype>
 #include <unordered_map>
 #include <unordered_set>
 
