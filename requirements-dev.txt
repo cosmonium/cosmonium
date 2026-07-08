@@ -14,7 +14,7 @@ black == 25.11.0 ; python_version < "3.10"
 
 flake8 == 7.1.1
 
-isort == 7.0.0 ; python_version >= "3.10"
+isort == 8.0.1 ; python_version >= "3.10"
 isort == 6.1.0 ; python_version < "3.10"
 
 pydocstyle == 6.3.0
