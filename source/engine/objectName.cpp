@@ -205,10 +205,10 @@ CatalogRegistry::has_catalog(const std::string &prefix) const
   return _catalogs.find(prefix) != _catalogs.end();
 }
 
-pvector<std::string>
+std::vector<std::string>
 CatalogRegistry::get_all_prefixes() const
 {
-  pvector<std::string> result;
+  std::vector<std::string> result;
   for (const auto &pair : _catalogs) {
     result.push_back(pair.first);
   }
@@ -338,30 +338,30 @@ ObjectNames::get_name() const
   return _names.empty() ? "" : _names[0].get_full_name();
 }
 
-pvector<std::string>
+std::vector<std::string>
 ObjectNames::get_all_names() const
 {
-  pvector<std::string> result;
+  std::vector<std::string> result;
   for (const auto &name : _names) {
     result.push_back(name.get_full_name());
   }
   return result;
 }
 
-pvector<std::string>
+std::vector<std::string>
 ObjectNames::get_decoded_names() const
 {
-  pvector<std::string> result;
+  std::vector<std::string> result;
   for (const auto &name : _names) {
     result.push_back(name.decode());
   }
   return result;
 }
 
-pvector<std::string>
+std::vector<std::string>
 ObjectNames::get_source_names() const
 {
-  pvector<std::string> result;
+  std::vector<std::string> result;
   for (size_t i = 0; i < _names.size(); ++i) {
     const auto &name = _names[i];
     // Include non-translatable names
@@ -376,10 +376,10 @@ ObjectNames::get_source_names() const
   return result;
 }
 
-pvector<std::string>
+std::vector<std::string>
 ObjectNames::get_catalog_names(uint8_t catalog_id) const
 {
-  pvector<std::string> result;
+  std::vector<std::string> result;
   for (const auto &name : _names) {
     if (name.type == ObjectName::NameType::NT_catalog && name.catalog_id == catalog_id) {
       result.push_back(name.get_full_name());

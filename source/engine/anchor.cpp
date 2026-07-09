@@ -322,7 +322,7 @@ AnchorBase::get_num_source_names(void) const
 std::string
 AnchorBase::get_source_name_at(unsigned int index) const
 {
-  pvector<std::string> source_names = object_names.get_source_names();
+  std::vector<std::string> source_names = object_names.get_source_names();
   return source_names[index];
 }
 
@@ -354,14 +354,14 @@ bool
 AnchorBase::_is_named(const std::string &name_up) const
 {
   // Check translated names
-  pvector<std::string> all_names = object_names.get_all_names();
+  std::vector<std::string> all_names = object_names.get_all_names();
   for (const auto &n : all_names) {
     std::string n_up = n;
     std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);
     if (n_up == name_up) return true;
   }
   // Check source (untranslated) names
-  pvector<std::string> src_names = object_names.get_source_names();
+  std::vector<std::string> src_names = object_names.get_source_names();
   for (const auto &n : src_names) {
     std::string n_up = n;
     std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);

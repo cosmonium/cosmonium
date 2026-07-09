@@ -20,7 +20,9 @@
 #ifndef OBJECTNAME_H
 #define OBJECTNAME_H
 
-#include "pvector.h"
+#include "dtoolbase.h"
+// #include "std::vector.h"
+#include <vector>
 #include <string>
 #include <cstdint>
 #include <map>
@@ -67,7 +69,7 @@ PUBLISHED:
 
 public:
   // Get all registered prefixes
-  pvector<std::string>
+  std::vector<std::string>
   get_all_prefixes() const;
 
 private:
@@ -207,26 +209,26 @@ PUBLISHED:
 
 public:
   /// Return all names as a vector of strings.
-  pvector<std::string>
+  std::vector<std::string>
   get_all_names() const;
 
   /// Return all names decoded for display, applying any type-specific
   /// transformations.
-  pvector<std::string>
+  std::vector<std::string>
   get_decoded_names() const;
 
   /// Return the source names (original forms).
-  pvector<std::string>
+  std::vector<std::string>
   get_source_names() const;
 
   /// Return names from a specific catalog.
-  pvector<std::string>
+  std::vector<std::string>
   get_catalog_names(uint8_t catalog_id) const;
 
 
 private:
-  pvector<ObjectName> _names;
-  pvector<std::string> _originals;  // Sparse: only for translated entries
+  std::vector<ObjectName> _names;
+  std::vector<std::string> _originals;  // Sparse: only for translated entries
 };
 
 #endif
