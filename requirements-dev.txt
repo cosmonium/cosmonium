@@ -9,7 +9,7 @@ setuptools == 80.9.0
 
 # Code quality tools
 
-black == 26.3.1 ; python_version >= "3.10"
+black == 26.5.1 ; python_version >= "3.10"
 black == 25.11.0 ; python_version < "3.10"
 
 flake8 == 7.1.1
