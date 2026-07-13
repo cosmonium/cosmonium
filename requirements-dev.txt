@@ -26,7 +26,7 @@ pre-commit == 4.0.1
 
 # Test tools
 
-pytest == 9.0.3
+pytest == 9.1.1
 
 
 # Documentation tools
