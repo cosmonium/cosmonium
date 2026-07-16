@@ -23,7 +23,6 @@ Handles the shared grammar used by SSC, STC and DSC files.
 """
 
 import logging
-import sys
 
 from ply import lex, yacc
 from ply.lex import Token
@@ -337,12 +336,3 @@ def parse(data, debug=0):
     if parser.error:
         return None
     return p
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        data = open(sys.argv[1]).read()
-        struct = parse(data)
-        if not struct:
-            raise SystemExit
-        print(struct)

@@ -28,7 +28,6 @@ were already loaded from the star catalog.
 import builtins
 import io
 import logging
-import sys
 from time import time
 
 from ..astro import bayer, units
@@ -40,7 +39,6 @@ from ..catalogs import objectsDB
 from ..objects.star import Star
 from ..objects.surface_factory import StarTexSurfaceFactory
 from ..objects.systems import Barycenter
-from ..objects.universe import Universe
 from . import config_parser
 from .bodies import celestiaStarSurfaceFactory
 from .celestia_utils import (
@@ -305,9 +303,3 @@ def load(stc, universe, context):
             parse_file(stc, universe, context)
     else:
         parse_file(stc, universe, context)
-
-
-if __name__ == '__main__':
-    universe = Universe()
-    if len(sys.argv) == 2:
-        parse_file(sys.argv[1], universe)

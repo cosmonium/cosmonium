@@ -25,7 +25,6 @@ Parses Celestia ``.ctx`` virtual-texture configuration files and returns a
 
 import logging
 import os
-import sys
 
 from ..textures import InvalidTextureSource
 from . import config_parser
@@ -88,8 +87,3 @@ def parse_file(filename, context):
     else:
         logger.error("Invalid file: %s", filepath)
         return InvalidTextureSource()
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        parse_file(sys.argv[1])

@@ -30,7 +30,6 @@ import io
 import logging
 import re
 import struct
-import sys
 from time import time
 
 from panda3d.core import LVector3d
@@ -42,7 +41,6 @@ from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import UnknownRotation
 from ..astro.spectraltype import spectralTypeIntDecoder, spectralTypeStringDecoder
 from ..objects.star import Star
-from ..objects.universe import Universe
 from .bodies import celestiaStarSurfaceFactory
 
 logger = logging.getLogger('celstars')
@@ -90,10 +88,9 @@ def do_load_text(filepath, names, universe):
 def load_text(filename, names, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
-        return do_load_text(filepath, names, universe)
+        do_load_text(filepath, names, universe)
     else:
         logger.warning("File not found: %s", filename)
-        return {}
 
 
 def do_load_bin(filepath, names, universe):
@@ -139,10 +136,9 @@ def do_load_bin(filepath, names, universe):
 def load_bin(filename, names, universe, context):
     filepath = context.find_data(filename)
     if filepath is not None:
-        return do_load_bin(filepath, names, universe)
+        do_load_bin(filepath, names, universe)
     else:
         logger.warning("File not found: %s", filename)
-        return {}
 
 
 def parse_line_name(line):
@@ -174,12 +170,3 @@ def load_names(filename, context):
     else:
         logger.warning("File not found: %s", filename)
         return {}
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        universe = Universe(None)
-        if sys.argv[1].endswith('.txt'):
-            load_text(sys.argv[1], universe)
-        else:
-            load_bin(sys.argv[1], universe)

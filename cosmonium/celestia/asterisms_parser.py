@@ -26,7 +26,6 @@ registers them in the universe.
 import builtins
 import io
 import logging
-import sys
 
 from ply import lex, yacc
 from ply.lex import Token
@@ -193,12 +192,3 @@ def load(filename, universe, context, debug=0):
             create_asterism(universe, asterism[0], asterism[1])
     else:
         logger.warning("File not found: %s", filename)
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        data = open(sys.argv[1]).read()
-        struct = parse(data)
-        if not struct:
-            raise SystemExit
-        print(struct)

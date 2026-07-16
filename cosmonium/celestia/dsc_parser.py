@@ -27,7 +27,6 @@ registers them in the universe. Other DSC objects than galaxies are not supporte
 import builtins
 import io
 import logging
-import sys
 
 from panda3d.core import LVector3d
 
@@ -38,7 +37,6 @@ from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
 from ..mathutil.quaternion import quaternion_from_axis_angle
 from ..objects.galaxies import Galaxy
-from ..objects.universe import Universe
 from . import config_parser
 
 logger = logging.getLogger('dsc')
@@ -135,9 +133,3 @@ def load(dsc, universe, context):
             parse_file(dsc, universe, context)
     else:
         parse_file(dsc, universe, context)
-
-
-if __name__ == '__main__':
-    universe = Universe(None)
-    if len(sys.argv) == 2:
-        parse_file(sys.argv[1], universe)

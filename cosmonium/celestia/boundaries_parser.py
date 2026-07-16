@@ -27,13 +27,11 @@ objects for each constellation.
 import builtins
 import logging
 import re
-import sys
 from time import time
 
 from ..astro import units
 from ..astro.projection import InfinitePosition
 from ..components.annotations.boundary import Boundary
-from ..objects.universe import Universe
 
 logger = logging.getLogger('boundaries')
 
@@ -69,9 +67,3 @@ def load(filename, universe, context):
         do_load(filepath, universe)
     else:
         logger.warning("File not found: %s", filename)
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        universe = Universe(None)
-        load(sys.argv[1], universe)

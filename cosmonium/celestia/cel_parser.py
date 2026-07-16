@@ -25,7 +25,6 @@ pairs suitable for consumption by :mod:`cel_engine`.
 
 import io
 import logging
-import sys
 
 from ply import lex, yacc
 from ply.lex import Token
@@ -227,12 +226,3 @@ def load(filename, context, debug=0):
     else:
         logger.warning("File not found: %s", filename)
         return None
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        data = open(sys.argv[1]).read()
-        struct = parse(data)
-        if not struct:
-            raise SystemExit
-        print(struct)
