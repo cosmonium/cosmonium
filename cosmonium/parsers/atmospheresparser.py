@@ -37,7 +37,6 @@ class CelestiaAtmosphereYamlParser(YamlModuleParser):
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())
         scattering = CelestiaScattering(
             height=data.height,
-            appearance=appearance,
             mie_scale_height=data.mie_scale_height,
             mie_coef=data.mie,
             mie_phase_asymmetry=data.mie_asymmetry,
