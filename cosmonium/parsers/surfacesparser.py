@@ -49,7 +49,7 @@ from .yamlparser import YamlModuleParser
 
 class SurfaceYamlParser(YamlModuleParser):
     @classmethod
-    def decode_surface(self, data, previous, owner):
+    def decode_surface(cls, data, previous, owner):
         if isinstance(data, SurfaceConfig):
             # Already validated - use model directly (no cascading needed)
             config = data

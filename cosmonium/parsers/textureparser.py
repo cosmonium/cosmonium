@@ -42,7 +42,7 @@ class TextureTilingYamlParser(TypedYamlParser):
 
 class TextureDictionaryYamlParser(YamlModuleParser):
     @classmethod
-    def decode_texture_albedo(self, data, srgb):
+    def decode_texture_albedo(cls, data, srgb):
         if data is not None:
             data = TextureSourceYamlParser.canonize_data(data)
             texture_source, texture_offset = TextureSourceYamlParser.decode(data)
@@ -53,7 +53,7 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         return albedo
 
     @classmethod
-    def decode_texture_normal(self, data):
+    def decode_texture_normal(cls, data):
         if data is not None:
             data = TextureSourceYamlParser.canonize_data(data)
             texture_source, texture_offset = TextureSourceYamlParser.decode(data)
@@ -63,7 +63,7 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         return normal
 
     @classmethod
-    def decode_texture_occlusion(self, data):
+    def decode_texture_occlusion(cls, data):
         if data is not None:
             data = TextureSourceYamlParser.canonize_data(data)
             texture_source, texture_offset = TextureSourceYamlParser.decode(data)
@@ -73,20 +73,20 @@ class TextureDictionaryYamlParser(YamlModuleParser):
         return occlusion
 
     @classmethod
-    def decode_textures_dictionary_entry(self, data, srgb):
+    def decode_textures_dictionary_entry(cls, data, srgb):
         entry = TexturesBlock()
         if isinstance(data, str):
-            albedo = self.decode_texture_albedo(data, srgb)
+            albedo = cls.decode_texture_albedo(data, srgb)
             entry.set_albedo(albedo)
         else:
             config = TextureDictionaryEntryConfig.model_validate(data)
-            albedo = self.decode_texture_albedo(config.albedo, srgb)
+            albedo = cls.decode_texture_albedo(config.albedo, srgb)
             if albedo is not None:
                 entry.set_albedo(albedo)
-            normal = self.decode_texture_normal(config.normal)
+            normal = cls.decode_texture_normal(config.normal)
             if normal is not None:
                 entry.set_normal(normal)
-            occlusion = self.decode_texture_occlusion(config.occlusion)
+            occlusion = cls.decode_texture_occlusion(config.occlusion)
             if occlusion is not None:
                 entry.set_occlusion(occlusion)
         return entry

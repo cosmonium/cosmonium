@@ -147,7 +147,7 @@ class GalaxyShapeYamlParser(YamlModuleParser):
             return None
 
     @classmethod
-    def vancouleur_to_pitch(self, stage):
+    def vancouleur_to_pitch(cls, stage):
         return (2.69 * stage + 16.22) / 180 * pi
 
     @classmethod
