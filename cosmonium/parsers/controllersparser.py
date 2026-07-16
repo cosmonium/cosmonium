@@ -94,8 +94,7 @@ class StandaloneControllerYamlParser(YamlModuleParser):
         if body is None:
             print(f"ERROR: Parent '{data.body}' of controller '{data.name or '(unnamed)'}' not found")
             return None
-        controller_class = ControllerYamlParser.decode(data.to_dict())
-        controller = controller_class(body)
+        controller = ControllerYamlParser.decode(data.to_dict(), body.anchor)
         cls.app.add_controller(controller)
         return None
 
