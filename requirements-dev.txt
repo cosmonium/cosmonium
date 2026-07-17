@@ -1,6 +1,6 @@
 # Build tools
 
-packaging == 25.0
+packaging == 26.2
 
 panda3d_interrogate == 0.8.1
 
