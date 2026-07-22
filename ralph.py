@@ -83,21 +83,21 @@ from cosmonium import settings, mesh
 class WaterLayer(PatchLayer):
 
     def __init__(self, config):
+        PatchLayer.__init__(self)
         self.config = config
-        self.water = None
 
     def check_settings(self):
-        if self.water is not None:
+        if self.instance is not None:
             if self.config.visible:
-                self.water.create_instance()
+                self.instance.create_instance()
             else:
-                self.water.remove_instance()
+                self.instance.remove_instance()
 
     def create_instance(self, patch, tasks_tree):
         scale = patch.scale * patch.size / self.config.scale
-        self.water = WaterNode(patch.x0, patch.y0, patch.size, scale, patch)
+        self.instance = WaterNode(patch.x0, patch.y0, patch.size, scale, patch)
         if self.config.visible:
-            self.water.create_instance()
+            self.instance.create_instance()
 
     def patch_done(self, patch, early):
         pass
@@ -106,9 +106,9 @@ class WaterLayer(PatchLayer):
         pass
 
     def remove_instance(self):
-        if self.water is not None:
-            self.water.remove_instance()
-            self.water = None
+        if self.instance is not None:
+            self.instance.remove_instance()
+            self.instance = None
 
 
 class WaterLayerFactory(TerrainLayerFactoryInterface):
@@ -122,8 +122,8 @@ class WaterLayerFactory(TerrainLayerFactoryInterface):
 class PhysicsLayer(PatchLayer):
 
     def __init__(self, physics):
+        PatchLayer.__init__(self)
         self.physics = physics
-        self.instance = None
 
     def patch_done(self, patch, early):
         if early:
