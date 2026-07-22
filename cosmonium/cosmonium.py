@@ -1522,11 +1522,11 @@ class Cosmonium(CosmoniumBase):
         if settings.render_sprite_points:
             self.pointset.reset()
             self.pointset.add_objects(self.scene_manager, self.visible_scene_anchors)
-            self.pointset.update()
+            self.pointset.update(0, 0)
             if self.haloset is not None:
                 self.haloset.reset()
                 self.haloset.add_objects(self.scene_manager, self.visible_scene_anchors)
-                self.haloset.update()
+                self.haloset.update(0, 0)
 
     @pstat
     def update_axes(self):

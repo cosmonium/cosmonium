@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ except ImportError as e:
 from .pyrendering.pointsset import PassthroughPointsSetShape, RegionsPointsSetShape  # noqa: F401
 
 
+#TODO: PointsSetShapeObject should not inherit from VisibleObject.
 class PointsSetShapeObject(VisibleObject):
     default_camera_mask = VisibleObject.DefaultCameraFlag
     tex = None
@@ -102,5 +103,5 @@ class PointsSetShapeObject(VisibleObject):
         self.shape.add_objects(scene_manager, scene_anchors)
         self.shape.reconfigure(scene_manager, self)
 
-    def update(self):
+    def update(self, time, dt):
         pass
