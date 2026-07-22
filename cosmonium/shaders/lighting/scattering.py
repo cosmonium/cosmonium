@@ -29,7 +29,7 @@ class ScatteringInterface:
     def calc_transmittance(self, code):
         raise NotImplementedError()
 
-    def incoming_light_for(self, code, light_direction, eye_light_direction, light_color, ambient_diffuse):
+    def incoming_light_for(self, code, light_direction, eye_light_direction, light_color):
         raise NotImplementedError()
 
 
