@@ -144,7 +144,7 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
 }'''
         )
 
-    def extra(self, code):
+    def extra(self, shader, code):
         self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)
         self.shader.fragment_shader.add_function(code, 'textureNoTile2D', self.textureNoTile2D)
         self.shader.fragment_shader.add_function(code, 'textureNoTile2DArray', self.textureNoTile2DArray)

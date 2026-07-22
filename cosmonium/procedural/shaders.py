@@ -51,7 +51,7 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
 
     def fragment_extra(self, code):
         ShaderDataSource.fragment_extra(self, code)
-        self.tiling.extra(code)
+        self.tiling.extra(self.shader, code)
 
     def get_source_for(self, source, param, error=True):
         for block_id, entry in self.dictionary.blocks.items():
