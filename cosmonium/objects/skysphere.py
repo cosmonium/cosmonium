@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ class SkySphere(VisibleObject):
             orientation = UnknownRotation()
         self.orientation = orientation
         if shape is None:
-            shape = ScaledSphereShape(self.context.observer.infinity, inv_texture_u=True)
+            shape = ScaledSphereShape(self.context.observer.infinity)
         self.shape = shape
         self.shape.parent = self
         # TODO: should be done like that or should we have EmisionAppearance ?
