@@ -148,7 +148,7 @@ class SimpleTexture(TextureBase):
             shape.set_texture_to_lod(self, texture_stage, texture_lod, self.source.is_patched())
         instance.set_texture(texture_stage, texture, 1)
 
-    def clear(self, patch):
+    def clear(self, patch, instance):
         self.source.clear(patch)
 
     def clear_all(self):
@@ -187,7 +187,7 @@ class DataTexture(TextureBase):
             instance.set_shader_input(input_name, texture)
 
     def clear(self, patch, instance):
-        self.source.clear(patch, instance)
+        self.source.clear(patch)
 
     def clear_all(self):
         self.source.clear_all()
@@ -380,7 +380,7 @@ class TextureArray(TextureBase):
             input_name = self.input_name
         self.apply_shader(instance, input_name, self.texture, None)
 
-    def clear(self, patch):
+    def clear(self, patch, instance):
         # A non-patched texture can not be cleared per patch
         pass
 
