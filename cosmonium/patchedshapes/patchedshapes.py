@@ -145,7 +145,7 @@ class PatchFactory:
                 print("NO PATCH DATA !!!", patch.str_id())
         return (min_height, max_height, mean_height)
 
-    def create_patch(self, parent, lod, x, y):
+    def create_patch(self, parent, lod, face, x, y):
         pass
 
     def patch_done(self, patch, early):
