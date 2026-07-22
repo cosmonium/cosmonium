@@ -114,7 +114,7 @@ class Asterism(VisibleObject):
         for segment in self.segments:
             if len(segment) < 2:
                 continue
-            for anchor in segment:
+            for _ in segment:
                 self.vertexWriter.addData3f(0, 0, 0)
                 self.colorwriter.addData4(srgb_to_linear(self.color))
         self.lines = GeomLines(Geom.UHStatic)
