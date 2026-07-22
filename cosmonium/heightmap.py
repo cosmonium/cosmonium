@@ -425,10 +425,10 @@ class StackedHeightmapPatch(HeightmapPatch):
                 return False
         return True
 
-    def get_height(self, x, y):
+    def get_height(self, x, y, shape_patch=None):
         height = 0.0
         for patch in self.patches:
-            height += patch.get_height(x, y)
+            height += patch.get_height(x, y, shape_patch)
         return height
 
     def load(self):
