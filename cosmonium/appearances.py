@@ -146,7 +146,7 @@ class AppearanceBase(DataSource):
     def bake(self):
         pass
 
-    def apply_textures(self, shape):
+    def apply_textures(self, shape, instance):
         pass
 
     def update_lod(self, shape, apparent_radius, distance_to_obs, pixel_size):
