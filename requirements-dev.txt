@@ -4,7 +4,7 @@ packaging == 26.2
 
 panda3d_interrogate == 0.11.2
 
-setuptools == 80.9.0
+setuptools == 83.0.0
 
 
 # Code quality tools
