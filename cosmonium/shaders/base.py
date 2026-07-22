@@ -90,7 +90,7 @@ class AutoShader(ShaderBase):
     def add_after_effect(self, after_effect):
         print("AutoShader: add_after_effect not supported")
 
-    def apply(self, shape, appearance):
+    def apply(self, instance):
         pass
 
 
