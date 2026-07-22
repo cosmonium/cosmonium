@@ -370,7 +370,7 @@ class ObjectPlacer(object):
     def __init__(self):
         pass
 
-    def place_new(self, count):
+    def place_new(self, terrain, count, patch=None):
         return None
 
 
