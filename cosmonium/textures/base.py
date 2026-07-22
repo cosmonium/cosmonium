@@ -60,16 +60,17 @@ class TextureBase:
         """Set the UV offset for the texture, if applicable."""
         pass
 
-    async def load(self, tasks_tree, patch):
+    async def load(self, tasks_tree, patch, texture_config=None):
         """Load the texture data for the given patch if not already loaded.
 
         Args:
             tasks_tree: Task tree for async scheduling.
             patch: The patch requesting the texture or None if not applicable.
+            texture_config: Optional ``TextureConfiguration`` applied after loading.
         """
         pass
 
-    def apply(self, shape, instance):
+    def apply(self, shape, instance, input_name=None):
         """Apply the texture to a scene instance, using Panda3D stages."""
         pass
 
@@ -77,7 +78,7 @@ class TextureBase:
         """Apply the texture to a scene instance, using shader input."""
         instance.set_shader_input(input_name, texture)
 
-    def clear(self, patch):
+    def clear(self, patch, instance):
         """Unload or clear the texture data for a specific patch, if applicable."""
         pass
 

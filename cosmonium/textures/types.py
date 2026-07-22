@@ -46,8 +46,10 @@ class WrapperTexture(TextureBase):
     """
 
     def __init__(self, texture):
+        TextureBase.__init__(self)
         self.texture = texture
         self.source = TextureSource()
+        self.panda = False
 
 
 class SimpleTexture(TextureBase):
@@ -104,17 +106,19 @@ class SimpleTexture(TextureBase):
             texture_config.border_color = LColor(0, 0, 0, 0)
         return texture_config
 
-    async def load(self, tasks_tree, patch):
+    async def load(self, tasks_tree, patch, texture_config=None):
         """Load the texture data for the given patch if not cached."""
         if not self.source.loaded or not self.source.cached:
             if self.source.is_patched():
                 self.source.set_offset(self.offset)
-            texture_config = self.create_texture_config(patch)
+            if texture_config is None:
+                # TODO: Should be done by the caller
+                texture_config = self.create_texture_config(patch)
             (texture, texture_size, texture_lod) = await self.source.load(
                 tasks_tree, patch, texture_config=texture_config
             )
 
-    def apply(self, shape, instance):
+    def apply(self, shape, instance, input_name=None):
         """Apply the loaded texture to a scene instance, falling back to a default if needed."""
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
@@ -131,7 +135,9 @@ class SimpleTexture(TextureBase):
         if self.panda:
             self.apply_panda(shape, instance, texture, texture_lod)
         else:
-            self.apply_shader(instance, self.input_name, texture, texture_lod)
+            if input_name is None:
+                input_name = self.input_name
+            self.apply_shader(instance, input_name, texture, texture_lod)
         self.configure_instance(shape.instance)
 
     def apply_panda(self, shape, instance, texture, texture_lod):
@@ -165,21 +171,23 @@ class DataTexture(TextureBase):
             source = AutoTextureSource(source)
         self.source = source
 
-    async def load(self, tasks_tree, patch, texture_config):
+    async def load(self, tasks_tree, patch, texture_config=None):
         """Load the data texture using the provided configuration."""
         if not self.source.loaded or not self.source.cached:
             await self.source.load(tasks_tree, patch, texture_config=texture_config)
 
-    def apply(self, shape, instance, input_name):
+    def apply(self, shape, instance, input_name=None):
         """Bind the texture as a shader input on the given instance."""
         (texture, texture_size, texture_lod) = self.source.get_texture(shape)
         if texture is None:
             (texture, texture_size, texture_lod) = self.get_default_texture()
         if texture is not None:
+            if input_name is None:
+                input_name = self.input_name
             instance.set_shader_input(input_name, texture)
 
     def clear(self, patch, instance):
-        self.source.clear(patch)
+        self.source.clear(patch, instance)
 
     def clear_all(self):
         self.source.clear_all()
@@ -353,10 +361,12 @@ class TextureArray(TextureBase):
         )
         return texture_config
 
-    async def load(self, tasks_tree, patch):
+    async def load(self, tasks_tree, patch, texture_config=None):
         """Load all constituent textures and combine them into a texture array."""
         if self.texture is None:
-            texture_config = self.create_texture_config(patch)
+            if texture_config is None:
+                # TODO: Should be done by the caller
+                texture_config = self.create_texture_config(patch)
             if settings.sync_texture_load:
                 texture = workers.syncTextureLoader.load_texture_array(self.textures)
             else:
@@ -365,8 +375,10 @@ class TextureArray(TextureBase):
                 self.texture = texture
                 texture_config.apply(texture)
 
-    def apply(self, shape, instance):
-        self.apply_shader(instance, self.input_name, self.texture, None)
+    def apply(self, shape, instance, input_name=None):
+        if input_name is None:
+            input_name = self.input_name
+        self.apply_shader(instance, input_name, self.texture, None)
 
     def clear(self, patch):
         # A non-patched texture can not be cleared per patch
