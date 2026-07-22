@@ -302,11 +302,14 @@ class AnchorBase(ABC):
         """
         self._intrinsic_luminosity = intrinsic_luminosity
 
-    def get_reflected_luminosity(self) -> float:
+    def get_reflected_luminosity(self, star: StellarAnchor) -> float:
         """Get the reflected luminosity in Watts.
 
+        Args:
+            star: The stellar anchor acting as the light source.
+
         Returns:
-            The reflected luminosity.
+            The reflected luminosity in Watts.
         """
         return self._reflected_luminosity
 
