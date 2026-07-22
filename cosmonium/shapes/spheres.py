@@ -85,7 +85,7 @@ class ScaledSphereShape(Shape):
         self.radius = radius
 
     async def create_instance(self):
-        self.instance = geometry.UVSphere(radius=self.radius, rings=45, sectors=90)
+        self.instance = geometry.UVSphere(axes=LVector3d(self.radius), rings=45, sectors=90)
         if self.use_collision_solid:
             self.create_collision_solid(self.radius)
         return self.instance
