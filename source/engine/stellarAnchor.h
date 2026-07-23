@@ -34,7 +34,7 @@ public:
       OrbitBase *orbit,
       RotationBase *rotation,
       LColor point_color,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   StellarAnchor(unsigned int anchor_class,

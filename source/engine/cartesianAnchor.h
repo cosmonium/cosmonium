@@ -33,7 +33,7 @@ public:
       PyObject *ref_object,
       ReferenceFrame *frame,
       LColor point_color,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   CartesianAnchor(
@@ -128,7 +128,7 @@ public:
   OriginAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   OriginAnchor(
@@ -148,7 +148,7 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       PyObject *ref_surface,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   FlatSurfaceAnchor(
@@ -177,7 +177,7 @@ public:
   ObserverAnchor(
       unsigned int anchor_class,
       PyObject *ref_object,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   ObserverAnchor(

@@ -58,7 +58,7 @@ AnchorTreeBase::set_rebuild_needed(void)
 TypeHandle AnchorBase::_type_handle;
 
 AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor point_color,
-                       const pvector<std::string> names) :
+                       const vector_string &names) :
   AnchorTreeBase(anchor_class),
   ref_object(ref_object),
   //Flags
@@ -148,7 +148,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   Py_INCREF(ref_object);
 
   // Extract and parse names from Python list
-  pvector<std::string> name_strings;
+  vector_string name_strings;
   if (names != nullptr) {
     if(PyList_Check(names)) {
       Py_ssize_t size = PyList_Size(names);
@@ -285,7 +285,7 @@ AnchorBase::update_all(double time, CameraAnchor &observer, unsigned long int up
 
 // Name management methods implementation
 void
-AnchorBase::set_names(const pvector<std::string> names)
+AnchorBase::set_names(const vector_string &names)
 {
   // Clear existing names
   object_names = ObjectNames();
@@ -322,7 +322,7 @@ AnchorBase::get_num_source_names(void) const
 std::string
 AnchorBase::get_source_name_at(unsigned int index) const
 {
-  std::vector<std::string> source_names = object_names.get_source_names();
+  vector_string source_names = object_names.get_source_names();
   return source_names[index];
 }
 
@@ -354,14 +354,14 @@ bool
 AnchorBase::_is_named(const std::string &name_up) const
 {
   // Check translated names
-  std::vector<std::string> all_names = object_names.get_all_names();
+  vector_string all_names = object_names.get_all_names();
   for (const auto &n : all_names) {
     std::string n_up = n;
     std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);
     if (n_up == name_up) return true;
   }
   // Check source (untranslated) names
-  std::vector<std::string> src_names = object_names.get_source_names();
+  vector_string src_names = object_names.get_source_names();
   for (const auto &n : src_names) {
     std::string n_up = n;
     std::transform(n_up.begin(), n_up.end(), n_up.begin(), ::toupper);

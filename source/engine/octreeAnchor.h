@@ -32,7 +32,7 @@ public:
       RotationBase *rotation,
       double radius,
       LColor point_color,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   OctreeAnchor(PyObject *ref_object,

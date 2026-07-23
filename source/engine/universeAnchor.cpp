@@ -28,7 +28,7 @@ UniverseAnchor::UniverseAnchor(PyObject *ref_object,
     RotationBase *rotation,
     double radius,
     LColor point_color,
-    const pvector<std::string> names) :
+    const vector_string &names) :
     OctreeAnchor(ref_object, orbit, rotation, radius, point_color, names)
 {
   visible = true;

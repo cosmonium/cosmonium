@@ -30,7 +30,7 @@ SystemAnchor::SystemAnchor(PyObject *ref_object,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color,
-    const pvector<std::string> names) :
+    const vector_string &names) :
     StellarAnchor(System, ref_object, orbit, rotation, point_color, names),
     _primary(nullptr),
     _star_system(false)
@@ -79,7 +79,7 @@ SystemAnchor::add_child(AnchorBase *child)
     children.push_back(child);
     child->parent = this;
     // Register all names in the fast-lookup map
-    std::vector<std::string> all_names = child->get_names()->get_all_names();
+    vector_string all_names = child->get_names()->get_all_names();
     for (const auto &n : all_names) {
         std::string key = n;
         std::transform(key.begin(), key.end(), key.begin(), ::toupper);
@@ -98,7 +98,7 @@ SystemAnchor::remove_child(AnchorBase *child)
       children.erase(it);
       child->parent = nullptr;
       // Remove all name entries from the fast-lookup map
-      std::vector<std::string> all_names = child->get_names()->get_all_names();
+      vector_string all_names = child->get_names()->get_all_names();
       for (const auto &n : all_names) {
           std::string key = n;
           std::transform(key.begin(), key.end(), key.begin(), ::toupper);

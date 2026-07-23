@@ -30,7 +30,7 @@
 TypeHandle CartesianAnchor::_type_handle;
 
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame, LColor point_color,
-                                 const pvector<std::string> names) :
+                                 const vector_string &names) :
     AnchorBase(anchor_class, ref_object, point_color, names),
     frame(frame),
     _frame_position(0.0),
@@ -48,7 +48,7 @@ CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object
 }
 
 CartesianAnchor::CartesianAnchor(unsigned int anchor_class, PyObject *ref_object, ReferenceFrame *frame) :
-    AnchorBase(anchor_class, ref_object, LColor(0), pvector<std::string>()),
+    AnchorBase(anchor_class, ref_object, LColor(0), vector_string()),
     frame(frame),
     _frame_position(0.0),
     _frame_orientation(LQuaterniond::ident_quat())
@@ -300,7 +300,7 @@ TypeHandle OriginAnchor::_type_handle;
 OriginAnchor::OriginAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
-        const pvector<std::string> names) :
+        const vector_string &names) :
     CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names)
 {
 }
@@ -320,7 +320,7 @@ FlatSurfaceAnchor::FlatSurfaceAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
         PyObject *ref_surface,
-        const pvector<std::string> names) :
+        const vector_string &names) :
     OriginAnchor(anchor_class, ref_object, names),
     ref_surface(ref_surface)
 {
@@ -390,7 +390,7 @@ TypeHandle ObserverAnchor::_type_handle;
 ObserverAnchor::ObserverAnchor(
         unsigned int anchor_class,
         PyObject *ref_object,
-        const pvector<std::string> names) :
+        const vector_string &names) :
     CartesianAnchor(anchor_class, ref_object, new AbsoluteReferenceFrame(), LColor(0), names)
 {
 }

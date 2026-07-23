@@ -22,11 +22,11 @@
 
 #include "referenceCount.h"
 #include "pandabase.h"
-#include "pvector.h"
 #include "luse.h"
 #include "type_utils.h"
 #include "objectName.h"
 #include "sceneAnchor.h"
+#include "vector_string.h"
 #include <string>
 #include <algorithm>
 
@@ -77,7 +77,7 @@ public:
       unsigned int anchor_class,
       PyObject *ref_object,
       LColor point_color,
-      const pvector<std::string> names);
+      const vector_string &names);
 
 PUBLISHED:
   AnchorBase(
@@ -103,7 +103,7 @@ PUBLISHED:
   // Name management methods
   std::string get_name(void) const;
   ObjectNames *get_names(void);
-  void set_names(const pvector<std::string> names);
+  void set_names(const vector_string &names);
   unsigned int get_num_source_names(void) const;
   std::string get_source_name_at(unsigned int index) const;
   std::string get_c_name(void) const;

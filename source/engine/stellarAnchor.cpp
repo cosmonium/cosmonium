@@ -36,7 +36,7 @@ StellarAnchor::StellarAnchor(unsigned int anchor_class,
     OrbitBase *orbit,
     RotationBase *rotation,
     LColor point_color,
-    const pvector<std::string> names) :
+    const vector_string &names) :
     AnchorBase(anchor_class, ref_object, point_color, names),
     orbit(orbit),
     rotation(rotation),
@@ -66,7 +66,7 @@ StellarAnchor::get_or_create_system(void)
   }
 
   std::string sys_name_str = get_name() + " System";
-  pvector<std::string> name_strings;
+  vector_string name_strings;
   name_strings.push_back(sys_name_str);
 
   PT(ReferenceFrame) system_frame = new J2000BarycentricEclipticReferenceFrame();
