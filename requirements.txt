@@ -13,8 +13,7 @@ mistune == 3.3.3
 
 numpy==1.26.4
 
-platformdirs == 4.4.0 ; python_version < "3.10"
-platformdirs == 4.10.0 ; python_version >= "3.10"
+platformdirs == 4.10.0
 
 pydantic == 2.13.4
 
