@@ -29,5 +29,11 @@ if settings.c_scene_manager:
         logging.warning(e)
         from .pyscene.sceneanchor import AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchor, SceneAnchorCollection
 else:
-    from .pyscene.sceneanchor import SceneAnchorCollection  # noqa: F401
-    from .pyscene.sceneanchor import AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchor  # noqa: F401
+    from .pyscene.sceneanchor import AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchor, SceneAnchorCollection
+
+__all__ = [
+    "AbsoluteSceneAnchor",
+    "ObserverSceneAnchor",
+    "SceneAnchor",
+    "SceneAnchorCollection",
+]

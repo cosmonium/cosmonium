@@ -20,7 +20,7 @@
 import builtins
 
 from .. import settings
-from .pyscene.scenemanager import SceneManagerBase  # noqa: F401
+from .pyscene.scenemanager import SceneManagerBase
 
 if settings.c_scene_manager:
     try:
@@ -35,9 +35,11 @@ if settings.c_scene_manager:
 
         C_CameraHolder = None
 else:
-    from .pyscene.scenemanager import DynamicSceneManager, RegionSceneManager, StaticSceneManager  # noqa: F401
+    from .pyscene.scenemanager import DynamicSceneManager, RegionSceneManager, StaticSceneManager
 
     C_CameraHolder = None
+
+__all__ = ["DynamicSceneManager", "RegionSceneManager", "StaticSceneManager", "SceneManagerBase", "C_CameraHolder"]
 
 
 def remove_main_region(camera):
