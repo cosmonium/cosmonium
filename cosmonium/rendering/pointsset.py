@@ -32,15 +32,17 @@ from .. import settings
 try:
     from cosmonium_engine import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 except ImportError as e:
-    print("WARNING: Could not load PointsSet C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load PointsSet C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyrendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape  # noqa: F401
     from .pyrendering.pointsset import HaloPointsSetShape  # noqa: F401
 
 from .pyrendering.pointsset import PassthroughPointsSetShape, RegionsPointsSetShape  # noqa: F401
 
 
-#TODO: PointsSetShapeObject should not inherit from VisibleObject.
+# TODO: PointsSetShapeObject should not inherit from VisibleObject.
 class PointsSetShapeObject(VisibleObject):
     default_camera_mask = VisibleObject.DefaultCameraFlag
     tex = None
