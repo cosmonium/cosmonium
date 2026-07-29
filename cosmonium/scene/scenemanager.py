@@ -1,6 +1,6 @@
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,22 +18,24 @@
 
 
 import builtins
-from .. import settings
 
+from .. import settings
 from .pyscene.scenemanager import SceneManagerBase  # noqa: F401
 
 if settings.c_scene_manager:
     try:
         from cosmonium_engine import CameraHolder as C_CameraHolder
-        from cosmonium_engine import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+        from cosmonium_engine import DynamicSceneManager, RegionSceneManager, StaticSceneManager
     except ImportError as e:
-        print("WARNING: Could not load Scene Manager C implementation, fallback on python implementation")
-        print("\t", e)
-        from .pyscene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
+        import logging
+
+        logging.warning("Could not load Scene Manager C++ implementation, fallback on Python implementation")
+        logging.warning(e)
+        from .pyscene.scenemanager import DynamicSceneManager, RegionSceneManager, StaticSceneManager
 
         C_CameraHolder = None
 else:
-    from .pyscene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager  # noqa: F401
+    from .pyscene.scenemanager import DynamicSceneManager, RegionSceneManager, StaticSceneManager  # noqa: F401
 
     C_CameraHolder = None
 
