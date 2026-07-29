@@ -25,9 +25,8 @@ extension is not available.
 """
 
 try:
-    from cosmonium_engine import OctreeNode, Settings
+    from cosmonium_engine import OctreeNode
 
-    c_settings = Settings.get_global_ptr()
 except ImportError as e:
     import logging
 
@@ -35,7 +34,5 @@ except ImportError as e:
     logging.warning(e)
     from .pyengine.octree import OctreeNode
 
-    c_settings = None
 
-
-__all__ = ["OctreeNode", "c_settings"]
+__all__ = ["OctreeNode"]
