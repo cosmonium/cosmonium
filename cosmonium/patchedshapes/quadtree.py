@@ -25,4 +25,6 @@ except ImportError as e:
 
     logging.warning("Could not load Quad Tree C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pypatchedshapes.quadtree import QuadTreeNode  # noqa: F401
+    from .pypatchedshapes.quadtree import QuadTreeNode
+
+__all__ = ["QuadTreeNode"]

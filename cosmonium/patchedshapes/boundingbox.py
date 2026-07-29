@@ -25,4 +25,6 @@ except ImportError as e:
 
     logging.warning("Could not load PatchBoundingBox C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pypatchedshapes.boundingbox import PatchBoundingBox  # noqa: F401
+    from .pypatchedshapes.boundingbox import PatchBoundingBox
+
+__all__ = ["PatchBoundingBox"]

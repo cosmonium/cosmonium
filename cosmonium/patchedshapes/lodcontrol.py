@@ -19,12 +19,30 @@
 
 
 try:
-    from cosmonium_engine import LodControl, TextureLodControl, TextureOrVertexSizeLodControl
-    from cosmonium_engine import VertexSizeLodControl, VertexSizeMaxDistanceLodControl
+    from cosmonium_engine import (
+        LodControl,
+        TextureLodControl,
+        TextureOrVertexSizeLodControl,
+        VertexSizeLodControl,
+        VertexSizeMaxDistanceLodControl,
+    )
 except ImportError as e:
     import logging
 
     logging.warning("Could not load LOD control C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pypatchedshapes.lodcontrol import LodControl, TextureLodControl, TextureOrVertexSizeLodControl  # noqa: F401
-    from .pypatchedshapes.lodcontrol import VertexSizeLodControl, VertexSizeMaxDistanceLodControl  # noqa: F401
+    from .pypatchedshapes.lodcontrol import (
+        LodControl,
+        TextureLodControl,
+        TextureOrVertexSizeLodControl,
+        VertexSizeLodControl,
+        VertexSizeMaxDistanceLodControl,
+    )
+
+__all__ = [
+    "LodControl",
+    "TextureLodControl",
+    "TextureOrVertexSizeLodControl",
+    "VertexSizeLodControl",
+    "VertexSizeMaxDistanceLodControl",
+]

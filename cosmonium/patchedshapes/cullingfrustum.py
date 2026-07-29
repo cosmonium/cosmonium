@@ -25,4 +25,6 @@ except ImportError as e:
 
     logging.warning("Could not load Culling Frustum C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pypatchedshapes.cullingfrustum import CullingFrustum, CullingFrustumBase, HorizonCullingFrustum  # noqa: F401
+    from .pypatchedshapes.cullingfrustum import CullingFrustum, CullingFrustumBase, HorizonCullingFrustum
+
+__all__ = ["CullingFrustum", "CullingFrustumBase", "HorizonCullingFrustum"]

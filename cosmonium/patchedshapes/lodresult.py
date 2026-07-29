@@ -25,4 +25,6 @@ except ImportError as e:
 
     logging.warning("Could not load LOD Result C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pypatchedshapes.lodresult import LodResult  # noqa: F401
+    from .pypatchedshapes.lodresult import LodResult
+
+__all__ = ["LodResult"]
