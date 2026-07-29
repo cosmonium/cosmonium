@@ -26,15 +26,16 @@ cosmonium_engine module. If the C++ extension is not available, c_settings
 will be set to None.
 """
 
+import logging
 
 try:
     from cosmonium_engine import Settings
 
     c_settings = Settings.get_global_ptr()
-    print("Using C++ Engine")
+    logging.info("Using C++ Engine")
 except ImportError as e:
-    print("WARNING: Could not load C++, fallback on python implementation")
-    print("\t", e)
+    logging.warning("Could not load C++ Engine, fallback on Python implementation")
+    logging.warning(e)
     c_settings = None
 
 

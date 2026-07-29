@@ -28,8 +28,10 @@ pyengine submodule if the C++ extension is not available.
 try:
     from cosmonium_engine import CatalogRegistry, ObjectName, ObjectNames
 except ImportError as e:
-    print("WARNING: Could not load ObjectName C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load ObjectName C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyengine.objectname import CatalogRegistry, ObjectName, ObjectNames
 
 

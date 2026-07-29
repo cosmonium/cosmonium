@@ -25,7 +25,6 @@ back to the pure Python implementations from the pyengine submodule if the
 C++ extension is not available.
 """
 
-
 try:
     from cosmonium_engine import (
         FindClosestSystemTraverser,
@@ -34,8 +33,10 @@ try:
         UpdateTraverser,
     )
 except ImportError as e:
-    print("WARNING: Could not load Traversers C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Traversers C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyengine.traversers import (
         FindClosestSystemTraverser,
         FindLightSourceTraverser,

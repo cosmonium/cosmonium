@@ -24,14 +24,15 @@ falling back to the pure Python implementation from the pyengine submodule if th
 extension is not available.
 """
 
-
 try:
     from cosmonium_engine import OctreeNode, Settings
 
     c_settings = Settings.get_global_ptr()
 except ImportError as e:
-    print("WARNING: Could not load Octree C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Octree C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyengine.octree import OctreeNode
 
     c_settings = None

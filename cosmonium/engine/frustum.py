@@ -24,12 +24,13 @@ cosmonium_engine module, falling back to the pure Python implementation from
 the pyengine submodule if the C++ extension is not available.
 """
 
-
 try:
     from cosmonium_engine import InfiniteFrustum
 except ImportError as e:
-    print("WARNING: Could not load Frustum C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Frustum C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyengine.frustum import InfiniteFrustum
 
 
