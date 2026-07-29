@@ -83,8 +83,9 @@ from .rendering.halos import Halos
 from .rendering.labels import Labels
 from .rendering.orbits import Orbits
 from .rendering.markers import Markers
-from .rendering.pointsset import PointsSetShapeObject, RegionsPointsSetShape, PassthroughPointsSetShape
-from .rendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
+from .rendering.pointsset import PointsSetShapeObject
+from .rendering.pointsset_adaptors import RegionsPointsSetShapeAdaptor, PassthroughPointsSetShapeAdaptor
+from .rendering.pointsset_shapes import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
 from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
 from .scene.scenemanager import C_CameraHolder, remove_main_region
 from .scene.sceneanchor import SceneAnchorCollection
@@ -489,11 +490,11 @@ class Cosmonium(CosmoniumBase):
             if settings.use_pbr:
                 self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
                 if self.scene_manager.has_regions():
-                    points_shape = RegionsPointsSetShape(
+                    points_shape = RegionsPointsSetShapeAdaptor(
                         EmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale
                     )
                 else:
-                    points_shape = PassthroughPointsSetShape(
+                    points_shape = PassthroughPointsSetShapeAdaptor(
                         EmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale)
                     )
                 self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
@@ -502,20 +503,20 @@ class Cosmonium(CosmoniumBase):
                 self.point_sprite = GaussianPointSprite(size=16, fwhm=8)
                 self.halos_sprite = ExpPointSprite(size=256, max_value=0.6)
                 if self.scene_manager.has_regions():
-                    points_shape = RegionsPointsSetShape(
+                    points_shape = RegionsPointsSetShapeAdaptor(
                         ScaledEmissivePointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale
                     )
                 else:
-                    points_shape = PassthroughPointsSetShape(
+                    points_shape = PassthroughPointsSetShapeAdaptor(
                         ScaledEmissivePointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale)
                     )
                 self.pointset = PointsSetShapeObject(points_shape, use_sprites=True, sprite=self.point_sprite)
                 if self.scene_manager.has_regions():
-                    points_shape = RegionsPointsSetShape(
+                    points_shape = RegionsPointsSetShapeAdaptor(
                         HaloPointsSetShape, has_size=True, has_oid=True, screen_scale=screen_point_scale
                     )
                 else:
-                    points_shape = PassthroughPointsSetShape(
+                    points_shape = PassthroughPointsSetShapeAdaptor(
                         HaloPointsSetShape(has_size=True, has_oid=True, screen_scale=screen_point_scale)
                     )
                 self.haloset = PointsSetShapeObject(

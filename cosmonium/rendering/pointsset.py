@@ -18,28 +18,15 @@
 #
 
 
-from panda3d.core import GeomNode
-from panda3d.core import OmniBoundingVolume, ShaderAttrib
+from panda3d.core import GeomNode, OmniBoundingVolume, ShaderAttrib
 
+from .. import settings
 from ..appearances import ModelAppearance
 from ..foundation import VisibleObject
 from ..shaders.lighting.flat import FlatLightingModel
 from ..shaders.point_control import StaticSizePointControl
 from ..shaders.rendering import RenderingShader
-from ..sprites import SimplePoint, RoundDiskPointSprite
-from .. import settings
-
-try:
-    from cosmonium_engine import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
-except ImportError as e:
-    import logging
-
-    logging.warning("Could not load PointsSet C++ implementation, fallback on Python implementation")
-    logging.warning(e)
-    from .pyrendering.pointsset import EmissivePointsSetShape, ScaledEmissivePointsSetShape  # noqa: F401
-    from .pyrendering.pointsset import HaloPointsSetShape  # noqa: F401
-
-from .pyrendering.pointsset import PassthroughPointsSetShape, RegionsPointsSetShape  # noqa: F401
+from ..sprites import RoundDiskPointSprite, SimplePoint
 
 
 # TODO: PointsSetShapeObject should not inherit from VisibleObject.
