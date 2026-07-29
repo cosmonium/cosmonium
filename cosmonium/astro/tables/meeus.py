@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,14 +22,19 @@ from ..elementsdb import orbit_elements_db
 
 try:
     from cosmonium_engine import MeeusPlutoOrbit
+
     loaded = True
 except ImportError as e:
-    print("WARNING: Could not load Meeus C implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Meeus C++ implementation")
+    logging.warning(e)
     loaded = False
 
 
 def init():
     orbit_elements_db.register_category('meeus', 100)
     if loaded:
-        orbit_elements_db.register_element('meeus', 'pluto-system', MeeusPlutoOrbit(247.736916416,  39.4450697, 0.25024871))  # noqa: E501
+        orbit_elements_db.register_element(
+            'meeus', 'pluto-system', MeeusPlutoOrbit(247.736916416, 39.4450697, 0.25024871)
+        )

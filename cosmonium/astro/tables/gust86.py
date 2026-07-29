@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,18 +22,21 @@ from ..elementsdb import orbit_elements_db
 
 try:
     from cosmonium_engine import Gust86Orbit
+
     loaded = True
 except ImportError as e:
-    print("WARNING: Could not load GUST86 C implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load GUST86 C++ implementation")
+    logging.warning(e)
     loaded = False
 
 
 def init():
     orbit_elements_db.register_category('gust86', 100)
     if loaded:
-        orbit_elements_db.register_element('gust86', 'ariel',   Gust86Orbit(0,  2.520, 190900, 0.0012))
-        orbit_elements_db.register_element('gust86', 'umbriel', Gust86Orbit(1,  4.144, 266000, 0.0039))
-        orbit_elements_db.register_element('gust86', 'titania', Gust86Orbit(2,  8.706, 436300, 0.0011))
-        orbit_elements_db.register_element('gust86', 'oberon',  Gust86Orbit(3, 13.46,  583500, 0.0014))
-        orbit_elements_db.register_element('gust86', 'miranda', Gust86Orbit(4,  1.413, 129900, 0.0013))
+        orbit_elements_db.register_element('gust86', 'ariel', Gust86Orbit(0, 2.520, 190900, 0.0012))
+        orbit_elements_db.register_element('gust86', 'umbriel', Gust86Orbit(1, 4.144, 266000, 0.0039))
+        orbit_elements_db.register_element('gust86', 'titania', Gust86Orbit(2, 8.706, 436300, 0.0011))
+        orbit_elements_db.register_element('gust86', 'oberon', Gust86Orbit(3, 13.46, 583500, 0.0014))
+        orbit_elements_db.register_element('gust86', 'miranda', Gust86Orbit(4, 1.413, 129900, 0.0013))

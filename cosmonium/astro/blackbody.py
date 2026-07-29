@@ -1,6 +1,6 @@
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 try:
     from cosmonium_engine import temp_to_RGB
 except ImportError as e:
-    print("WARNING: Could not load Blackbody C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Blackbody C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyastro.blackbody import temp_to_RGB  # noqa: F401

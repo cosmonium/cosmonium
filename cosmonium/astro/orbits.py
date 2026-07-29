@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,26 @@
 
 
 try:
-    from cosmonium_engine import OrbitBase, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition
-    from cosmonium_engine import EllipticalOrbit, FunctionOrbit
+    from cosmonium_engine import (
+        AbsoluteFixedPosition,
+        EllipticalOrbit,
+        FixedPosition,
+        FunctionOrbit,
+        LocalFixedPosition,
+        OrbitBase,
+    )
 
     Orbit = OrbitBase
 except ImportError as e:
-    print("WARNING: Could not load Orbits C implementation, fallback on python implementation")
-    print("\t", e)
-    from .pyastro.orbits import Orbit, FixedPosition, AbsoluteFixedPosition, LocalFixedPosition  # noqa: F401
-    from .pyastro.orbits import EllipticalOrbit, FunctionOrbit  # noqa: F401
+    import logging
+
+    logging.warning("Could not load Orbits C++ implementation, fallback on Python implementation")
+    logging.warning(e)
+    from .pyastro.orbits import (
+        AbsoluteFixedPosition,
+        EllipticalOrbit,
+        FixedPosition,
+        FunctionOrbit,
+        LocalFixedPosition,
+        Orbit,
+    )

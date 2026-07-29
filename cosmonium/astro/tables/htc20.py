@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,16 +22,19 @@ from ..elementsdb import orbit_elements_db
 
 try:
     from cosmonium_engine import HTC20Orbit
+
     loaded = True
 except ImportError as e:
-    print("WARNING: Could not load HTC20 C implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load HTC20 C++ implementation")
+    logging.warning(e)
     loaded = False
 
 
 def init():
     orbit_elements_db.register_category('htc20', 100)
     if loaded:
-        orbit_elements_db.register_element('htc20', 'helene',  HTC20Orbit(0, 2.737, 377444, 0.0000))
+        orbit_elements_db.register_element('htc20', 'helene', HTC20Orbit(0, 2.737, 377444, 0.0000))
         orbit_elements_db.register_element('htc20', 'telesto', HTC20Orbit(1, 1.888, 294720, 0.0002))
         orbit_elements_db.register_element('htc20', 'calypso', HTC20Orbit(2, 1.888, 294721, 0.0005))

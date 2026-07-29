@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,18 @@
 
 
 try:
-    from cosmonium_engine import RotationBase, FixedRotation, UnknownRotation, UniformRotation, SynchronousRotation
+    from cosmonium_engine import FixedRotation, RotationBase, SynchronousRotation, UniformRotation, UnknownRotation
 
     Rotation = RotationBase
 except ImportError as e:
-    print("WARNING: Could not load Rotations C implementation, fallback on python implementation")
-    print("\t", e)
-    from .pyastro.rotations import Rotation, FixedRotation, UnknownRotation  # noqa: F401
-    from .pyastro.rotations import UniformRotation, SynchronousRotation  # noqa: F401
+    import logging
+
+    logging.warning("Could not load Rotations C++ implementation, fallback on Python implementation")
+    logging.warning(e)
+    from .pyastro.rotations import (
+        FixedRotation,
+        Rotation,
+        SynchronousRotation,
+        UniformRotation,
+        UnknownRotation,
+    )

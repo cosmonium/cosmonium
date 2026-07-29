@@ -49,8 +49,10 @@ try:
         SynchroneReferenceFrame,
     )
 except ImportError as e:
-    print("WARNING: Could not load frames C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load frames C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pyastro.frames.anchors import (
         AnchorReferenceFrame,
         CelestialReferenceFrame,

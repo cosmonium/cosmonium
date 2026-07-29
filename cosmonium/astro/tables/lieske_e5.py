@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,17 +22,20 @@ from ..elementsdb import orbit_elements_db
 
 try:
     from cosmonium_engine import LieskeE5Orbit
+
     loaded = True
 except ImportError as e:
-    print("WARNING: Could not load Lieske E5 C implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load Lieske E5 C++ implementation")
+    logging.warning(e)
     loaded = False
 
 
 def init():
     orbit_elements_db.register_category('e5', 100)
     if loaded:
-        orbit_elements_db.register_element('e5', 'io',       LieskeE5Orbit(0,  1.769,  421800, 0.0041))
-        orbit_elements_db.register_element('e5', 'europa',   LieskeE5Orbit(1,  3.551,  671100, 0.0094))
-        orbit_elements_db.register_element('e5', 'ganymede', LieskeE5Orbit(2,  7.155, 1070400, 0.0013))
-        orbit_elements_db.register_element('e5', 'callisto', LieskeE5Orbit(3, 16.69,  1882700, 0.0074))
+        orbit_elements_db.register_element('e5', 'io', LieskeE5Orbit(0, 1.769, 421800, 0.0041))
+        orbit_elements_db.register_element('e5', 'europa', LieskeE5Orbit(1, 3.551, 671100, 0.0094))
+        orbit_elements_db.register_element('e5', 'ganymede', LieskeE5Orbit(2, 7.155, 1070400, 0.0013))
+        orbit_elements_db.register_element('e5', 'callisto', LieskeE5Orbit(3, 16.69, 1882700, 0.0074))
