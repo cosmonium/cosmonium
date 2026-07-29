@@ -439,17 +439,17 @@ class Appearance(AppearanceBase):
         if instance is not None:
             instance.clear_texture()
         if self.texture is not None:
-            self.texture.clear(patch)
+            self.texture.clear(patch, instance)
         if self.normal_map is not None:
-            self.normal_map.clear(patch)
+            self.normal_map.clear(patch, instance)
         if self.bump_map is not None:
-            self.bump_map.clear(patch)
+            self.bump_map.clear(patch, instance)
         if self.specular_map is not None:
-            self.specular_map.clear(patch)
+            self.specular_map.clear(patch, instance)
         if self.emission_texture is not None:
-            self.emission_texture.clear(patch)
+            self.emission_texture.clear(patch, instance)
         if self.occlusion_map is not None:
-            self.occlusion_map.clear(patch)
+            self.occlusion_map.clear(patch, instance)
 
     def clear_all(self):
         if self.texture is not None:
