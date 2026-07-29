@@ -33,13 +33,15 @@ try:
     tile_patch_generator = TilePatchGenerator()
     Tile = tile_patch_generator.make
 except ImportError as e:
-    print("WARNING: Could not load geometry C implementation, fallback on python implementation")
-    print("\t", e)
+    import logging
+
+    logging.warning("Could not load geometry C++ implementation, fallback on Python implementation")
+    logging.warning(e)
     from .pygeometry.cube_patches import SquaredDistanceSquarePatch
     from .pygeometry.cube_patches import NormalizedSquarePatch
     from .pygeometry.tessellation import TessellationInfo
-    from .pygeometry.tiles import Tile  # noqa: F401
-    from .pygeometry.uv_patches import UVPatch  # noqa: F401
+    from .pygeometry.tiles import Tile
+    from .pygeometry.uv_patches import UVPatch
 
 from .pygeometry.cube_patches import (
     NormalizedSquarePatchBoundingPoints,
