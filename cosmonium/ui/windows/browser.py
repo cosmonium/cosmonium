@@ -21,7 +21,6 @@
 import traceback
 
 from ... import settings
-from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 cefpanda_valid = False
@@ -47,7 +46,7 @@ class Browser(UIWindow):
         else:
             self.renderer.set_target(self.layout)
         self.layout.create()
-        self.window = WindowFrame("Browser", scale=self.scale, child=self.layout, parent=self)
+        self.window = self.create_window_frame("Browser")
 
     def load(self, url):
         if not cefpanda_valid:

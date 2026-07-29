@@ -22,7 +22,6 @@ from direct.gui.DirectGui import DirectFrame, DGG
 from directfolderbrowser.DirectFolderBrowser import DirectFolderBrowser
 
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -66,7 +65,7 @@ class FileWindow(UIWindow):
             icons=self.icons,
         )
         self.layout.frame['frameSize'] = [0, width, -height, 0]
-        self.window = WindowFrame(self.title, scale=self.scale, child=self.layout, parent=self)
+        self.window = self.create_window_frame(self.title)
 
     def hide(self):
         UIWindow.hide(self)

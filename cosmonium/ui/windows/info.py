@@ -30,7 +30,6 @@ from ..managers.window_manager import WindowManager
 from ..object_info import ObjectInfo
 from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -66,7 +65,7 @@ class InfoWindow(UIWindow):
         size = sizer.min_size
         self.layout.frame['canvasSize'] = (0, size[0], -size[1], 0)
         title = "Body information"
-        self.window = WindowFrame(title, scale=self.scale, child=self.layout, parent=self)
+        self.window = self.create_window_frame(title)
         self.window.register_scroller(self.layout.frame)
 
     def make_title_entry(self, frame, title):

@@ -33,7 +33,6 @@ from ...utils import isclose
 from ... import settings
 from ..skin import UIElement
 from ..widgets.tabbed_frame import TabbedFrameContainer
-from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -248,7 +247,7 @@ class ParamEditor(UIWindow):
         self.element = None
         self.button_background['frameSize'] = [0, self.width * settings.ui_scale, 0, self.layout.height_offset]
         title = "Editor - " + group.name
-        self.window = WindowFrame(title, scale=self.scale, child=self.layout, parent=self)
+        self.window = self.create_window_frame(title)
         self.window.register_scroller(self.layout.frame.viewingArea)
 
     def do_update(self, value, slider, param, component=None):

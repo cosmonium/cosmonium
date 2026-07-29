@@ -31,7 +31,6 @@ from ... import settings
 from ..managers.window_manager import WindowManager
 from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
-from ..widgets.window_frame import WindowFrame
 from .uiwindow import UIWindow
 
 
@@ -142,7 +141,7 @@ class TimeEditor(UIWindow):
         sizer.update((self.width, self.height))
         size = sizer.min_size
         frame['frameSize'] = (0, size[0], -size[1], 0)
-        self.window = WindowFrame(_("Set time"), scale=self.scale, child=self.layout, parent=self)
+        self.window = self.create_window_frame(_("Set time"))
 
     def ok(self):
         years = self.year_entry.getValue()

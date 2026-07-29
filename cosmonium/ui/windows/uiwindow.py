@@ -23,6 +23,7 @@ from panda3d.core import LVector2
 
 from ... import settings
 from ..core.ui_element import FloatingUIElement
+from ..widgets.window_frame import WindowFrame
 
 
 class UIWindow(FloatingUIElement):
@@ -60,6 +61,9 @@ class UIWindow(FloatingUIElement):
         """Create the UI element."""
         # TODO: Refactor window frame creation here
         self.create_layout()
+
+    def create_window_frame(self, title):
+        return WindowFrame(title, scale=self.scale, child=self.layout, parent=self)
 
     def show(self):
         if self.shown():
