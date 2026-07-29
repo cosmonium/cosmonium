@@ -24,4 +24,6 @@ except ImportError as e:
 
     logging.warning("Could not load Blackbody C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pyastro.blackbody import temp_to_RGB  # noqa: F401
+    from .pyastro.blackbody import temp_to_RGB
+
+__all__ = ["temp_to_RGB"]

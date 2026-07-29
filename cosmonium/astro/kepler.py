@@ -24,4 +24,6 @@ except ImportError as e:
 
     logging.warning("Could not load Kepler C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pyastro.kepler import kepler_pos  # noqa: F401
+    from .pyastro.kepler import kepler_pos
+
+__all__ = ["kepler_pos"]

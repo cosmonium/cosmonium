@@ -34,3 +34,11 @@ except ImportError as e:
         UniformRotation,
         UnknownRotation,
     )
+
+__all__ = [
+    "FixedRotation",
+    "Rotation",
+    "SynchronousRotation",
+    "UniformRotation",
+    "UnknownRotation",
+]

@@ -42,3 +42,12 @@ except ImportError as e:
         LocalFixedPosition,
         Orbit,
     )
+
+__all__ = [
+    "AbsoluteFixedPosition",
+    "EllipticalOrbit",
+    "FixedPosition",
+    "FunctionOrbit",
+    "LocalFixedPosition",
+    "Orbit",
+]
