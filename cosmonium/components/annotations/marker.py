@@ -20,10 +20,10 @@
 
 from panda3d.core import LPoint3d, LVector3, LVector3d, NodePath, OmniBoundingVolume
 
-from ...foundation import VisibleObject
-from ...utils import srgb_to_linear
-from ...geometry.marker import build_marker_geom
 from ... import settings
+from ...foundation import VisibleObject
+from ...geometry.marker import build_marker_geom
+from ...utils import srgb_to_linear
 
 
 class ObjectMarker(VisibleObject):

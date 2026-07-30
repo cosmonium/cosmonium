@@ -18,14 +18,22 @@
 #
 
 
-from panda3d.core import LPoint3d, LQuaternion, OmniBoundingVolume
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
-from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath
+from panda3d.core import (
+    Geom,
+    GeomLines,
+    GeomNode,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexWriter,
+    LPoint3d,
+    LQuaternion,
+    NodePath,
+    OmniBoundingVolume,
+)
 
+from ... import settings
 from ...foundation import VisibleObject
 from ...utils import srgb_to_linear
-from ... import settings
 
 
 class RotationAxis(VisibleObject):

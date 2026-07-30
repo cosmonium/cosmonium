@@ -18,13 +18,12 @@
 #
 
 
-from panda3d.core import NodePath, CardMaker, OmniBoundingVolume
+from panda3d.core import CardMaker, NodePath, OmniBoundingVolume
 
+from ... import settings
 from ...astro.astro import radiance_to_mag
 from ...foundation import VisibleObject
 from ...sprites import ExpPointSprite
-
-from ... import settings
 
 
 class Halo(VisibleObject):

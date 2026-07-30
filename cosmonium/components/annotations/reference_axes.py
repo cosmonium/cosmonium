@@ -20,9 +20,9 @@
 
 from panda3d.core import LQuaternion, OmniBoundingVolume
 
+from ... import settings
 from ...foundation import VisibleObject
 from ...mesh import load_panda_model_sync
-from ... import settings
 
 
 class ReferenceAxes(VisibleObject):

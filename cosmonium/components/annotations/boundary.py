@@ -18,18 +18,24 @@
 #
 
 
-from panda3d.core import OmniBoundingVolume
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter
-from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath
+from panda3d.core import (
+    Geom,
+    GeomLines,
+    GeomNode,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexWriter,
+    NodePath,
+    OmniBoundingVolume,
+)
 
+from ... import settings
 from ...appearances import ModelAppearance
 from ...bodyclass import bodyClasses
 from ...foundation import VisibleObject
 from ...shaders.lighting.flat import FlatLightingModel
 from ...shaders.rendering import RenderingShader
 from ...utils import srgb_to_linear
-from ... import settings
 
 
 class Boundary(VisibleObject):

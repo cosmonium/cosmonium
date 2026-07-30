@@ -18,14 +18,12 @@
 #
 
 
-from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LVector3
-from panda3d.core import LQuaternion
+from panda3d.core import CullFaceAttrib, DepthOffsetAttrib, LQuaternion, LVector3
 
+from ... import settings
 from ...entities.entity import Entity
 from ...parameters import AutoUserParameter
 from ...shapes.spheres import SphereShape
-from ... import settings
-
 from .surfaces import Surface
 
 
@@ -33,9 +31,7 @@ class Clouds(Surface):
     def __init__(self, height, appearance, shader=None, shape=None):
         if shape is None:
             shape = SphereShape()
-        Surface.__init__(
-            self, 'clouds', model=None, shape=shape, appearance=appearance, shader=shader, clickable=False
-        )
+        Surface.__init__(self, 'clouds', model=None, shape=shape, appearance=appearance, shader=shader, clickable=False)
         self.height = height
         self.scale_base = None
         self.inside = None

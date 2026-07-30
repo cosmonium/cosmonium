@@ -18,11 +18,21 @@
 #
 
 
-from panda3d.core import LColor, OmniBoundingVolume
-from panda3d.core import GeomVertexFormat, GeomVertexData, GeomVertexWriter, GeomVertexRewriter, InternalName
-from panda3d.core import Geom, GeomNode, GeomLines
-from panda3d.core import NodePath
+from panda3d.core import (
+    Geom,
+    GeomLines,
+    GeomNode,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexRewriter,
+    GeomVertexWriter,
+    InternalName,
+    LColor,
+    NodePath,
+    OmniBoundingVolume,
+)
 
+from ... import settings
 from ...appearances import ModelAppearance
 from ...astro.orbits import FixedPosition
 from ...bodyclass import bodyClasses
@@ -32,7 +42,6 @@ from ...shaders.lighting.smoothline import SmoothLineLightingModel
 from ...shaders.rendering import RenderingShader
 from ...shaders.vertex_control.spread_object import LargeObjectVertexControl
 from ...utils import TransparencyBlend, srgb_to_linear
-from ... import settings
 
 
 class Orbit(VisibleObject):

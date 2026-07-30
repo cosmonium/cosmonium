@@ -18,7 +18,7 @@
 #
 
 
-from panda3d.core import LVector3d, LQuaterniond
+from panda3d.core import LQuaterniond, LVector3d
 
 from ...appearances import Appearance
 from ...entities.entity import Entity

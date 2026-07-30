@@ -80,7 +80,7 @@ class Asterism(VisibleObject):
         decl = 0
         if len(self.segments) > 0 and len(self.segments[0]) > 0:
             for anchor in self.segments[0]:
-                (right_ascension, declination) = position_to_equatorial(anchor.orbit.get_absolute_position_at(0))
+                right_ascension, declination = position_to_equatorial(anchor.orbit.get_absolute_position_at(0))
                 ra_sin += sin(right_ascension)
                 ra_cos += cos(right_ascension)
                 decl += declination

@@ -18,13 +18,11 @@
 #
 
 
-from panda3d.core import CullFaceAttrib
-from panda3d.core import LQuaternion
-
-from ...entities.entity import Entity
-from ...utils import TransparencyBlend
+from panda3d.core import CullFaceAttrib, LQuaternion
 
 from ... import settings
+from ...entities.entity import Entity
+from ...utils import TransparencyBlend
 
 
 class Atmosphere(Entity):
