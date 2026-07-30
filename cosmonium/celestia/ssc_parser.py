@@ -22,7 +22,6 @@
 Parses Celestia SSC files and instantiates objects and inserts them into the universe.
 """
 
-
 import builtins
 import io
 import logging
@@ -275,7 +274,7 @@ def instanciate_body(universe, context, names, is_planet, data, parent_anchor):
         elif key == 'Rings':
             rings_data = value
         elif key == 'Atmosphere':
-            (atmosphere, clouds) = instanciate_atmosphere(value, context)
+            atmosphere, clouds = instanciate_atmosphere(value, context)
         elif key == 'EllipticalOrbit':
             orbit = instanciate_elliptical_orbit(value, orbit_global_coord)
         elif key == 'CustomOrbit':

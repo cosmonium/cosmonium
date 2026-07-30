@@ -23,7 +23,6 @@ Parses Celestia DSC files and instantiates :class:`~Galaxy` objects and
 registers them in the universe. Other DSC objects than galaxies are not supported yet.
 """
 
-
 import builtins
 import io
 import logging

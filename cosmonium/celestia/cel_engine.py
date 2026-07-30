@@ -28,7 +28,6 @@ The main entry-point is :func:`build_sequence` which accepts the list of
 a :class:`Sequence` ready to be started.
 """
 
-
 import logging
 import re
 from math import pi

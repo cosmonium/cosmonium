@@ -21,6 +21,5 @@
 from ..dircontext import defaultDirContext
 from ..objects.surface_factory import StarTexSurfaceFactory
 
-
 # TODO: Initialize properly
 celestiaStarSurfaceFactory = StarTexSurfaceFactory("astar.jpg", context=defaultDirContext)

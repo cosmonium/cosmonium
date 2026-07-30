@@ -24,7 +24,6 @@ frames from raw data dictionaries produced by the PLY-based parsers, as
 well as path-resolution helpers for looking up bodies in the catalog.
 """
 
-
 import logging
 from math import pi
 
@@ -64,7 +63,7 @@ def find_body(path):
 
 def instanciate_custom_orbit(data, parent_anchor):
     if '-' in data:
-        (category, name) = data.split('-')
+        category, name = data.split('-')
         element_name = category + ':' + name
     else:
         element_name = "celestia:" + data
@@ -202,7 +201,7 @@ def instanciate_reference_frame(universe, data, parent_anchor, global_coord):
 
 def instanciate_custom_rotation(data, parent_anchor):
     if '-' in data:
-        (category, name) = data.split('-')
+        category, name = data.split('-')
         if name == 'p03lp':
             category, name = name, category
         element_name = category + ':' + name

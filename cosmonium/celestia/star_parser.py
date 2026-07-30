@@ -24,7 +24,6 @@ binary format (``CELSTARS`` header). Provides also loading of a companion
 names file (HIP numbers mapped to canonical names).
 """
 
-
 import builtins
 import io
 import logging
@@ -49,7 +48,7 @@ logger = logging.getLogger('celstars')
 def parse_line(line, names, universe):
     data = re.split(' +', line.rstrip('\r\n'))
     if len(data) == 6:
-        (catNo, ra, decl, distance, app_magnitude, spectral_type) = data
+        catNo, ra, decl, distance, app_magnitude, spectral_type = data
         catNo = int(catNo)
         if catNo in names:
             name = names[catNo]
@@ -117,9 +116,7 @@ def do_load_bin(filepath, names, universe):
         else:
             name = "HIP %d" % catNo
         position = LVector3d(x * units.Ly, -z * units.Ly, y * units.Ly)
-        orbit = AbsoluteFixedPosition(
-            absolute_reference_point=position, frame=J2000BarycentricEclipticReferenceFrame()
-        )
+        orbit = AbsoluteFixedPosition(absolute_reference_point=position, frame=J2000BarycentricEclipticReferenceFrame())
         star = Star(
             name,
             surface_factory=celestiaStarSurfaceFactory,

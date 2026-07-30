@@ -150,7 +150,7 @@ class CelUrl(object):
         time = elements.pop(0)
         m = re.search(r'^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d\.\d{5})$', time)
         if m is not None:
-            (year, month, day, hours, mins, secs) = m.groups()
+            year, month, day, hours, mins, secs = m.groups()
             year = int(year)
             month = int(month)
             day = int(day)
@@ -167,7 +167,7 @@ class CelUrl(object):
         if parameters.get('dist') is not None:
             logger.warning("Unsupported non absolute reference: dist=%s", parameters.get('dist'))
             return False
-        (x, y, z) = (parameters.get('x'), parameters.get('y'), parameters.get('z'))
+        x, y, z = (parameters.get('x'), parameters.get('y'), parameters.get('z'))
         if x is None or y is None or z is None:
             logger.warning("Missing position")
             return False
@@ -175,7 +175,7 @@ class CelUrl(object):
         y = Bigfix.bigfix_to_float(y)
         z = Bigfix.bigfix_to_float(z)
         self.position = LVector3d(x * units.mLy, -z * units.mLy, y * units.mLy)
-        (ox, oy, oz, ow) = (parameters.get('ox'), parameters.get('oy'), parameters.get('oz'), parameters.get('ow'))
+        ox, oy, oz, ow = (parameters.get('ox'), parameters.get('oy'), parameters.get('oz'), parameters.get('ow'))
         if ox is None or oy is None or oz is None or ow is None:
             logger.warning("Missing orientation")
             return False
@@ -385,11 +385,11 @@ class CelUrl(object):
         path = '/'.join(path)
         parameters = ''
         query = []
-        (x, y, z) = tuple(self.position)
+        x, y, z = tuple(self.position)
         query.append(('x', Bigfix.float_to_bigfix(x / units.mLy)))
         query.append(('y', Bigfix.float_to_bigfix(z / units.mLy)))
         query.append(('z', Bigfix.float_to_bigfix(-y / units.mLy)))
-        (ow, ox, oy, oz) = tuple(self.orientation)
+        ow, ox, oy, oz = tuple(self.orientation)
         query.append(('ow', -ow))
         query.append(('ox', ox))
         query.append(('oy', oz))

@@ -145,14 +145,12 @@ def p_entry_list_2(p):
     p[0] = {}
 
 
-@Rule(
-    '''entry : NAME INT
-             | NAME FLOAT
-             | NAME STRING
-             | NAME BOOL
-             | NAME vector
-             | NAME hash'''
-)
+@Rule('''entry : NAME INT
+               | NAME FLOAT
+               | NAME STRING
+               | NAME BOOL
+               | NAME vector
+               | NAME hash''')
 def p_entry(p):
     p[0] = [p[1], p[2]]
 
@@ -163,19 +161,15 @@ def p_vector(p):
     p[0] = p[2]
 
 
-@Rule(
-    '''float_list : float_list FLOAT
-                  | float_list INT'''
-)
+@Rule('''float_list : float_list FLOAT
+                    | float_list INT''')
 def p_float_list(p):
     p[0] = p[1]
     p[0].append(p[2])
 
 
-@Rule(
-    '''float_list : FLOAT
-                  | INT'''
-)
+@Rule('''float_list : FLOAT
+                    | INT''')
 def p_float_list_1(p):
     p[0] = [p[1]]
 

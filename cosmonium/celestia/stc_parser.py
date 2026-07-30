@@ -24,7 +24,6 @@ Parses Celestia STC files and instantiates :class:`~Star` and
 were already loaded from the star catalog.
 """
 
-
 import builtins
 import io
 import logging

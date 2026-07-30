@@ -43,7 +43,6 @@ The :class:`Bigfix` class provides two class methods:
   bigfix string representation.
 """
 
-
 from math import floor
 
 

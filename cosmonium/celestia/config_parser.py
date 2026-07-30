@@ -113,12 +113,10 @@ def p_definition_list_1(p):
     p[0] = [p[1]]
 
 
-@Rule(
-    ''' definition : NAME NAME INT '{' entry_list '}'
-                   | NAME INT '{' entry_list '}'
-                   | INT '{' entry_list '}'
-    '''
-)
+@Rule(''' definition : NAME NAME INT '{' entry_list '}'
+                     | NAME INT '{' entry_list '}'
+                     | INT '{' entry_list '}'
+    ''')
 def p_definition_without_alias(p):
     item_parent = None
     item_alias = None
@@ -142,12 +140,10 @@ def p_definition_without_alias(p):
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(
-    ''' definition : NAME NAME INT STRING '{' entry_list '}'
-                   | NAME INT STRING '{' entry_list '}'
-                   | INT STRING '{' entry_list '}'
-    '''
-)
+@Rule(''' definition : NAME NAME INT STRING '{' entry_list '}'
+                     | NAME INT STRING '{' entry_list '}'
+                     | INT STRING '{' entry_list '}'
+    ''')
 def p_definition_with_alias(p):
     item_parent = None
     if len(p) == 8:
@@ -173,12 +169,10 @@ def p_definition_with_alias(p):
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(
-    ''' definition : NAME NAME STRING '{' entry_list '}'
-                   | NAME STRING '{' entry_list '}'
-                   | STRING '{' entry_list '}'
-    '''
-)
+@Rule(''' definition : NAME NAME STRING '{' entry_list '}'
+                     | NAME STRING '{' entry_list '}'
+                     | STRING '{' entry_list '}'
+    ''')
 def p_definition_without_parent(p):
     item_parent = None
     item_alias = None
@@ -202,12 +196,10 @@ def p_definition_without_parent(p):
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(
-    ''' definition : NAME NAME STRING STRING '{' entry_list '}'
-                   | NAME STRING STRING '{' entry_list '}'
-                   | STRING STRING '{' entry_list '}'
-    '''
-)
+@Rule(''' definition : NAME NAME STRING STRING '{' entry_list '}'
+                     | NAME STRING STRING '{' entry_list '}'
+                     | STRING STRING '{' entry_list '}'
+    ''')
 def p_definition_with_parent(p):
     item_alias = None
     if len(p) == 8:
@@ -233,10 +225,8 @@ def p_definition_with_parent(p):
     p[0] = [disposition, item_type, item_name, item_parent, item_alias, item_data]
 
 
-@Rule(
-    ''' definition : NAME '{' entry_list '}'
-    '''
-)
+@Rule(''' definition : NAME '{' entry_list '}'
+    ''')
 def p_definition_without_name(p):
     item_parent = None
     item_alias = None
@@ -268,14 +258,12 @@ def p_entry_list_2(p):
     p[0] = {}
 
 
-@Rule(
-    '''entry : NAME INT
-             | NAME FLOAT
-             | NAME STRING
-             | NAME BOOL
-             | NAME vector
-             | NAME hash'''
-)
+@Rule('''entry : NAME INT
+               | NAME FLOAT
+               | NAME STRING
+               | NAME BOOL
+               | NAME vector
+               | NAME hash''')
 def p_entry(p):
     p[0] = [p[1], p[2]]
 
@@ -285,19 +273,15 @@ def p_vector(p):
     p[0] = p[2]
 
 
-@Rule(
-    '''float_list : float_list FLOAT
-                  | float_list INT'''
-)
+@Rule('''float_list : float_list FLOAT
+                    | float_list INT''')
 def p_float_list(p):
     p[0] = p[1]
     p[0].append(p[2])
 
 
-@Rule(
-    '''float_list : FLOAT
-                  | INT'''
-)
+@Rule('''float_list : FLOAT
+                    | INT''')
 def p_float_list_1(p):
     p[0] = [p[1]]
 

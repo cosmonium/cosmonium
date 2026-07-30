@@ -23,7 +23,6 @@ Reads a whitespace-delimited boundary file and creates :class:`~Boundary`
 objects for each constellation.
 """
 
-
 import builtins
 import logging
 import re
@@ -46,7 +45,7 @@ def do_load(filepath, universe):
     for line in data.readlines():
         data = re.split(r'\s+', line.rstrip('\r\n').lstrip(' '))
         if len(data) == 4:
-            (ra, decl, const, ignore) = data
+            ra, decl, const, ignore = data
             if const != prev_const and prev_const is not None:
                 # print("Adding constellation", prev_const)
                 boundary = Boundary(prev_const, points)
