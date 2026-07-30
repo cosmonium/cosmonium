@@ -169,7 +169,7 @@ class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
 class AppearanceYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, heightmap=None, radius=None, patched_shape=True):
-        (object_type, parameters) = cls.get_type_and_data(data, 'textures', detect_trivial=False)
+        object_type, parameters = cls.get_type_and_data(data, 'textures', detect_trivial=False)
         validated_data = cls.validate_and_decode(object_type, parameters)
         # Get registered parser if exists
         if object_type in cls.parsers:

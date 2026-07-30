@@ -83,7 +83,7 @@ class AtmosphereYamlParser(TypedYamlParser):
     def decode(cls, data):
         if data is None:
             return None
-        (object_type, parameters) = cls.get_type_and_data(data)
+        object_type, parameters = cls.get_type_and_data(data)
         validated_data = cls.validate_and_decode(object_type, parameters)
         if object_type == 'oneil:simple':
             return ONeilSimpleAtmosphereYamlParser.decode(validated_data)

@@ -58,7 +58,7 @@ def do_load(filepath):
         line = line.rstrip(' \r\n').lstrip(' ')
         data = re.split(r'\|', line)
         if len(data) == 3:
-            (ra, decl, const) = data
+            ra, decl, const = data
             if const != prev_const and prev_const is not None:
                 # print("Adding constellation", prev_const, const)
                 create_line(points, prev_ra, prev_decl, first_ra, first_decl)
@@ -68,7 +68,7 @@ def do_load(filepath):
                 prev_ra = None
                 prev_decl = None
             prev_const = const
-            (hours, mins, secs) = ra.split(' ')
+            hours, mins, secs = ra.split(' ')
             ra = units.hourMinSec(float(hours), float(mins), float(secs))
             decl = float(decl)
             if prev_ra is None:

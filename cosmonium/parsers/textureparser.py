@@ -18,8 +18,9 @@
 #
 
 
-from ..appearances import TexturesBlock
 from cosmonium.procedural.textures_dictionary import TexturesDictionary
+
+from ..appearances import TexturesBlock
 from ..shaders.samplers import DefaultSampler, HashTextureTilingSampler
 from ..textures import NormalMapTexture, OcclusionMapTexture, SurfaceTexture
 from .schemas.texture import TextureDictionaryConfig, TextureDictionaryEntryConfig
@@ -30,7 +31,7 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 class TextureTilingYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
-        (object_type, object_data) = cls.get_type_and_data(data, 'default')
+        object_type, object_data = cls.get_type_and_data(data, 'default')
         if object_type == 'default':
             return DefaultSampler()
         elif object_type == 'hash':

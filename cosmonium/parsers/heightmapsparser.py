@@ -36,7 +36,7 @@ class InterpolatorYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         interpolator = None
-        (object_type, _parameters) = cls.get_type_and_data(data, 'hardware')
+        object_type, _parameters = cls.get_type_and_data(data, 'hardware')
         if object_type == 'hardware':
             interpolator = HardwareInterpolator()
         elif object_type == 'software':
@@ -50,7 +50,7 @@ class FilterYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, interpolator):
         filter = None
-        (object_type, _parameters) = cls.get_type_and_data(data, 'bilinear')
+        object_type, _parameters = cls.get_type_and_data(data, 'bilinear')
         if object_type == 'nearest':
             filter = NearestFilter(interpolator)
         elif object_type == 'bilinear':

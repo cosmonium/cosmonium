@@ -34,7 +34,7 @@ class PlacerYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, default='random'):
         placer = None
-        (placer_type, placer_data) = cls.get_type_and_data(data, default)
+        placer_type, placer_data = cls.get_type_and_data(data, default)
         if placer_type == 'random':
             placer = RandomObjectPlacer()
         else:

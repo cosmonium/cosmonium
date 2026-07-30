@@ -71,7 +71,7 @@ class ControllerYamlParser(TypedYamlParser):
 
     @classmethod
     def decode(cls, data, anchor):
-        (object_type, parameters) = cls.get_type_and_data(data, detect_trivial=False)
+        object_type, parameters = cls.get_type_and_data(data, detect_trivial=False)
         if object_type in cls.parsers:
             parser = cls.parsers[object_type]
             validated_parameters = cls.validate_and_decode(object_type, parameters)

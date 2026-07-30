@@ -129,9 +129,7 @@ class SurfaceYamlParser(YamlModuleParser):
                     use_model_texcoord=not extra.get('create-uv', False),
                 )
             else:
-                model = HeightmapSurfaceModel(
-                    base_model=model, heightmap=heightmap, height_scale=radius, biome=None
-                )
+                model = HeightmapSurfaceModel(base_model=model, heightmap=heightmap, height_scale=radius, biome=None)
                 data_source = []
                 shape_data_source = shape.get_shader_data_source()
                 if shape_data_source is not None:

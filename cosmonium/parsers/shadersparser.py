@@ -67,7 +67,7 @@ class CustomShaderComponentYamlParser(YamlModuleParser):
 class LightingModelYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data, appearance):
-        (object_type, parameters) = cls.get_type_and_data(data, 'lambert-phong')
+        object_type, parameters = cls.get_type_and_data(data, 'lambert-phong')
         if object_type == 'lambert-phong':
             model = ShadingLightingModel(LambertPhongLightingModel())
         elif object_type == 'oren-nayar':
@@ -93,7 +93,7 @@ class VertexControlYamlParser(TypedYamlParser):
     @classmethod
     def decode(cls, data):
         component = None
-        (object_type, parameters) = cls.get_type_and_data(data, None)
+        object_type, parameters = cls.get_type_and_data(data, None)
         if object_type is None:
             component = None
         elif object_type == 'custom':

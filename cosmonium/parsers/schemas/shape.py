@@ -38,9 +38,7 @@ from .types import Vector3Field
 class PatchedShapeConfig(ConfigBase):
     """Configuration for patched sphere shapes (patched-sphere, sqrt-sphere, cube-sphere, se-sphere)."""
 
-    type: Literal['patched-sphere', 'sqrt-sphere', 'cube-sphere', 'se-sphere'] = Field(
-        description="Patched shape type"
-    )
+    type: Literal['patched-sphere', 'sqrt-sphere', 'cube-sphere', 'se-sphere'] = Field(description="Patched shape type")
 
 
 class IcoSphereShapeConfig(ConfigBase):

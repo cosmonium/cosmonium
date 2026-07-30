@@ -265,9 +265,7 @@ class TypedYamlParser(YamlModuleParser):
                 return None
         else:
             data = cls.canonize_data(data)
-            (object_type, parameters) = cls.get_type_and_data(
-                data, cls.default_type, detect_trivial=cls.detect_trivial
-            )
+            object_type, parameters = cls.get_type_and_data(data, cls.default_type, detect_trivial=cls.detect_trivial)
             if object_type in cls.parsers:
                 parser = cls.parsers[object_type]
                 # Validate parameters if model is registered

@@ -102,7 +102,7 @@ class NoiseYamlParser:
         if isinstance(data, (float, int)):
             return NoiseConst(data)
         # Temporary hack until NoiseYamlParser inherits from TypedYamlParser
-        (func, parameters) = TypedYamlParser.get_type_and_data(data, map_type=False)
+        func, parameters = TypedYamlParser.get_type_and_data(data, map_type=False)
         return self.decode_noise(func, parameters)
 
     def decode_noise_list(self, data):
