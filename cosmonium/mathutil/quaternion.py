@@ -19,6 +19,7 @@
 
 
 from math import acos, sin, sqrt
+
 from panda3d.core import LQuaterniond, LVector3d
 
 from ..astro import units

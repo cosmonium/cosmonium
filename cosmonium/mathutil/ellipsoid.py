@@ -31,8 +31,9 @@
 
 from __future__ import annotations
 
+from math import atan, copysign, cos, pi, sin, sqrt
+
 from panda3d.core import LVector3d
-from math import atan, cos, pi, sin, sqrt, copysign
 
 from .ellipse import DistancePointEllipse
 

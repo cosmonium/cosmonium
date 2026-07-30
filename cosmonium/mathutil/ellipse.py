@@ -27,7 +27,7 @@
 
 from __future__ import annotations
 
-from math import atan2, pi, sqrt, copysign
+from math import atan2, copysign, pi, sqrt
 
 maxIter = 50
 tol = 1.0e-19

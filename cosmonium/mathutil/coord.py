@@ -19,6 +19,7 @@
 
 
 from math import asin, atan2, cos, sin
+
 from panda3d.core import LPoint3d
 
 
@@ -39,7 +40,7 @@ def cartesian_to_spherical(position):
 
 
 def spherical_to_cartesian(position):
-    (phi, theta, distance) = position
+    phi, theta, distance = position
     # Offset phi by 180 deg with proper wrap around
     # phi = (phi + pi + pi) % (2 * pi) - pi
     rel_position = LPoint3d(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta))
