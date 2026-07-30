@@ -17,9 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LVecBase3, LVector3
-from panda3d.core import BitMask32
-from panda3d.core import CollisionSphere, CollisionNode
+from panda3d.core import BitMask32, CollisionNode, CollisionSphere, LVecBase3, LVector3
 
 from .. import settings
 

@@ -18,11 +18,10 @@
 #
 
 import builtins
-from panda3d.core import LQuaternion
-from panda3d.core import NodePath, ModelPool, Filename
 
-from ..parameters import ParametersGroup, AutoUserParameter, UserParameter
+from panda3d.core import Filename, LQuaternion, ModelPool, NodePath
 
+from ..parameters import AutoUserParameter, ParametersGroup, UserParameter
 from .base import Shape
 
 
@@ -120,7 +119,7 @@ class MeshShape(Shape):
         if self.instance is None:
             return
         self.mesh = mesh
-        (l, r) = mesh.getTightBounds()
+        l, r = mesh.getTightBounds()
         if self.auto_scale_mesh:
             major = max(r - l) / 2
             scale_factor = 1.0 / major

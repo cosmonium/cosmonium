@@ -17,11 +17,9 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import GeomNode
-from panda3d.core import NodePath
+from panda3d.core import GeomNode, NodePath
 
 from ..geometry import geometry
-
 from .base import Shape
 
 
