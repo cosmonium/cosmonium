@@ -52,7 +52,7 @@ class HeightmapSurfaceModel(SurfaceModelInterface):
     # --- Surface geometry queries ---
 
     def get_alt_under(self, position: LPoint3d, strict: bool = False) -> float | None:
-        (x, y) = self._base.position_to_parametric(position)
+        x, y = self._base.position_to_parametric(position)
         coord = self._shape.parametric_to_shape_coord(x, y)
         patch = self._shape.find_patch_at(coord)
         if patch is not None:
@@ -77,7 +77,7 @@ class HeightmapSurfaceModel(SurfaceModelInterface):
     def get_point_under(self, position: LPoint3d, strict: bool = False) -> LPoint3d | None:
         point_under = self._base.get_point_under(position)
         height = self.get_alt_under(point_under, strict)
-        (tangent, binormal, normal) = self._base.get_tangent_plane_under(point_under)
+        tangent, binormal, normal = self._base.get_tangent_plane_under(point_under)
         if height is not None:
             point_under += normal * height
         elif strict:

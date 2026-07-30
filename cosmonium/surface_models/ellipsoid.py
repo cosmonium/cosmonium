@@ -117,7 +117,7 @@ class EllipsoidModelInterface(SurfaceModelInterface):
         return self.get_radius_under(position)
 
     def position_to_parametric(self, position):
-        (x, y, _h) = self.cartesian_to_parametric(position)
+        x, y, _h = self.cartesian_to_parametric(position)
         return (x, y)
 
     # --- Shape management ---
@@ -194,13 +194,13 @@ class SphereModel(EllipsoidModelInterface):
         return p
 
     def cartesian_to_parametric(self, position: LPoint3d) -> tuple[float, float, float]:
-        (phi, theta, h) = self.cartesian_to_geodetic(position)
+        phi, theta, h = self.cartesian_to_geodetic(position)
         x = phi / pi / 2 + 0.5
         y = theta / pi + 0.5
         return (x, y, h)
 
     def get_tangent_plane_under(self, position: LPoint3d) -> tuple[LPoint3d, LPoint3d, LPoint3d]:
-        (phi, theta, _h) = self.cartesian_to_geodetic(position)
+        phi, theta, _h = self.cartesian_to_geodetic(position)
         cos_s = cos(phi)
         sin_s = sin(phi)
         sin_r = sin(theta + pi / 2)
@@ -271,7 +271,7 @@ class SpheroidModel(EllipsoidModelInterface):
             phi = atan2(position[1], position[0])
         else:
             phi = 0.0
-        (theta, h) = PointToGeodetic(1.0, 1.0 - self.ellipticity, y0, y1)
+        theta, h = PointToGeodetic(1.0, 1.0 - self.ellipticity, y0, y1)
         return (phi, theta, h * self.radius)
 
     def parametric_to_cartesian(self, x: float, y: float, h: float) -> LPoint3d:
@@ -306,7 +306,7 @@ class SpheroidModel(EllipsoidModelInterface):
         return (x, y, h)
 
     def get_tangent_plane_under(self, position: LPoint3d) -> tuple[LPoint3d, LPoint3d, LPoint3d]:
-        (phi, theta, _h) = self.cartesian_to_geodetic(position)
+        phi, theta, _h = self.cartesian_to_geodetic(position)
         cos_s = cos(phi)
         sin_s = sin(phi)
         sin_r = sin(theta + pi / 2)
@@ -368,7 +368,7 @@ class EllipsoidModel(EllipsoidModelInterface):
         return TriaxialGeodeticToCartesian(self.axes, long, lat, h)
 
     def cartesian_to_geodetic(self, position: LPoint3d) -> tuple[float, float, float]:
-        (phi, theta, h) = PointToTriaxialGeodetic(
+        phi, theta, h = PointToTriaxialGeodetic(
             *(self.axes / self.radius),
             position[0] / self.radius,
             position[1] / self.radius,
@@ -406,7 +406,7 @@ class EllipsoidModel(EllipsoidModelInterface):
         return (x, y, h)
 
     def get_tangent_plane_under(self, position: LPoint3d) -> tuple[LPoint3d, LPoint3d, LPoint3d]:
-        (phi, theta, _h) = self.cartesian_to_geodetic(position)
+        phi, theta, _h = self.cartesian_to_geodetic(position)
         cos_s = cos(phi)
         sin_s = sin(phi)
         sin_r = sin(theta + pi / 2)
