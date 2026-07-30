@@ -158,8 +158,7 @@ class PandaShaderDataSource(ShaderDataSource):
         if self.has_attribute_color:
             code.append("uniform vec4 p3d_Color;")
         if self.has_material:
-            code.append(
-                """uniform struct {
+            code.append("""uniform struct {
   vec4 ambient;
   vec4 diffuse;
   vec4 emission;
@@ -171,8 +170,7 @@ class PandaShaderDataSource(ShaderDataSource):
   float metallic;
   float refractiveIndex;
 } p3d_Material;
-"""
-            )
+""")
 
     def fragment_inputs(self, code):
         if self.has_vertex_color:

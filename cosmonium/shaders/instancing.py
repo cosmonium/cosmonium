@@ -17,8 +17,8 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .component import ShaderComponent
 from .. import settings
+from .component import ShaderComponent
 
 
 class InstanceControl(ShaderComponent):

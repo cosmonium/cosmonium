@@ -71,48 +71,37 @@ class WideLineGeometryControl(GeometryControl):
         code.append("layout(triangle_strip, max_vertices=4) out;")
 
     def geometry_uniforms(self, code):
-        code.append(
-            """
+        code.append("""
 uniform vec2 win_size;
 // wide_line_parameters: .x=unused, .y=unused, .z=unused, .w=halo_expansion_px
 uniform vec4 wide_line_parameters;
-"""
-        )
+""")
 
     def geometry_inputs(self, code):
-        code.append(
-            """
+        code.append("""
 in vec4 vertex_color[];
-"""
-        )
+""")
         if self.enable_fade:
-            code.append(
-                """
+            code.append("""
 // Fade value per vertex (0.0 = fully transparent, 1.0 = fully opaque)
 in float vertex_fade[];
-"""
-            )
+""")
 
     def geometry_outputs(self, code):
-        code.append(
-            """
+        code.append("""
 noperspective out vec4 geom_color;
 // line_coord.y: signed distance from line centre in screen pixels
 //   (negative = one side, positive = other side)
 noperspective out vec2 line_coord;
-"""
-        )
+""")
         if self.enable_fade:
-            code.append(
-                """
+            code.append("""
 // Fade value along line length
 noperspective out float line_fade;
-"""
-            )
+""")
 
     def geometry_shader(self, code):
-        code.append(
-            """
+        code.append("""
     // Get line endpoints in clip space
     vec4 p0_clip = gl_in[0].gl_Position;
     vec4 p1_clip = gl_in[1].gl_Position;
@@ -127,14 +116,12 @@ noperspective out float line_fade;
 
     vec4 color0 = vertex_color[0];
     vec4 color1 = vertex_color[1];
-"""
-        )
+""")
         if self.enable_fade:
             code.append("    float fade0 = vertex_fade[0];")
             code.append("    float fade1 = vertex_fade[1];")
 
-        code.append(
-            """
+        code.append("""
     // Clip line segment against near plane if one endpoint is behind the camera.
     // Disabled as there is no visual gain.
     if (false && (p0_behind || p1_behind)) {
@@ -145,21 +132,17 @@ noperspective out float line_fade;
         if (p0_behind) {
             p0_clip = p_clipped;
             color0 = mix(color0, color1, t);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("            fade0 = mix(fade0, fade1, t);")
-        code.append(
-            """
+        code.append("""
         } else {
             p1_clip = p_clipped;
             color1 = mix(color0, color1, t);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("            fade1 = mix(fade0, fade1, t);")
-        code.append(
-            """
+        code.append("""
         }
     }
 
@@ -189,44 +172,37 @@ noperspective out float line_fade;
     gl_Position = vec4((p0_ndc - offset_ndc) * p0_clip.w, p0_clip.z, p0_clip.w);
     geom_color = color0;
     line_coord = vec2(0.0, -total_half_px);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("    line_fade = fade0;")
 
-        code.append(
-            """
+        code.append("""
     EmitVertex();
 
     gl_Position = vec4((p0_ndc + offset_ndc) * p0_clip.w, p0_clip.z, p0_clip.w);
     geom_color = color0;
     line_coord = vec2(0.0,  total_half_px);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("    line_fade = fade0;")
 
-        code.append(
-            """
+        code.append("""
     EmitVertex();
 
     gl_Position = vec4((p1_ndc - offset_ndc) * p1_clip.w, p1_clip.z, p1_clip.w);
     geom_color = color1;
     line_coord = vec2(1.0, -total_half_px);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("    line_fade = fade1;")
 
-        code.append(
-            """
+        code.append("""
     EmitVertex();
 
     gl_Position = vec4((p1_ndc + offset_ndc) * p1_clip.w, p1_clip.z, p1_clip.w);
     geom_color = color1;
     line_coord = vec2(1.0,  total_half_px);
-"""
-        )
+""")
         if self.enable_fade:
             code.append("    line_fade = fade1;")
         code.append("    EmitVertex();")

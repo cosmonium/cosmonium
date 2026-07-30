@@ -18,7 +18,7 @@
 #
 
 
-from ..component import ShaderComponent, CompositeShaderComponent
+from ..component import CompositeShaderComponent, ShaderComponent
 from ..shadows.locallights import ShaderLocalShadows
 from .scattering import NoScattering
 
@@ -146,8 +146,7 @@ class ShadingLightingModel(CompositeShaderComponent):
 
     def vertex_uniforms(self, code):
         CompositeShaderComponent.vertex_uniforms(self, code)
-        code.append(
-            """
+        code.append("""
 uniform struct p3d_LightSourceParameters {
     vec4 position;
     vec4 diffuse;
@@ -158,13 +157,11 @@ uniform struct p3d_LightSourceParameters {
     sampler2DShadow shadowMap;
     mat4 shadowViewMatrix;
 } p3d_LightSource[8];
-"""
-        )
+""")
 
     def fragment_uniforms(self, code):
         CompositeShaderComponent.fragment_uniforms(self, code)
-        code.append(
-            """
+        code.append("""
 uniform struct p3d_LightSourceParameters {
     vec4 position;
     vec4 diffuse;
@@ -180,8 +177,7 @@ uniform struct p3d_LightModelParameters {
     vec4 ambient;
 } p3d_LightModel;
 
-"""
-        )
+""")
         code.append("const float LIGHT_CUTOFF = 0.001;")
         code.append("const float SPOTSMOOTH = 0.001;")
         code.append("uniform float ambient_coef;")
@@ -225,9 +221,7 @@ uniform struct p3d_LightModelParameters {
         code.append("    shadow *= attenuation_factor;")
         code.append("    float spot_cos = dot(normalize(p3d_LightSource[i].spotDirection), -light_direction);")
         code.append("    float spot_cutoff = p3d_LightSource[i].spotCosCutoff;")
-        code.append(
-            "    float shadow_spot = smoothstep(spot_cutoff - SPOTSMOOTH, spot_cutoff + SPOTSMOOTH, spot_cos);"
-        )
+        code.append("    float shadow_spot = smoothstep(spot_cutoff - SPOTSMOOTH, spot_cutoff + SPOTSMOOTH, spot_cos);")
         code.append("    shadow *= shadow_spot;")
         self.local_shadows.shadow_for(code, "i")
         code.append("    vec3 contribution = vec3(0);")

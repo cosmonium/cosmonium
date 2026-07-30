@@ -46,21 +46,18 @@ class ShaderPSSMShadowMap(ShaderComponent, ShaderShadowInterface):
         code.append("in vec4 %s_lightcoord;" % self.name)
 
     def project(self, code):
-        code.append(
-            '''
+        code.append('''
 // Projects a point using the given mvp
 vec3 project(mat4 mvp, vec3 p) {
     vec4 projected = mvp * vec4(p, 1);
     return (projected.xyz / projected.w) * vec3(0.5) + vec3(0.5);
-}'''
-        )
+}''')
 
     def fragment_extra(self, code):
         self.shader.fragment_shader.add_function(code, 'project', self.project)
 
     def shadow_for(self, code, light, light_direction, eye_light_direction):
-        code.append(
-            '''
+        code.append('''
     // Find in which split the current point is present.
     int split = 99;
     float border_bias = 0.5 - (0.5 / (1.0 + border_bias));
@@ -94,5 +91,4 @@ vec3 project(mat4 mvp, vec3 p) {
 
         local_shadow *= shadow_factor;
     }
-'''
-        )
+''')

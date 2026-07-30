@@ -33,8 +33,7 @@ class PbrLightingModel(ShaderComponent, BRDFInterface):
         code.append("uniform float backlit;")
 
     def point_material(self, code):
-        code.append(
-            '''
+        code.append('''
 struct PointMaterial
 {
     vec3 diffuse_color;
@@ -46,12 +45,10 @@ struct PointMaterial
     vec3 reflectance90;
     vec3 specular_color;
 };
-'''
-        )
+''')
 
     def point_vectors(self, code):
-        code.append(
-            '''
+        code.append('''
 struct PointVectors
 {
     float n_dot_l;
@@ -60,12 +57,10 @@ struct PointVectors
     float l_dot_h;
     float v_dot_h;
 };
-'''
-        )
+''')
 
     def calc_point_vectors(self, code):
-        code.append(
-            '''
+        code.append('''
 PointVectors calc_point_vectors(vec3 normal, vec3 obs_dir, vec3 light_dir)
 {
     vec3 half_vec = normalize(light_dir + obs_dir);
@@ -84,33 +79,27 @@ PointVectors calc_point_vectors(vec3 normal, vec3 obs_dir, vec3 light_dir)
         v_dot_h
     );
 }
-'''
-        )
+''')
 
     def lambert_diffuse(self, code):
-        code.append(
-            '''
+        code.append('''
 vec3 lambert_diffuse(PointMaterial material, PointVectors vectors)
 {
     return material.diffuse_color / pi;
 }
-'''
-        )
+''')
 
     def fresnel_schlick(self, code):
-        code.append(
-            '''
+        code.append('''
 vec3 fresnel_schlick(PointMaterial material, PointVectors vectors)
 {
     return material.reflectance0 + (material.reflectance90 - material.reflectance0)
         * pow(clamp(1.0 - vectors.v_dot_h, 0.0, 1.0), 5.0);
 }
-'''
-        )
+''')
 
     def smith_joint(self, code):
-        code.append(
-            '''
+        code.append('''
 float smith_joint(PointMaterial material, PointVectors vectors)
 {
     float GGXV = vectors.n_dot_l
@@ -127,23 +116,19 @@ float smith_joint(PointMaterial material, PointVectors vectors)
     }
     return 0.0;
 }
-'''
-        )
+''')
 
     def trowbridge_reitz(self, code):
-        code.append(
-            '''
+        code.append('''
 float trowbridge_reitz(PointMaterial material, PointVectors vectors)
 {
     float f = (vectors.n_dot_h * material.alpha_roughness_squared - vectors.n_dot_h) * vectors.n_dot_h + 1.0;
     return material.alpha_roughness_squared / (pi * f * f);
 }
-'''
-        )
+''')
 
     def calc_shade(self, code):
-        code.append(
-            '''
+        code.append('''
 vec3 calc_shade(PointMaterial material, PointVectors vectors)
 {
     if (vectors.n_dot_l > 0.0 && vectors.n_dot_v > 0.0)
@@ -160,8 +145,7 @@ vec3 calc_shade(PointMaterial material, PointVectors vectors)
         return vec3(0.0, 0.0, 0.0);
     }
 }
-'''
-        )
+''')
 
     def fragment_extra(self, code):
         self.shader.fragment_shader.add_function(code, 'point_material', self.point_material)

@@ -60,18 +60,15 @@ class HashTextureTilingSampler(TextureTilingSampler):
         return 'hash'
 
     def hash4(self, code):
-        code.append(
-            '''
+        code.append('''
 vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
                                               2.0+dot(p,vec2(11.0,47.0)),
                                               3.0+dot(p,vec2(41.0,29.0)),
                                               4.0+dot(p,vec2(23.0,31.0))))*103.0); }
-'''
-        )
+''')
 
     def textureNoTile2D(self, code):
-        code.append(
-            '''vec4 textureNoTile2D(sampler2D samp, in vec2 uv)
+        code.append('''vec4 textureNoTile2D(sampler2D samp, in vec2 uv)
 {
     vec2 iuv = floor(uv.xy);
     vec2 fuv = fract(uv.xy);
@@ -104,12 +101,10 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
                 mix(textureGrad(samp, uvc, ddxc, ddyc),
                     textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
 }
-'''
-        )
+''')
 
     def textureNoTile2DArray(self, code):
-        code.append(
-            '''vec4 textureNoTile2DArray(sampler2DArray samp, in vec3 uv)
+        code.append('''vec4 textureNoTile2DArray(sampler2DArray samp, in vec3 uv)
 {
     vec2 iuv = floor(uv.xy);
     vec2 fuv = fract(uv.xy);
@@ -141,8 +136,7 @@ vec4 hash4( vec2 p ) { return fract(sin(vec4( 1.0+dot(p,vec2(37.0,17.0)),
                     textureGrad(samp, vec3(uvb, uv.z), ddxb, ddyb), b.x),
                 mix(textureGrad(samp, vec3(uvc, uv.z), ddxc, ddyc),
                     textureGrad(samp, vec3(uvd, uv.z), ddxd, ddyd), b.x), b.y);
-}'''
-        )
+}''')
 
     def extra(self, shader, code):
         self.shader.fragment_shader.add_function(code, 'hash4', self.hash4)

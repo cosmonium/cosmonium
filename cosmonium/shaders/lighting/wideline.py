@@ -74,8 +74,7 @@ class WideLineLightingModel(LightingModelBase):
 
     def fragment_shader(self, code):
         if self.glow_mode:
-            code.append(
-                """
+            code.append("""
     total_diffuse_color = geom_color;
 
     // dist_px: distance from line centre in screen pixels
@@ -99,11 +98,9 @@ class WideLineLightingModel(LightingModelBase):
     float final_alpha  = max(core_alpha, glow_alpha);
 
     total_diffuse_color.rgb = geom_color.rgb * (1.0 + full_glow);
-"""
-            )
+""")
         else:
-            code.append(
-                """
+            code.append("""
     total_diffuse_color = geom_color;
 
     // dist_px: distance from line centre in screen pixels
@@ -115,8 +112,7 @@ class WideLineLightingModel(LightingModelBase):
     // Smooth AA transition over exactly 1 pixel straddling the core edge.
     float core_edge = half_core_width;
     float final_alpha = smoothstep(core_edge + 0.5, core_edge - 0.5, dist_px);
-"""
-            )
+""")
         if self.enable_fade:
             code.append("    final_alpha *= line_fade;")
         if self.blend_mode == TransparencyBlend.TB_Additive:

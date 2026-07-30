@@ -18,7 +18,7 @@
 #
 
 
-from .base import ShaderDataSource, CompositeShaderDataSource
+from .base import CompositeShaderDataSource, ShaderDataSource
 
 
 class DataStoreManagerShaderDataSource(CompositeShaderDataSource):

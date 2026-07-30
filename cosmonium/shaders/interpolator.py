@@ -38,14 +38,12 @@ class TextureHardwareInterpolator(TextureInterpolator):
         return ''
 
     def texture_hardware_fetch(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_hardware_fetch( sampler2D sam, vec2 uv )
 {
     return texture( sam, uv );
 }
-'''
-        ]
+''']
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_hardware_fetch', self.texture_hardware_fetch)
@@ -58,8 +56,7 @@ class TextureSoftwareInterpolator(TextureInterpolator):
         return '-sw'
 
     def texture_software_fetch(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_software_fetch( sampler2D sam, vec2 uv )
 {
     vec2 res = textureSize( sam, 0 );
@@ -77,8 +74,7 @@ vec4 texture_software_fetch( sampler2D sam, vec2 uv )
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
 }
-'''
-        ]
+''']
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_software_fetch', self.texture_software_fetch)

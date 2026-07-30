@@ -19,9 +19,8 @@
 
 from __future__ import annotations
 
-from ..base import StructuredShader, ShaderProgram
+from ..base import ShaderProgram, StructuredShader
 from ..component import ShaderComponent
-
 from .passthrough import DefaultPassThroughVertexShader
 
 

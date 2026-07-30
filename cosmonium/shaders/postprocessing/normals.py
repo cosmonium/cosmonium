@@ -18,7 +18,7 @@
 #
 
 from ..base import ShaderProgram, StructuredShader
-from .passthrough import GeomPassThroughVertexShader, ColorPassThroughFragmentShader
+from .passthrough import ColorPassThroughFragmentShader, GeomPassThroughVertexShader
 
 
 class GenerateNormalsGeomShader(ShaderProgram):

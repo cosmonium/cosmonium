@@ -18,8 +18,8 @@
 #
 
 
-from .component import ShaderComponent
 from ..utils import TransparencyBlend
+from .component import ShaderComponent
 
 
 class ShaderAppearance(ShaderComponent):

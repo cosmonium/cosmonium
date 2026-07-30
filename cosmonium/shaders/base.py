@@ -18,15 +18,15 @@
 #
 
 
-from panda3d.core import Shader
-
-from ..opengl import OpenGLConfig
-from ..cache import create_path_for
-from .. import settings
-
 import hashlib
 import os
 import re
+
+from panda3d.core import Shader
+
+from .. import settings
+from ..cache import create_path_for
+from ..opengl import OpenGLConfig
 
 
 class ShaderBase(object):
@@ -151,16 +151,14 @@ class ShaderProgram(object):
 
     def to_srgb(self, code):
         # See https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_framebuffer_sRGB.txt
-        code.append(
-            '''
+        code.append('''
 float to_srgb(float value) {
     if(value < 0.0031308) {
         return 12.92 * value;
     } else {
         return 1.055 * pow(value, 0.41666) - 0.055;
     }
-}'''
-        )
+}''')
 
     def create_shader_version(self, code):
         if self.version is not None:

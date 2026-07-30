@@ -33,30 +33,26 @@ class QuadTessellationVertexInput(VertexInput):
             code.append("#extension GL_ARB_tessellation_shader : enable")
 
     def interpolate(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 interpolate(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 {
     vec4 a = mix(v0, v1, gl_TessCoord.x);
     vec4 b = mix(v3, v2, gl_TessCoord.x);
     return mix(a, b, gl_TessCoord.y);
 }
-'''
-        ]
+''']
 
     def vertex_extra(self, code):
         self.interpolate(code)
 
     def vertex_shader(self, code):
-        code += [
-            '''
+        code += ['''
             model_vertex4 = interpolate(
                               gl_in[0].gl_Position,
                               gl_in[1].gl_Position,
                               gl_in[2].gl_Position,
                               gl_in[3].gl_Position);
-'''
-        ]
+''']
         # TODO: Retrieve normals from tesselator
         if 'model_normal' in self.config.vertex_requires:
             code.append("model_normal4 = vec4(0.0, 0.0, 1.0, 0.0);")
@@ -95,8 +91,7 @@ class ConstantTessellationControl(TessellationControl):
         code.append("uniform vec4 TessLevelOuter;")
 
     def vertex_shader(self, code):
-        code += [
-            '''
+        code += ['''
         gl_TessLevelOuter[0] = TessLevelOuter[0];
         gl_TessLevelOuter[1] = TessLevelOuter[1];
         gl_TessLevelOuter[2] = TessLevelOuter[2];
@@ -104,5 +99,4 @@ class ConstantTessellationControl(TessellationControl):
 
         gl_TessLevelInner[0] = TessLevelInner;
         gl_TessLevelInner[1] = TessLevelInner;
-'''
-        ]
+''']

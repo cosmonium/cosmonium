@@ -35,8 +35,7 @@ class SpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
         code.append('out mat3 jacobian;')
 
     def vertex_shader(self, code):
-        code.append(
-            '''
+        code.append('''
     {
         float x = jacobian_params.x;
         float y = jacobian_params.y;
@@ -47,8 +46,7 @@ class SpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
             x, y, 1
         );
     }
-'''
-        )
+''')
 
     def fragment_inputs(self, code):
         code.append('in mat3 jacobian;')
@@ -68,8 +66,7 @@ class ImprovedSpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
         code.append('out mat3 jacobian;')
 
     def vertex_shader(self, code):
-        code.append(
-            '''
+        code.append('''
     {
         float s2 = jacobian_params.x * jacobian_params.x;
         float t2 = jacobian_params.y * jacobian_params.y;
@@ -82,8 +79,7 @@ class ImprovedSpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
             jacobian_params.x * b, jacobian_params.y * a, w
         );
     }
-'''
-        )
+''')
 
     def fragment_inputs(self, code):
         code.append('in mat3 jacobian;')

@@ -49,15 +49,12 @@ class TextureNearestFilter(TextureFilter):
         return '-n'
 
     def texture_nearest_filter(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_nearest_filter( sampler2D sam, vec2 p )
 {
     return %s;
 }
-'''
-            % self.interpolator.apply('sam', 'p')
-        ]
+''' % self.interpolator.apply('sam', 'p')]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_nearest_filter', self.texture_nearest_filter)
@@ -70,15 +67,12 @@ class TextureBilinearFilter(TextureFilter):
         return '-l'
 
     def texture_bilinear_filter(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_bilinear_filter( sampler2D sam, vec2 p )
 {
     return %s;
 }
-'''
-            % self.interpolator.apply('sam', 'p')
-        ]
+''' % self.interpolator.apply('sam', 'p')]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_bilinear_filter', self.texture_bilinear_filter)
@@ -91,8 +85,7 @@ class TextureSmoothstepFilter(TextureFilter):
         return '-s'
 
     def texture_smoothstep_filter(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_smoothstep_filter( sampler2D sam, vec2 p )
 {
     vec2 res = textureSize( sam, 0 );
@@ -106,9 +99,7 @@ vec4 texture_smoothstep_filter( sampler2D sam, vec2 p )
     p = (p - 0.5)/res;
     return %s;
 }
-'''
-            % self.interpolator.apply('sam', 'p')
-        ]
+''' % self.interpolator.apply('sam', 'p')]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_smoothstep_filter', self.texture_smoothstep_filter)
@@ -121,8 +112,7 @@ class TextureQuinticFilter(TextureFilter):
         return '-q'
 
     def texture_quintic_filter(self, code):
-        code += [
-            '''
+        code += ['''
 vec4 texture_quintic_filter( sampler2D sam, vec2 p )
 {
     vec2 res = textureSize( sam, 0 );
@@ -136,9 +126,7 @@ vec4 texture_quintic_filter( sampler2D sam, vec2 p )
     p = (p - 0.5)/res;
     return %s;
 }
-'''
-            % self.interpolator.apply('sam', 'p')
-        ]
+''' % self.interpolator.apply('sam', 'p')]
 
     def extra(self, shader, code):
         shader.add_function(code, 'texture_quintic_filter', self.texture_quintic_filter)

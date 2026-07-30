@@ -55,8 +55,7 @@ class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
 
     def get_bias(self, code):
         # http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
-        code.append(
-            '''
+        code.append('''
 vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) {
     float cos_alpha = clamp(dot(normal, light_dir), 0.0, 1.0);
     float offset_scale_n = sqrt(1 - cos_alpha * cos_alpha);       // sin(acos(L.N))
@@ -64,8 +63,7 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
     vec3 offset = normal * offset_scale_n * normal_bias + light_dir * offset_scale_l * slope_bias;
     return offset;
 }
-'''
-        )
+''')
 
     def vertex_extra(self, code):
         if self.use_bias:
@@ -100,8 +98,7 @@ vec3 get_bias(float slope_bias, float normal_bias, vec3 normal, vec3 light_dir) 
         code.append("in vec4 %s_lightcoord;" % self.name)
 
     def pcf_16(self, code):
-        code.append(
-            '''
+        code.append('''
 float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
 {
     float shadow = 0.0;
@@ -123,8 +120,7 @@ float shadow_pcf_16(sampler2DShadow shadow_map, vec4 shadow_coord)
         shadow = 1.0;
     }
     return shadow;
-}'''
-        )
+}''')
 
     def fragment_extra(self, code):
         if self.use_pcf_16:

@@ -45,8 +45,7 @@ class Fog(ShaderComponent):
         code.append("uniform vec4 sunColor;")
 
     def applyFog(self, code):
-        code.append(
-            '''
+        code.append('''
 vec3 applyFog(in vec3  pixelColor, in vec3 position)
 {
     float cam_distance = abs(distance(camera, position));
@@ -66,8 +65,7 @@ vec3 applyFog(in vec3  pixelColor, in vec3 position)
     vec3  mixColor = mix( fogColor.xyz, sunColor.xyz, pow(sunAmount, 8.0));
     return mix(pixelColor, mixColor, clamp(fogAmount, 0, 1));
 }
-'''
-        )
+''')
 
     def fragment_extra(self, code):
         self.applyFog(code)
