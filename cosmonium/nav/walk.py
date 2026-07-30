@@ -241,7 +241,7 @@ class WalkNav(InteractiveNavigationController):
             distance: Signed distance to travel (positive = forward).
         """
         object_position = self.controller.get_local_position()
-        (_lon, _lat, normal) = self.body.get_tangent_plane_under(object_position)
+        _lon, _lat, normal = self.body.get_tangent_plane_under(object_position)
         surface_point = self.body.get_point_under(self.controller.get_local_position())
         direction = self.controller.get_local_position() - surface_point
         altitude = direction.dot(normal)
@@ -249,7 +249,7 @@ class WalkNav(InteractiveNavigationController):
         projected = direction - normal * direction.dot(normal)
         projected.normalize()
         new_position = self.body.get_point_under(object_position + projected * distance)
-        (_lon, _lat, normal) = self.body.get_tangent_plane_under(new_position)
+        _lon, _lat, normal = self.body.get_tangent_plane_under(new_position)
         self.controller.set_local_position(new_position + normal * altitude)
 
     def change_altitude(self, rate: float) -> None:
@@ -265,7 +265,7 @@ class WalkNav(InteractiveNavigationController):
         """
         if rate == 0.0:
             return
-        (tangent, binormal, normal) = self.body.get_tangent_plane_under(self.controller.get_local_position())
+        tangent, binormal, normal = self.body.get_tangent_plane_under(self.controller.get_local_position())
         surface_point = self.body.get_point_under(self.controller.get_local_position())
         direction = self.controller.get_local_position() - surface_point
         altitude = direction.dot(normal)

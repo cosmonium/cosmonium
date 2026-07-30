@@ -410,7 +410,7 @@ class FreeNav(InteractiveNavigationController):
         local_position = self.controller.anchor.calc_absolute_relative_position_to(
             target.anchor.get_absolute_reference_point()
         )
-        (tangent, binormal, normal) = target.get_tangent_plane_under(local_position)
+        tangent, binormal, normal = target.get_tangent_plane_under(local_position)
         surface_point = target.get_point_under(local_position)
         direction = local_position - surface_point
         altitude = direction.dot(normal)
