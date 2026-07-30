@@ -24,7 +24,6 @@ which are shadows cast by spherical occluders using mathematical calculations
 rather than shadow maps.
 """
 
-
 from math import asin
 
 from panda3d.core import LMatrix4, LQuaternion, PTA_LMatrix4

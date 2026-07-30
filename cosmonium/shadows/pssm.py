@@ -24,7 +24,6 @@ a technique for rendering high-quality shadows over large distances by
 dividing the view frustum into multiple splits.
 """
 
-
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d._rplight import PSSMCameraRig
 from panda3d.core import LVector3, PTA_LMatrix4, Texture

@@ -23,7 +23,6 @@ This module provides classes for implementing ring shadows, which are shadows
 cast by planetary rings onto surfaces below them.
 """
 
-
 from panda3d.core import LColor, LVector3d, Texture
 
 from .. import settings
@@ -109,7 +108,7 @@ class RingsShadowDataSource(DataSource):
             camera_pos: Camera position.
             camera_rot: Camera rotation.
         """
-        (texture, texture_size, texture_lod) = self.ring.appearance.texture.source.get_texture(self.ring.shape)
+        texture, texture_size, texture_lod = self.ring.appearance.texture.source.get_texture(self.ring.shape)
         if texture is None:
             texture = Texture()
             texture.setup_2d_texture(1, 1, Texture.T_unsigned_byte, Texture.F_rgba8)
