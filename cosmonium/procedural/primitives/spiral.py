@@ -18,7 +18,7 @@
 #
 
 
-from ...parameters import ParametersGroup, AutoUserParameter
+from ...parameters import AutoUserParameter, ParametersGroup
 from ..shadernoise import BasicNoiseSource
 
 

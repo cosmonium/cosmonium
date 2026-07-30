@@ -19,16 +19,25 @@
 
 
 import builtins
-from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import CardMaker
-from panda3d.core import CullFaceAttrib
-from panda3d.core import Plane, Point3, Vec3, Vec4
-from panda3d.core import RenderState, Shader, Filename
-from panda3d.core import Texture, TransparencyAttrib
 
-from ..foundation import BaseObject
-from ..dircontext import defaultDirContext
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import (
+    CardMaker,
+    CullFaceAttrib,
+    Filename,
+    Plane,
+    Point3,
+    RenderState,
+    Shader,
+    Texture,
+    TransparencyAttrib,
+    Vec3,
+    Vec4,
+)
+
 from .. import settings
+from ..dircontext import defaultDirContext
+from ..foundation import BaseObject
 
 
 class WaterNode:

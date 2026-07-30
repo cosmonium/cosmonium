@@ -19,7 +19,6 @@
 
 
 from ...dircontext import defaultDirContext
-
 from ..shadernoise import NoiseSource
 
 

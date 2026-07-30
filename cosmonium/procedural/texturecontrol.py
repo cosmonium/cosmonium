@@ -95,7 +95,7 @@ class HeightColorMap(TextureControl):
 
 class SimpleTextureControl(TextureControl):
     def color_func_call(self, code):
-        (index, nb_coefs) = self.shader.data_source.get_source_for("%s_index" % self.name)
+        index, nb_coefs = self.shader.data_source.get_source_for("%s_index" % self.name)
         major = index // 4
         minor = index % 4
         initializer = ', '.join(['vec4(0)' for x in range(nb_coefs)])
@@ -232,9 +232,7 @@ class SlopeTextureControl(TextureControl):
                     % (entry.slope - entry.blend / 2.0, entry.blend)
                 )
                 code.append("    for (int i = 0; i < coefs.length(); ++i) {")
-                code.append(
-                    "        coefs[i] = mix(%s_coefs[i], coefs[i], slope_weight);" % entry.texture_control.name
-                )
+                code.append("        coefs[i] = mix(%s_coefs[i], coefs[i], slope_weight);" % entry.texture_control.name)
                 code.append("    }")
             previous = entry
         code.append("    return coefs;")
@@ -300,9 +298,7 @@ class BiomeControl(TextureControl):
                     % (entry.value - entry.blend / 2.0, entry.blend)
                 )
                 code.append("    for (int i = 0; i < coefs.length(); ++i) {")
-                code.append(
-                    "        coefs[i] = mix(%s_coefs[i], coefs[i], biome_weight);" % entry.texture_control.name
-                )
+                code.append("        coefs[i] = mix(%s_coefs[i], coefs[i], biome_weight);" % entry.texture_control.name)
                 code.append("    }")
             previous = entry
         code.append("    return coefs;")

@@ -19,17 +19,16 @@
 
 
 from array import array
-from direct.task.TaskManagerGlobal import taskMgr
 from itertools import chain
-from panda3d.core import OmniBoundingVolume
-from panda3d.core import PTAVecBase4f
-from panda3d.core import Texture, GeomEnums
 from random import random, uniform
 
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import GeomEnums, OmniBoundingVolume, PTAVecBase4f, Texture
+
+from .. import settings
 from ..entities.datasource import DataSource
 from ..foundation import VisibleObject
 from ..shaders.instancing import OffsetScaleInstanceControl
-from .. import settings
 
 
 class TerrainObjectFactory(object):
@@ -202,8 +201,8 @@ class PatchedTerrainPopulatorBase(TerrainPopulatorBase):
         # TODO: Terrain scale should be retrieved properly...
         size = self.terrain.shape.tile_size
         for data in patch.data:
-            (x, y, height, scale) = data
-            (u, v) = terrain_patch.coord_to_uv((x / size, y / size))
+            x, y, height, scale = data
+            u, v = terrain_patch.coord_to_uv((x / size, y / size))
             if u < 0.5:
                 if v < 0.5:
                     bl.append(data)
@@ -278,7 +277,7 @@ class CpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def create_object_instances(self, scene_anchor, patch, terrain_patch):
         instances = []
         for i, offset in enumerate(patch.data):
-            (x, y, height, scale) = offset
+            x, y, height, scale = offset
             child = scene_anchor.unshifted_instance.attach_new_node('instance_%d' % i)
             self.object_template.instance.instance_to(child)
             child.set_pos(x, y, height)

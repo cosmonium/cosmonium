@@ -18,15 +18,14 @@
 #
 
 
-from .shadernoise import NoiseShader, FloatTarget
-
-from ..pipeline.target import ProcessTarget
-from ..pipeline.stage import ProcessStage
+from .. import settings
+from ..heightmap import HeightmapPatch, PatchedHeightmapBase, TextureHeightmapBase
 from ..pipeline.factory import PipelineFactory
 from ..pipeline.generator import GeneratorPool
-from ..heightmap import TextureHeightmapBase, HeightmapPatch, PatchedHeightmapBase
+from ..pipeline.stage import ProcessStage
+from ..pipeline.target import ProcessTarget
 from ..textures import TexCoord
-from .. import settings
+from .shadernoise import FloatTarget, NoiseShader
 
 
 class HeightmapGenerationStage(ProcessStage):

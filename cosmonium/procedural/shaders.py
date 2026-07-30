@@ -18,10 +18,10 @@
 #
 
 
-from ..shaders.base import StructuredShader, ShaderProgram
-from ..shaders.appearance import ShaderAppearance
-from ..shaders.data_source.base import ShaderDataSource, CompositeShaderDataSource
 from ..pipeline.shaders import GeneratorVertexShader
+from ..shaders.appearance import ShaderAppearance
+from ..shaders.base import ShaderProgram, StructuredShader
+from ..shaders.data_source.base import CompositeShaderDataSource, ShaderDataSource
 
 
 class TextureDictionaryShaderDataSource(ShaderDataSource):

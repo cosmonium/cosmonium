@@ -18,11 +18,11 @@
 #
 
 
-from panda3d.core import LVector3, LMatrix4, LQuaternion
+from panda3d.core import LMatrix4, LQuaternion, LVector3
 
 from ..patchedshapes.patchedshapes import SquarePatchBase
 from ..pipeline.shaders import GeneratorVertexShader
-from ..shaders.base import StructuredShader, ShaderProgram
+from ..shaders.base import ShaderProgram, StructuredShader
 from ..shaders.component import ShaderComponent
 from ..textures import TexCoord
 

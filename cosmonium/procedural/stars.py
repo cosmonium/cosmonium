@@ -20,18 +20,17 @@
 
 from math import pi
 
+from .. import settings
 from ..appearances import Appearance
 from ..astro import units
 from ..components.elements.surfaces import Surface
 from ..objects.surface_factory import SurfaceFactory
-from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.emission import PureEmissionLightingModel
-from ..surface_models import EllipsoidSurfaceModelFactory
 from ..patchedshapes.lodcontrol import VertexSizeLodControl
-from ..patchedshapes.patchedshapes import SquaredDistanceSquareShape, SquaredDistanceSquarePatchFactory
+from ..patchedshapes.patchedshapes import SquaredDistanceSquarePatchFactory, SquaredDistanceSquareShape
+from ..shaders.lighting.emission import PureEmissionLightingModel
+from ..shaders.rendering import RenderingShader
+from ..surface_models import EllipsoidSurfaceModelFactory
 from ..textures import SurfaceTexture
-from .. import settings
-
 from .shadernoise import GrayTarget
 from .textures import NoiseTextureGenerator, PatchedProceduralVirtualTextureSource
 

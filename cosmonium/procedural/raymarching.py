@@ -20,12 +20,11 @@
 
 from panda3d.core import LVecBase3
 
-from ..shaders.appearance import ShaderAppearance
-from ..utils import TransparencyBlend, srgb_to_linear_channel
+from .. import settings
 from ..appearances import AppearanceBase
 from ..parameters import AutoUserParameter, ParametersGroup
-from .. import settings
-
+from ..shaders.appearance import ShaderAppearance
+from ..utils import TransparencyBlend, srgb_to_linear_channel
 from .shadernoise import NoiseSource
 
 
@@ -81,8 +80,7 @@ class RayMarchingShader(ShaderAppearance):
         return name
 
     def ray_sphere_intersection(self, code):
-        code.append(
-            '''
+        code.append('''
 bool raySphereIntersection(float radius, vec3 origin, vec3 direction, out float t0, out float t1)
 {
     float A = 1.0;
@@ -99,8 +97,7 @@ bool raySphereIntersection(float radius, vec3 origin, vec3 direction, out float 
         return true;
     }
 }
-'''
-        )
+''')
 
     def fragment_extra(self, code):
         self.shader.fragment_shader.add_function(code, 'raySphereIntersection', self.ray_sphere_intersection)
@@ -527,8 +524,7 @@ class VolumetricDensityRayMarchingShader(VolumetricDensityRayMarchingShaderBase)
 
     def fragment_extra(self, code):
         VolumetricDensityRayMarchingShaderBase.fragment_extra(self, code)
-        code.append(
-            '''
+        code.append('''
 //Henyey-Greenstein phase function
 float hg_phase_func(float mu, float g)
 {
@@ -542,8 +538,7 @@ float cs_phase_func(float mu, float g)
     float g2 = g * g;
     return (3.0 * (1.0 - g2) * (1.0 + mu * mu)) / (2.0 * (2.0 + g2) * pow(1.0 + g2 - 2.0 * g * mu, 1.5));
 }
-'''
-        )
+''')
 
     def loop_init(self, code):
         VolumetricDensityRayMarchingShaderBase.loop_init(self, code)
@@ -640,7 +635,5 @@ class VolumetricDensityEmissiveRayMarchingShader(VolumetricDensityRayMarchingSha
         code.append("uniform float phase_asymmetry_factor;")
 
     def perform_scattering(self, code):
-        code.append(
-            "        vec3 light_emission_radiance = emission_color * emission_power * density * step / radius;"
-        )
+        code.append("        vec3 light_emission_radiance = emission_color * emission_power * density * step / radius;")
         code.append("        surface_color.rgb += light_emission_radiance;")
