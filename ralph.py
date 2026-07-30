@@ -40,44 +40,44 @@ sys.path.insert(0, 'third-party')
 sys.path.insert(0, 'third-party/cefpanda')
 sys.path.insert(0, 'third-party/gltf')
 
-import argparse
-import builtins
-from direct.showbase.PythonUtil import clamp
-from direct.showbase.ShowBaseGlobal import globalClock
-from direct.task.TaskManagerGlobal import taskMgr
-from math import pow, pi
-from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath, ExecutionEnvironment
-from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp
+import argparse  # noqa: E402
+import builtins  # noqa: E402
+from direct.showbase.PythonUtil import clamp  # noqa: E402
+from direct.showbase.ShowBaseGlobal import globalClock  # noqa: E402
+from direct.task.TaskManagerGlobal import taskMgr  # noqa: E402
+from math import pow, pi  # noqa: E402
+from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath, ExecutionEnvironment  # noqa: E402
+from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp  # noqa: E402
 
-from cosmonium.astro import units
+from cosmonium.astro import units  # noqa: E402
 # TODO: Change of base unit should be done properly
 units.m = 1.0
 units.Km = 1000.0
 
-from cosmonium.camera.base import CameraHolder, EventsControllerBase
-from cosmonium.controllers.position import FlatSurfaceMovementController, CartesianMovementController
-from cosmonium.cosmonium import CosmoniumBase
-from cosmonium.engine.c_settings import c_settings
-from cosmonium.foundation import BaseObject
-from cosmonium.nav import ControlNav, KineticNav
-from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser
-from cosmonium.parsers.bulletparser import BulletPhysicsShapeYamlParser
-from cosmonium.parsers.cameraparser import CameraControllerYamlParser
-from cosmonium.parsers.collisionparser import CollisionShapeYamlParser
-from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser
-from cosmonium.parsers.yamlparser import YamlModuleParser
-from cosmonium.patchedshapes.patchedshapes import PatchLayer
-from cosmonium.patchedshapes.tiles import TerrainLayerFactoryInterface
-from cosmonium.physics.bullet import BulletPhysics, BulletMovementController
-from cosmonium.physics.collision import CollisionPhysics
-from cosmonium.procedural.water import WaterNode
-from cosmonium.scene.flatuniverse import FlatUniverse
-from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region
-from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld
-from cosmonium.shadows.pssm import PSSMShadowMapShadowCaster
-from cosmonium.shadows.shadowmap import CustomShadowMapShadowCaster
-from cosmonium.ui.splash import NoSplash
-from cosmonium import settings, mesh
+from cosmonium.camera.base import CameraHolder, EventsControllerBase  # noqa: E402
+from cosmonium.controllers.position import FlatSurfaceMovementController, CartesianMovementController  # noqa: E402
+from cosmonium.cosmonium import CosmoniumBase  # noqa: E402
+from cosmonium.engine.c_settings import c_settings  # noqa: E402
+from cosmonium.foundation import BaseObject  # noqa: E402
+from cosmonium.nav import ControlNav, KineticNav  # noqa: E402
+from cosmonium.parsers.actorobjectparser import ActorObjectYamlParser  # noqa: E402
+from cosmonium.parsers.bulletparser import BulletPhysicsShapeYamlParser  # noqa: E402
+from cosmonium.parsers.cameraparser import CameraControllerYamlParser  # noqa: E402
+from cosmonium.parsers.collisionparser import CollisionShapeYamlParser  # noqa: E402
+from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser  # noqa: E402
+from cosmonium.parsers.yamlparser import YamlModuleParser  # noqa: E402
+from cosmonium.patchedshapes.patchedshapes import PatchLayer  # noqa: E402
+from cosmonium.patchedshapes.tiles import TerrainLayerFactoryInterface  # noqa: E402
+from cosmonium.physics.bullet import BulletPhysics, BulletMovementController  # noqa: E402
+from cosmonium.physics.collision import CollisionPhysics  # noqa: E402
+from cosmonium.procedural.water import WaterNode  # noqa: E402
+from cosmonium.scene.flatuniverse import FlatUniverse  # noqa: E402
+from cosmonium.scene.scenemanager import C_CameraHolder, StaticSceneManager, remove_main_region  # noqa: E402
+from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld  # noqa: E402
+from cosmonium.shadows.pssm import PSSMShadowMapShadowCaster  # noqa: E402
+from cosmonium.shadows.shadowmap import CustomShadowMapShadowCaster  # noqa: E402
+from cosmonium.ui.splash import NoSplash  # noqa: E402
+from cosmonium import settings, mesh  # noqa: E402
 
 
 class WaterLayer(PatchLayer):
