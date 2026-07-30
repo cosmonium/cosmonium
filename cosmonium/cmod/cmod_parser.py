@@ -210,7 +210,7 @@ class CMODParser:
         data_type = self._read_data_type(f)
         if data_type not in (self.CMOD_Color, self.CMOD_Float3):
             raise ValueError(f"Expected data type {self.CMOD_Color} or {self.CMOD_Float3} but got {data_type}")
-        (r, g, b) = self._read_3_float_raw(f)
+        r, g, b = self._read_3_float_raw(f)
         return (r, g, b)
 
     def _parse_material(self, f: BinaryIO) -> dict[str, Any]:

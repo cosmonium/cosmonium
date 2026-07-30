@@ -18,7 +18,7 @@
 #
 
 
-from typing import List, Dict, Any, TextIO
+from typing import Any, Dict, List, TextIO
 
 
 class EggWriter:
