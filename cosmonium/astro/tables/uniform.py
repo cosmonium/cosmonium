@@ -20,11 +20,11 @@
 
 from math import pi
 
+from .. import units
 from ..astro import calc_orientation_from_incl_an
 from ..elementsdb import rotation_elements_db
 from ..frame import J2000EclipticReferenceFrame
 from ..rotations import UniformRotation
-from .. import units
 
 
 def create_uniform_rotation(period, inclination, ascending_node):

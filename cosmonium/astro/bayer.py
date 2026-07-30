@@ -197,7 +197,7 @@ def canonize_name(name):
     try:
         match = greek_abv_match.match(name)
         if match:
-            (greek, number, const) = match.groups()
+            greek, number, const = match.groups()
             if const.lower() in constellations_map:
                 greek = greek.upper()
                 if greek in greek_canonize:
@@ -210,7 +210,7 @@ def canonize_name(name):
 def decode_name(name):
     match = greek_abv_match.match(name)
     if match:
-        (greek, number, const) = match.groups()
+        greek, number, const = match.groups()
         if const.lower() in constellations_map:
             greek = greek.upper()
             if greek in greek_utf8_map:
@@ -238,7 +238,7 @@ def decode_names(encoded_names):
 def encode_name(name):
     match = greek_word_match.match(name)
     if match:
-        (greek, number) = match.groups()
+        greek, number = match.groups()
         if greek in greek_abv_map:
             name = name.replace(greek, greek_abv_map[greek], 1)
     return name

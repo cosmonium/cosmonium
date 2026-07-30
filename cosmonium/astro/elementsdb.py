@@ -53,7 +53,7 @@ class ElementsDB(object):
     def get(self, name):
         element = None
         if ':' in name:
-            (category_name, element_name) = name.split(':')
+            category_name, element_name = name.split(':')
             if category_name in self.db_map:
                 if element_name in self.db_map[category_name].elements:
                     element = self.db_map[category_name].elements[element_name]

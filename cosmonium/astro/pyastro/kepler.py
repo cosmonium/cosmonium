@@ -18,9 +18,9 @@
 #
 
 
-from math import sqrt, cos, sin, fabs, pi, atan2, exp, log, fmod, atan, sinh, cosh
-from panda3d.core import LPoint3d
+from math import atan, atan2, cos, cosh, exp, fabs, fmod, log, pi, sin, sinh, sqrt
 
+from panda3d.core import LPoint3d
 
 THRESH = 1.0e-12
 MIN_THRESH = 1.0e-14

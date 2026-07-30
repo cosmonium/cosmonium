@@ -18,11 +18,11 @@
 #
 
 
-from math import pow, log, log10, exp, sqrt, asin, pi, atan2
-from panda3d.core import LVector3d, LQuaterniond, LPoint3d
+from math import asin, atan2, exp, log, log10, pi, pow, sqrt
+
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from . import units
-
 
 # Brightness increase factor for one magnitude
 magnitude_brightness_ratio = pow(10.0, 0.4)

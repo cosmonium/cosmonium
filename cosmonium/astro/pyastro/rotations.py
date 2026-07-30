@@ -19,6 +19,7 @@
 
 
 from math import pi
+
 from panda3d.core import LQuaterniond, LVector3d
 
 from ..frame import J2000BarycentricEclipticReferenceFrame

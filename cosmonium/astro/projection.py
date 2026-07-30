@@ -20,8 +20,8 @@
 
 from panda3d.core import LVector3d
 
-from .astro import calc_orientation
 from . import units
+from .astro import calc_orientation
 
 
 class InfinitePosition:

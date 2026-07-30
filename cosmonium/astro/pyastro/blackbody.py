@@ -22,9 +22,10 @@
 # but I can't make any promises about the quality of the algorithm's estimates above 40000 K.)
 
 
+from math import log, pow
+
 from direct.showbase.PythonUtil import clamp
 from panda3d.core import LColor
-from math import log, pow
 
 
 def temp_to_RGB(kelvin):

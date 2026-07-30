@@ -18,10 +18,10 @@
 #
 
 
-import jdcal
 from math import floor, pi
-from panda3d.core import LQuaterniond, LVector3d
 
+import jdcal
+from panda3d.core import LQuaterniond, LVector3d
 
 Km = 1.0
 m = Km / 1000.0
@@ -94,7 +94,7 @@ times_scale = [['Year', JYear, JYear], ['Day', Day, Day], ['Hour', Hour, Hour], 
 
 
 def time_to_values(time):
-    (years, months, days, frac) = jdcal.jd2gcal(0, time)
+    years, months, days, frac = jdcal.jd2gcal(0, time)
     hours = int(frac * 24)
     mins = (frac * 24 * 60) % 60
     secs = (frac * 24 * 60 * 60) % 60
@@ -102,7 +102,7 @@ def time_to_values(time):
 
 
 def values_to_time(years, months, days, hours, mins, secs):
-    (jd1, jd2) = jdcal.gcal2jd(years, months, days)
+    jd1, jd2 = jdcal.gcal2jd(years, months, days)
     frac = hours * 3600 + mins * 60 + secs
     frac /= 24.0 * 3600
     return jd1 + jd2 + frac

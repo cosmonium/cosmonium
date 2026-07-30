@@ -1,5 +1,4 @@
-from . import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, vsop87
-from . import uniform, wgccre
+from . import dourneau, elp82, gust86, htc20, lieske_e5, meeus, rckin, uniform, vsop87, wgccre
 
 
 def init():

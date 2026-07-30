@@ -185,14 +185,10 @@ def init():
             'sun': WGCCRESimpleRotation(286.13, 63.87, 84.176, 14.1844000, units.J2000),
             'mercury': WGCCREMercuryRotation(),
             'venus': WGCCRESimpleRotation(272.76, 67.16, 160.20, -1.4813688, units.J2000),
-            'earth': WGCCRESimplePrecessingRotation(
-                0.00, -0.641, 90.00, -0.557, 190.147, 360.9856235, units.J2000
-            ),
+            'earth': WGCCRESimplePrecessingRotation(0.00, -0.641, 90.00, -0.557, 190.147, 360.9856235, units.J2000),
             'mars': WGCCREMarsRotation(),
             'jupiter': WGCCREJupiterRotation(),
-            'saturn': WGCCRESimplePrecessingRotation(
-                40.589, -0.036, 83.537, -0.004, 38.90, 810.7939024, units.J2000
-            ),
+            'saturn': WGCCRESimplePrecessingRotation(40.589, -0.036, 83.537, -0.004, 38.90, 810.7939024, units.J2000),
             'uranus': WGCCRESimpleRotation(257.311, -15.175, 203.81, -501.1600928, units.J2000),
             'neptune': WGCCRENeptuneRotation(),
             # Earth
@@ -201,12 +197,8 @@ def init():
             'phobos': WGCCREPhobosRotation(),
             'deimos': WGCCREDeimosRotation(),
             # Jupiter
-            'metis': WGCCRESimplePrecessingRotation(
-                268.05, -0.009, 64.49, 0.003, 346.09, 1221.2547301, units.J2000
-            ),
-            'adrastea': WGCCRESimplePrecessingRotation(
-                268.05, -0.009, 64.49, 0.003, 33.29, 1206.9986602, units.J2000
-            ),
+            'metis': WGCCRESimplePrecessingRotation(268.05, -0.009, 64.49, 0.003, 346.09, 1221.2547301, units.J2000),
+            'adrastea': WGCCRESimplePrecessingRotation(268.05, -0.009, 64.49, 0.003, 33.29, 1206.9986602, units.J2000),
             'amalthea': WGCCREAmaltheaRotation(),
             'thebe': WGCCREThebeRotation(),
             'io': WGCCREIoRotation(),
@@ -214,42 +206,22 @@ def init():
             'ganymede': WGCCREGanymedeRotation(),
             'callisto': WGCCRECallistoRotation(),
             # Saturn
-            'pan': WGCCRESimplePrecessingRotation(
-                40.6, -0.036, 83.5, -0.004, 48.8, 626.0440000, units.J2000
-            ),
-            'atlas': WGCCRESimplePrecessingRotation(
-                40.58, -0.036, 83.53, -0.004, 137.88, 598.3060000, units.J2000
-            ),
-            'prometheus': WGCCRESimplePrecessingRotation(
-                40.58, -0.036, 83.53, -0.004, 296.14, 587.289000, units.J2000
-            ),
-            'pandora': WGCCRESimplePrecessingRotation(
-                40.58, -0.036, 83.53, -0.004, 162.92, 572.7891000, units.J2000
-            ),
+            'pan': WGCCRESimplePrecessingRotation(40.6, -0.036, 83.5, -0.004, 48.8, 626.0440000, units.J2000),
+            'atlas': WGCCRESimplePrecessingRotation(40.58, -0.036, 83.53, -0.004, 137.88, 598.3060000, units.J2000),
+            'prometheus': WGCCRESimplePrecessingRotation(40.58, -0.036, 83.53, -0.004, 296.14, 587.289000, units.J2000),
+            'pandora': WGCCRESimplePrecessingRotation(40.58, -0.036, 83.53, -0.004, 162.92, 572.7891000, units.J2000),
             'epimetheus': WGCCREEpimetheusRotation(),
             'janus': WGCCREJanusRotation(),
             'mimas': WGCCREMimasRotation(),
-            'enceladus': WGCCRESimplePrecessingRotation(
-                40.66, -0.036, 83.52, -0.004, 6.32, 262.7318996, units.J2000
-            ),
+            'enceladus': WGCCRESimplePrecessingRotation(40.66, -0.036, 83.52, -0.004, 6.32, 262.7318996, units.J2000),
             'tethys': WGCCRETethysRotation(),
-            'telesto': WGCCRESimplePrecessingRotation(
-                50.51, -0.036, 84.06, -0.004, 56.88, 190.6979332, units.J2000
-            ),
-            'calypso': WGCCRESimplePrecessingRotation(
-                36.41, -0.036, 85.04, -0.004, 153.51, 190.6742373, units.J2000
-            ),
-            'dione': WGCCRESimplePrecessingRotation(
-                40.66, -0.036, 83.52, -0.004, 357.6, 131.5349316, units.J2000
-            ),
-            'helene': WGCCRESimplePrecessingRotation(
-                40.85, -0.036, 83.34, -0.004, 245.12, 131.6174056, units.J2000
-            ),
+            'telesto': WGCCRESimplePrecessingRotation(50.51, -0.036, 84.06, -0.004, 56.88, 190.6979332, units.J2000),
+            'calypso': WGCCRESimplePrecessingRotation(36.41, -0.036, 85.04, -0.004, 153.51, 190.6742373, units.J2000),
+            'dione': WGCCRESimplePrecessingRotation(40.66, -0.036, 83.52, -0.004, 357.6, 131.5349316, units.J2000),
+            'helene': WGCCRESimplePrecessingRotation(40.85, -0.036, 83.34, -0.004, 245.12, 131.6174056, units.J2000),
             'rhea': WGCCRERheaRotation(),
             'titan': WGCCRESimpleRotation(39.4827, 83.4279, 186.5855, 22.5769768, units.J2000),
-            'iapetus': WGCCRESimplePrecessingRotation(
-                318.16, -3.949, 75.03, -1.143, 355.2, 4.5379572, units.J2000
-            ),
+            'iapetus': WGCCRESimplePrecessingRotation(318.16, -3.949, 75.03, -1.143, 355.2, 4.5379572, units.J2000),
             'phoebe': WGCCRESimpleRotation(356.90, 77.80, 178.58, 931.639, units.J2000),
             # Uranus
             'cordelia': WGCCRECordeliaRotation(),
