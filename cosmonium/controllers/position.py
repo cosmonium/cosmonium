@@ -19,7 +19,8 @@
 
 
 from math import pi
-from panda3d.core import LVector3d, LPoint3d, LQuaterniond, look_at
+
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d, look_at
 
 from ..mathutil.quaternion import relative_rotation
 from .base import MovementController
@@ -309,7 +310,7 @@ class SurfaceMovementController(PositionMovementController):
     def calc_surface_orientation(self):
         """Calculate orientation aligned to surface"""
         p = self.body.surface.model.geodetic_to_cartesian(self.longitude, self.latitude, 0)
-        (tangent, binormal, normal) = self.body.surface.get_tangent_plane_under(p)
+        tangent, binormal, normal = self.body.surface.get_tangent_plane_under(p)
         rotation = LQuaterniond()
         look_at(rotation, binormal, normal)
         return rotation
@@ -322,7 +323,7 @@ class SurfaceMovementController(PositionMovementController):
         self.set_frame_orientation(orientation)
 
     def set_frame_position(self, position):
-        (x, y, altitude) = position
+        x, y, altitude = position
         new_frame_pos = LPoint3d(x, y, 1.0)
         new_local_pos = self.anchor.calc_local_position_of_frame(new_frame_pos)
         distance = self.body.get_height_under(new_local_pos)
@@ -435,7 +436,7 @@ class FlatSurfaceMovementController(CartesianMovementController):
         self.update_position()
 
     def set_local_position(self, position):
-        (x, y, z) = position
+        x, y, z = position
         new_frame_pos = LPoint3d(x, y, 0)
         self.anchor.set_frame_position(new_frame_pos)
         new_pos = self.anchor.get_local_position()
