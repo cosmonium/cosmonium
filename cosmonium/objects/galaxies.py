@@ -18,34 +18,47 @@
 #
 
 
-from math import cos, sin, pi, log, tan, tanh, sqrt, exp, atan, atanh
-from panda3d.core import TextureStage, Texture, TexGenAttrib, GeomVertexRewriter
-from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
-from panda3d.core import GeomPoints, Geom, GeomNode, OmniBoundingVolume
-from panda3d.core import LPoint3d, LPoint3, LColor, LVector3d
-from panda3d.core import NodePath, StackedPerlinNoise3
-from panda3d.core import ShaderAttrib
-from random import random, gauss, choice, seed
+from math import atan, atanh, cos, exp, log, pi, sin, sqrt, tan, tanh
+from random import choice, gauss, random, seed
 
+from panda3d.core import (
+    Geom,
+    GeomNode,
+    GeomPoints,
+    GeomVertexArrayFormat,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexRewriter,
+    GeomVertexWriter,
+    InternalName,
+    LColor,
+    LPoint3,
+    LPoint3d,
+    LVector3d,
+    NodePath,
+    OmniBoundingVolume,
+    ShaderAttrib,
+    StackedPerlinNoise3,
+    TexGenAttrib,
+    Texture,
+    TextureStage,
+)
 
+from .. import settings
 from ..appearances import AppearanceBase
+from ..astro import units
+from ..astro.astro import abs_mag_to_lum
 from ..components.elements.surfaces import Surface
 from ..entities.datasource import DataSource
 from ..parameters import AutoUserParameter, UserParameter
-from ..sprites import ExpPointSprite
+from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..shaders.point_control import PointControl
 from ..shaders.rendering import RenderingShader
-from ..shaders.lighting.emission import PureEmissionLightingModel
 from ..shapes.base import Shape
+from ..sprites import ExpPointSprite
 from ..surface_models.ellipsoid import SphereModel
-from ..textures import TransparentTexture, DirectTextureSource
-from ..utils import TransparencyBlend
-from ..utils import srgb_to_linear
-
-from ..astro import units
-from ..astro.astro import abs_mag_to_lum
-from .. import settings
-
+from ..textures import DirectTextureSource, TransparentTexture
+from ..utils import TransparencyBlend, srgb_to_linear
 from .systems import OctreeSystem
 
 
@@ -297,9 +310,7 @@ class GalaxyShapeBase(Shape):
 
 
 class EllipticalGalaxyShape(GalaxyShapeBase):
-    def __init__(
-        self, factor, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0
-    ):
+    def __init__(self, factor, nb_points=4000, spread=0.4, zspread=0.2, sprite_size=400, sersic=4.0):
         GalaxyShapeBase.__init__(self)
         self.factor = factor
         self.nb_points = nb_points

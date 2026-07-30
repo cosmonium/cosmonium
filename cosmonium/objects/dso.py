@@ -19,7 +19,6 @@
 
 
 from ..astro import units
-
 from .emissive import EmissiveBody
 
 

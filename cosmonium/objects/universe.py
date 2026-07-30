@@ -25,7 +25,6 @@ from ..astro.orbits import AbsoluteFixedPosition
 from ..astro.rotations import FixedRotation
 from ..catalogs import objectsDB
 from ..engine.anchors import UniverseAnchor
-
 from .systems import OctreeSystem
 
 
@@ -48,7 +47,7 @@ class Universe(OctreeSystem):
         if not isinstance(path, str):
             return self.anchor.find_by_path(path, separator)
         elif path.startswith(separator):
-            path = path[len(separator):]
+            path = path[len(separator) :]
             return self.anchor.find_by_path(path, separator)
         else:
             parts = path.split(separator)

@@ -18,9 +18,8 @@
 #
 
 
+from ..engine.anchors import OctreeAnchor, SystemAnchor
 from .stellarobject import StellarObject
-
-from ..engine.anchors import SystemAnchor, OctreeAnchor
 
 
 class ReferencePoint(StellarObject):

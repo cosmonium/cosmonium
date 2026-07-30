@@ -22,14 +22,13 @@ import re
 
 from panda3d.core import LColor, LVector3d
 
+from .. import settings
 from ..bodyclass import bodyClasses
 from ..catalogs import objectsDB
-from ..engine.anchors import CartesianAnchor
-from ..engine.anchors import DynamicStellarAnchor
+from ..engine.anchors import CartesianAnchor, DynamicStellarAnchor
 from ..foundation import CompositeObject
 from ..scene.sceneanchor import SceneAnchor
 from ..utils import srgb_to_linear
-from .. import settings
 
 
 class StellarObject:

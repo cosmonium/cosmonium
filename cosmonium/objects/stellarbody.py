@@ -18,12 +18,11 @@
 #
 
 
-from panda3d.core import LVector3d, LQuaterniond, LPoint3d
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
-from ..astro.frame import OrbitReferenceFrame, J2000BarycentricEclipticReferenceFrame
+from ..astro.frame import J2000BarycentricEclipticReferenceFrame, OrbitReferenceFrame
 from ..astro.orbits import LocalFixedPosition
 from ..astro.rotations import FixedRotation
-
 from .stellarobject import StellarObject
 from .systems import StellarSystem
 

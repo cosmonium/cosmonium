@@ -18,14 +18,14 @@
 #
 
 
-from panda3d.core import LQuaternion, LColor, BitMask32
+from panda3d.core import BitMask32, LColor, LQuaternion
 
+from .. import settings
 from ..astro.rotations import UnknownRotation
 from ..foundation import VisibleObject
 from ..shaders.lighting.flat import FlatLightingModel
 from ..shaders.rendering import RenderingShader
 from ..shapes.spheres import ScaledSphereShape
-from .. import settings
 
 
 class SkySphere(VisibleObject):

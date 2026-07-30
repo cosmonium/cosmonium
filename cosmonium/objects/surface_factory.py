@@ -20,8 +20,8 @@
 
 from ..appearances import Appearance
 from ..components.elements.surfaces import Surface
-from ..shaders.rendering import RenderingShader
 from ..shaders.lighting.flat import FlatLightingModel
+from ..shaders.rendering import RenderingShader
 from ..shapes.spheres import SphereShape
 from ..surface_models import EllipsoidSurfaceModelFactory
 

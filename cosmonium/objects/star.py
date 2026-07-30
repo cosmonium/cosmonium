@@ -18,11 +18,10 @@
 #
 
 
+from ..astro import units
 from ..astro.astro import temp_to_radius
 from ..astro.blackbody import temp_to_RGB
 from ..astro.spectraltype import SpectralType, spectralTypeStringDecoder
-from ..astro import units
-
 from .emissive import EmissiveBody
 
 

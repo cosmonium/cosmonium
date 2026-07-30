@@ -18,10 +18,9 @@
 #
 
 
-from ..astro.astro import abs_mag_to_lum
 from ..astro import units
+from ..astro.astro import abs_mag_to_lum
 from ..engine.anchors import StellarAnchor
-
 from .stellarbody import StellarBody
 
 

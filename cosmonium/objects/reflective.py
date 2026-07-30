@@ -19,7 +19,6 @@
 
 
 from ..engine.anchors import StellarAnchor
-
 from .stellarbody import StellarBody
 
 
