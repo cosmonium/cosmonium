@@ -19,9 +19,8 @@
 
 from ...shaders.component import ShaderComponent
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
-
 from ..stage import SceneStage
-from ..target import ScreenTarget, ProcessTarget
+from ..target import ProcessTarget, ScreenTarget
 
 
 class ColorCorrectionFragmentShader(ShaderComponent):

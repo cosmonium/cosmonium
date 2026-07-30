@@ -19,6 +19,7 @@
 
 
 import builtins
+
 from panda3d.core import DepthTestAttrib
 
 from ..stage import RenderSceneStage

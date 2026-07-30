@@ -19,13 +19,12 @@
 
 
 import builtins
-from panda3d.core import DepthTestAttrib
-from panda3d.core import Texture, LColor
+
+from panda3d.core import DepthTestAttrib, LColor, Texture
 
 from ...textures import TextureConfiguration
-
 from ..stage import RenderSceneStage
-from ..target import SceneTarget, PasstroughTarget
+from ..target import PasstroughTarget, SceneTarget
 
 
 class RenderStage(RenderSceneStage):

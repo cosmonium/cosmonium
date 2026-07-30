@@ -17,8 +17,18 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import Camera, OrthographicLens, CardMaker, GraphicsOutput, Texture, NodePath, DisplayRegion
-from panda3d.core import WindowProperties, FrameBufferProperties, GraphicsPipe
+from panda3d.core import (
+    Camera,
+    CardMaker,
+    DisplayRegion,
+    FrameBufferProperties,
+    GraphicsOutput,
+    GraphicsPipe,
+    NodePath,
+    OrthographicLens,
+    Texture,
+    WindowProperties,
+)
 
 from ..textures import TextureConfiguration
 

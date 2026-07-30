@@ -19,7 +19,6 @@
 
 from ...shaders.component import ShaderComponent
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
-
 from ..stage import SceneStage
 from ..target import ProcessTarget
 

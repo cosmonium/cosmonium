@@ -19,7 +19,8 @@
 
 from __future__ import annotations
 
-from math import log2, ceil
+from math import ceil, log2
+
 import numpy
 from panda3d.core import Texture
 
@@ -27,7 +28,6 @@ from ...shaders.base import ShaderProgram
 from ...shaders.component import ShaderComponent
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...textures import TextureConfiguration
-
 from ..stage import SceneStage
 from ..target import ProcessTarget
 
@@ -133,9 +133,7 @@ class AverageLuminosityStage(SceneStage):
         scale = 1 << level
         target = ProcessTarget(f"luminance_downscale_{level}")
         target.set_relative_size((1.0 / scale, 1.0 / scale))
-        target.add_color_target(
-            (32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram
-        )
+        target.add_color_target((32, 0, 0, 0), srgb_colors=False, texture=self.luminance_textures[level], to_ram=to_ram)
         self.add_target(target)
         target.create(pipeline)
         target.set_shader(self.downscale_shader)

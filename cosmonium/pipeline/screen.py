@@ -19,8 +19,7 @@
 
 import sys
 
-from panda3d.core import WindowProperties
-from panda3d.core import load_prc_file_data
+from panda3d.core import WindowProperties, load_prc_file_data
 
 from .. import settings
 

@@ -20,15 +20,14 @@
 from __future__ import annotations
 
 from math import ceil, log2
+
 from panda3d.core import Texture
 
-from ...shaders.base import ShaderProgram, ShaderBase
+from ...shaders.base import ShaderBase, ShaderProgram
 from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...textures import TextureConfiguration
-
 from ..stage import SceneStage
 from ..target import ProcessTarget
-
 from .bloom_threshold import LuminanceThresholdFragmentShader
 
 

@@ -21,13 +21,11 @@ from __future__ import annotations
 
 from panda3d.core import Texture
 
-from ...textures import TextureConfiguration
-from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.base import ShaderProgram
-
+from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
+from ...textures import TextureConfiguration
 from ..stage import SceneStage
 from ..target import ProcessTarget
-
 from .bloom_threshold import LuminanceThresholdFragmentShader
 
 
@@ -80,8 +78,11 @@ class BlurBloomStage(SceneStage):
 
     def create(self, pipeline):
         target = ProcessTarget("brightness_threshold")
-        target.add_color_target(self.colors, srgb_colors=False,
-                                config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp))
+        target.add_color_target(
+            self.colors,
+            srgb_colors=False,
+            config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp),
+        )
         self.add_target(target)
         target.create(pipeline)
         shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
@@ -91,8 +92,11 @@ class BlurBloomStage(SceneStage):
         target.root.set_shader_input('scene', self.get_source('scene'))
 
         target = ProcessTarget("bloom_horizontal")
-        target.add_color_target(self.colors, srgb_colors=False,
-                                config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp))
+        target.add_color_target(
+            self.colors,
+            srgb_colors=False,
+            config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp),
+        )
         self.add_target(target)
         target.create(pipeline)
         horizontal_shader = PostProcessShader(fragment_shader=BlurPassFragmentShader(horizontal=True))
@@ -101,8 +105,11 @@ class BlurBloomStage(SceneStage):
         target.root.set_shader_input('scene', self.targets[0].get_attachment('color'))
 
         target = ProcessTarget("bloom_vertical")
-        target.add_color_target(self.colors, srgb_colors=False,
-                                config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp))
+        target.add_color_target(
+            self.colors,
+            srgb_colors=False,
+            config=TextureConfiguration(wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp),
+        )
         self.add_target(target)
         target.create(pipeline)
         vertical_shader = PostProcessShader(fragment_shader=BlurPassFragmentShader(horizontal=False))

@@ -17,11 +17,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ...shaders.component import ShaderComponent
-
+from ...shaders.postprocessing.postprocess import PostProcessShader, SimplePostProcessFragmentShader
 from ..stage import SceneStage
-from ..target import ScreenTarget, ProcessTarget
+from ..target import ProcessTarget, ScreenTarget
 
 
 class SimpleToneMappingFragmentShader(ShaderComponent):

@@ -19,22 +19,21 @@
 
 
 import builtins
-from math import log2, pow, exp, isinf, isnan
+from math import exp, isinf, isnan, log2, pow
 
+from .. import settings
 from ..foundation import BaseObject
 from ..scene.scenemanager import SceneManagerBase
-from .. import settings
-
 from .pipeline import Pipeline
 from .screen import Screen
 from .stages.annotations import AnnotationsRenderStage
 from .stages.average_luminosity import AverageLuminosityStage
 from .stages.bloom_apply import BloomApplyStage
+from .stages.blur_bloom import BlurBloomStage
 from .stages.color_correction import ColorCorrectionStage
 from .stages.downscale_bloom import DownscaleBloomStage
 from .stages.passthrough import PassthroughStage
 from .stages.render import RenderStage
-from .stages.blur_bloom import BlurBloomStage
 from .stages.tone_mapping import ToneMappingStage
 
 

@@ -34,7 +34,7 @@ class GeneratorChain(ProcessPipeline):
 
     def check_generation(self, task):
         if len(self.queue) > 0:
-            (tid, shader_data, future, controller) = self.queue.pop(0)
+            tid, shader_data, future, controller = self.queue.pop(0)
             if not future.cancelled():
                 future.set_result(self.gather())
             else:
@@ -45,7 +45,7 @@ class GeneratorChain(ProcessPipeline):
 
     def schedule_next(self):
         while len(self.queue) > 0:
-            (tid, shader_data, future, controller) = self.queue[0]
+            tid, shader_data, future, controller = self.queue[0]
             if not future.cancelled():
                 # print("TRIGGER", tid)
                 if controller is not None:
