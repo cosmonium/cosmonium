@@ -18,9 +18,10 @@
 #
 
 import builtins
+
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenImage import OnscreenImage
-from panda3d.core import TextNode, WindowProperties, Texture, TransparencyAttrib
+from panda3d.core import TextNode, Texture, TransparencyAttrib, WindowProperties
 
 from .. import settings
 

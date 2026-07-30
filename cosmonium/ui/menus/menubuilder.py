@@ -20,8 +20,14 @@
 from functools import partial
 from typing import NamedTuple
 
-from .menucommon import create_orbiting_bodies_menu, create_orbits_menu, create_surfaces_menu, create_extra_info_menu
-from .menucommon import create_select_camera_controller_menu, create_select_ship_menu
+from .menucommon import (
+    create_extra_info_menu,
+    create_orbiting_bodies_menu,
+    create_orbits_menu,
+    create_select_camera_controller_menu,
+    create_select_ship_menu,
+    create_surfaces_menu,
+)
 
 
 class MenubarConfig(NamedTuple):
@@ -79,9 +85,7 @@ class MenuBuilder:
             'select-ship': lambda: create_select_ship_menu(self.engine),
         }
         self.text_generators = {
-            'select-name': lambda: (
-                self.engine.selected.get_name() if self.engine.selected is not None else ''
-            ),
+            'select-name': lambda: (self.engine.selected.get_name() if self.engine.selected is not None else ''),
             'over-name': lambda: (self.mouse.over.get_name() if self.mouse.over is not None else ''),
         }
 

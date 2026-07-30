@@ -17,15 +17,13 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from ...astro.orbits import EllipticalOrbit
+from ...astro.rotations import UniformRotation
+from ...objects.stellarobject import StellarObject
 from .editors import ObjectEditors
-
 from .objecteditor import StellarObjectEditor
 from .orbiteditor import EllipticalOrbitEditor
 from .rotationeditor import UniformRotationEditor
-
-from ...objects.stellarobject import StellarObject
-from ...astro.orbits import EllipticalOrbit
-from ...astro.rotations import UniformRotation
 
 ObjectEditors.register(StellarObject, StellarObjectEditor)
 ObjectEditors.register(EllipticalOrbit, EllipticalOrbitEditor)

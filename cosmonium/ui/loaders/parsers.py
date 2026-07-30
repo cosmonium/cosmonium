@@ -110,9 +110,7 @@ class LengthParser:
                     print(f"Invalid size {data}")
                     size = None
             elif isinstance(data, (int, float)):
-                size = lambda element, font_size, skin: entry.calc_size_px(  # noqa: E731
-                    data, element, font_size, skin
-                )
+                size = lambda element, font_size, skin: entry.calc_size_px(data, element, font_size, skin)  # noqa: E731
             else:
                 print(f"Invalid size {data}")
                 size = None

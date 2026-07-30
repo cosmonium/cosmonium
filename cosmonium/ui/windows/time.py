@@ -26,8 +26,8 @@ from directguilayout.gui import Widget as SizerWidget
 from directspinbox.DirectSpinBox import DirectSpinBox
 from panda3d.core import TextNode
 
-from ...events import EventsDispatcher
 from ... import settings
+from ...events import EventsDispatcher
 from ..managers.window_manager import WindowManager
 from ..skin import UIElement
 from ..widgets.direct_widget_container import DirectWidgetContainer
@@ -103,7 +103,7 @@ class TimeEditor(UIWindow):
         sizer.add(hsizer, alignments=("min", "expand"), borders=self.borders)
 
     def set_current_time(self):
-        (years, months, days, hours, mins, secs) = self.time.time_to_values()
+        years, months, days, hours, mins, secs = self.time.time_to_values()
         self.year_entry.setValue(years)
         self.month_entry.setValue(months)
         self.day_entry.setValue(days)

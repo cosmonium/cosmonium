@@ -19,6 +19,7 @@
 
 
 from panda3d.core import LPoint3
+
 from .direct_widget_container import DirectWidgetContainer
 
 

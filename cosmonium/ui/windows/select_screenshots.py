@@ -18,8 +18,8 @@
 #
 
 
-from ...events import EventsDispatcher
 from ... import settings
+from ...events import EventsDispatcher
 from ..managers.window_manager import WindowManager
 from .filewindow import FileWindow
 

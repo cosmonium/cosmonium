@@ -34,7 +34,7 @@ class ObjectEditors:
         editor = cls.editors_map.get(object_to_edit.__class__, None)
         if editor is None:
             for entry in cls.editors:
-                (object_class, object_editor) = entry
+                object_class, object_editor = entry
                 if isinstance(object_to_edit, object_class):
                     editor = object_editor
                     break

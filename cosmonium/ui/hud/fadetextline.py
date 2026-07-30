@@ -18,8 +18,8 @@
 #
 
 
-from panda3d.core import LColor
 from direct.interval.IntervalGlobal import Sequence, Wait
+from panda3d.core import LColor
 
 from .textline import TextLine
 

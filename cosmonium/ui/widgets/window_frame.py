@@ -19,12 +19,13 @@
 
 
 import builtins
-from direct.gui.DirectGui import DirectFrame, DGG
+
+from direct.gui.DirectGui import DGG, DirectFrame
 from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import Point3, TextNode, PGSliderBar
+from panda3d.core import PGSliderBar, Point3, TextNode
 
 from ...geometry.geometry import FrameGeom
 from ..skin import UIElement

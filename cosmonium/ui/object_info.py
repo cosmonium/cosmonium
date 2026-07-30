@@ -20,17 +20,17 @@
 
 from math import pi
 
+from .. import utils
 from ..astro import units
 from ..astro.astro import orientation_to_equatorial
-from ..astro.orbits import Orbit, FixedPosition, EllipticalOrbit, FunctionOrbit
-from ..astro.rotations import Rotation, UnknownRotation, UniformRotation, SynchronousRotation
-from ..astro.units import toUnit, time_to_values, toDegMinSec, toHourMinSec
+from ..astro.orbits import EllipticalOrbit, FixedPosition, FunctionOrbit, Orbit
+from ..astro.rotations import Rotation, SynchronousRotation, UniformRotation, UnknownRotation
+from ..astro.units import time_to_values, toDegMinSec, toHourMinSec, toUnit
 from ..components.elements.surfaces import Surface
 from ..dataattribution import dataAttributionDB
 from ..objects.star import Star
 from ..objects.stellarbody import StellarBody
 from ..objects.stellarobject import StellarObject
-from .. import utils
 
 
 class ObjectInfo(object):
@@ -47,7 +47,7 @@ class ObjectInfo(object):
         info_method = cls.infos_map.get(body.__class__, None)
         if info_method is None:
             for entry in cls.infos:
-                (info_class, info_method) = entry
+                info_class, info_method = entry
                 if isinstance(body, info_class):
                     break
         if info_method is not None:
@@ -69,7 +69,7 @@ def orbit_info(orbit):
 def fixed_orbit_info(orbit):
     texts = []
     orientation = orbit.get_absolute_rotation_at(0)
-    (ra, de) = orientation_to_equatorial(orientation)
+    ra, de = orientation_to_equatorial(orientation)
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
     return [_("Position"), texts]
@@ -111,7 +111,7 @@ def uniform_rotation_info(rotation):
     texts = []
     # TODO: should give simulation time !
     orientation = rotation.get_equatorial_orientation_at(0)
-    (ra, de) = orientation_to_equatorial(orientation)
+    ra, de = orientation_to_equatorial(orientation)
     texts.append([_("Period"), toUnit(abs(rotation.get_period()), units.times_scale)])
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])
@@ -125,7 +125,7 @@ def synchronous_rotation_info(rotation):
     texts = []
     # TODO: should give simulation time !
     orientation = rotation.get_equatorial_orientation_at(0)
-    (ra, de) = orientation_to_equatorial(orientation)
+    ra, de = orientation_to_equatorial(orientation)
     texts.append([_("Period"), _("Synchronous")])
     texts.append([_("Right Ascension"), "%dh%dm%gs" % toHourMinSec(ra * 180 / pi)])
     texts.append([_("Declination"), "%d°%d'%g\"" % toDegMinSec(de * 180 / pi)])

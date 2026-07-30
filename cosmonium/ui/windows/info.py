@@ -24,8 +24,8 @@ from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import TextNode
 
-from ...events import EventsDispatcher
 from ... import settings
+from ...events import EventsDispatcher
 from ..managers.window_manager import WindowManager
 from ..object_info import ObjectInfo
 from ..skin import UIElement
@@ -89,7 +89,7 @@ class InfoWindow(UIWindow):
             if len(entry) != 2:
                 print("Invalid entry", entry)
                 continue
-            (title, value) = entry
+            title, value = entry
             if title is None:
                 pass
             elif value is None:
@@ -114,7 +114,7 @@ class InfoWindow(UIWindow):
                         if len(entry) != 2:
                             print("Invalid entry for", title, entry)
                             continue
-                        (title, value) = entry
+                        title, value = entry
                         title_label = self.make_text_entry(frame, title)
                         title_widget = SizerWidget(title_label)
                         value_label = self.make_text_entry(frame, value)

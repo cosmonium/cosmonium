@@ -18,15 +18,15 @@
 #
 
 
-from abc import ABC, abstractmethod
 import builtins
+from abc import ABC, abstractmethod
+
 from direct.showbase.ShowBaseGlobal import globalClock
 
+from ... import settings, utils
 from ...astro import units
 from ...bodyclass import bodyClasses
 from ...objects.star import Star
-from ... import settings
-from ... import utils
 
 
 class ObjectProvider(ABC):
@@ -58,7 +58,7 @@ class ObjectProvider(ABC):
     def ground_distance(self):
         camera_position = builtins.base.observer.get_local_position()
         surface_point = self._object.get_point_under(camera_position)
-        (tangent, binormal, normal) = self._object.get_tangent_plane_under(camera_position)
+        tangent, binormal, normal = self._object.get_tangent_plane_under(camera_position)
         direction = camera_position - surface_point
         distance = direction.dot(normal)
         return distance

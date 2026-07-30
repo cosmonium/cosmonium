@@ -18,13 +18,13 @@
 #
 
 
-from panda3d.core import TextNode
-from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DGG
 from direct.gui.DirectScrolledFrame import DirectScrolledFrame
+from direct.gui.OnscreenText import OnscreenText
+from panda3d.core import TextNode
 
-from .direct_widget_container import DirectWidgetContainer
 from ..skin import UIElement
+from .direct_widget_container import DirectWidgetContainer
 
 
 class ScrollText(DirectWidgetContainer):

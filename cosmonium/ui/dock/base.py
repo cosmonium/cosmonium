@@ -20,10 +20,11 @@
 from __future__ import annotations
 
 import builtins
-from directguilayout.gui import Widget as SizerWidget
-from direct.gui.DirectGuiBase import DirectGuiWidget
-from panda3d.core import PNMImage, Texture
 from typing import TYPE_CHECKING
+
+from direct.gui.DirectGuiBase import DirectGuiWidget
+from directguilayout.gui import Widget as SizerWidget
+from panda3d.core import PNMImage, Texture
 
 if TYPE_CHECKING:
     from .dock import Dock

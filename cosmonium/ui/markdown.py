@@ -18,12 +18,13 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from typing import Any, Dict, Optional
+
 import mistune
 from mistune.core import BaseRenderer, BlockState
 from panda3d.core import TextProperties, TextPropertiesManager
-from typing import Any, Dict, Optional
 
-from ..fonts import fontsManager, Font
+from ..fonts import Font, fontsManager
 
 
 class DirectMarkdownRenderer(BaseRenderer):

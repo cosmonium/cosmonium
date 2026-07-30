@@ -22,11 +22,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from panda3d.core import LColor
 from typing import Optional
 
-from ..fonts import fontsManager, Font
+from panda3d.core import LColor
+
 from .. import settings
+from ..fonts import Font, fontsManager
 
 
 @dataclass

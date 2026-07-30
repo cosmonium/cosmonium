@@ -19,7 +19,6 @@
 
 from ...astro.orbits import FixedPosition
 from ...parameters import ParametersGroup
-
 from .editors import ObjectEditors
 
 

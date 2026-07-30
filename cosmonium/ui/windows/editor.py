@@ -24,13 +24,13 @@ from direct.gui.DirectGui import DirectEntry, DirectSlider
 from direct.gui.DirectLabel import DirectLabel
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
-from directspinbox.DirectSpinBox import DirectSpinBox, WHEELDOWN, WHEELUP
+from directspinbox.DirectSpinBox import WHEELDOWN, WHEELUP, DirectSpinBox
 from panda3d.core import TextNode
 from tabbedframe.TabbedFrame import TabbedFrame
 
+from ... import settings
 from ...parameters import UserParameter
 from ...utils import isclose
-from ... import settings
 from ..skin import UIElement
 from ..widgets.tabbed_frame import TabbedFrameContainer
 from .uiwindow import UIWindow

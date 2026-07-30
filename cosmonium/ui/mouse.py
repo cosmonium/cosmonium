@@ -21,7 +21,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase.MessengerGlobal import messenger
 from direct.task.Task import Task
 from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import LPoint2, LColor
+from panda3d.core import LColor, LPoint2
 
 from .. import settings
 from ..catalogs import objectsDB

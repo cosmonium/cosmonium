@@ -19,9 +19,10 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
-from typing import TYPE_CHECKING
 
 from ..skin import UIElement
 from .base import DGuiDockWidget

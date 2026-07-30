@@ -39,7 +39,7 @@ class TkClipboard(Clipboard):
         has_tk = False
         self.r = None
         try:
-            from tkinter import Tk, TclError
+            from tkinter import TclError, Tk
 
             has_tk = True
             print("Using Tk clipboard")

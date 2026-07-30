@@ -18,7 +18,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from direct.gui.DirectGui import DirectFrame, DGG
+from direct.gui.DirectGui import DGG, DirectFrame
 from directfolderbrowser.DirectFolderBrowser import DirectFolderBrowser
 
 from ..widgets.direct_widget_container import DirectWidgetContainer

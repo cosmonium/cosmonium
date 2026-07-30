@@ -18,9 +18,10 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from collections import defaultdict
-from direct.showbase.DirectObject import DirectObject
 import sys
+from collections import defaultdict
+
+from direct.showbase.DirectObject import DirectObject
 
 
 class Shortcuts(DirectObject):
@@ -57,7 +58,7 @@ class Shortcuts(DirectObject):
             return
         callback_data = self.keystrokes.get(keyname, None)
         if callback_data is not None:
-            (method, extraArgs) = callback_data
+            method, extraArgs = callback_data
             method(*extraArgs)
 
     def accept(self, event, method, extraArgs=[], direct=False):

@@ -19,7 +19,7 @@
 
 from ...bodyclass import bodyClasses
 from ...events import EventsDispatcher
-from ...parameters import ParametersGroup, UserParameter, SettingParameter, ParametricFunctionParameter
+from ...parameters import ParametersGroup, ParametricFunctionParameter, SettingParameter, UserParameter
 from ..managers.window_manager import WindowManager
 from .editor import ParamEditor
 
@@ -180,9 +180,7 @@ class Preferences(ParamEditor):
                 _('Point-like objects'),
                 [
                     SettingParameter(_('scale with DPI'), 'point_scale_dpi_aware', SettingParameter.TYPE_BOOL),
-                    SettingParameter(
-                        _("Custom point scale"), 'custom_point_scale', UserParameter.TYPE_FLOAT, [0.5, 2]
-                    ),
+                    SettingParameter(_("Custom point scale"), 'custom_point_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                 ],
             ),
         ]

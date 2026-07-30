@@ -21,7 +21,8 @@
 
 import builtins
 from itertools import chain
-from panda3d.core import TextNode, LVector2
+
+from panda3d.core import LVector2, TextNode
 
 from ..hud.fadetextline import FadeTextLine
 from ..skin import UIElement

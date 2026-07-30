@@ -19,9 +19,9 @@
 
 from math import pi
 
-from ...astro.astro import calc_orientation, calc_orientation_from_incl_an, orientation_to_equatorial
 from ...astro import units
-from ...parameters import ParametersList, ParametersGroup, UserParameter, AutoUserParameter
+from ...astro.astro import calc_orientation, calc_orientation_from_incl_an, orientation_to_equatorial
+from ...parameters import AutoUserParameter, ParametersGroup, ParametersList, UserParameter
 
 
 class RotationEditorBase:

@@ -19,6 +19,7 @@
 
 
 from abc import abstractmethod
+
 from panda3d.core import LVector2
 
 from ... import settings

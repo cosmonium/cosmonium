@@ -19,10 +19,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from panda3d.core import LVector3, TextNode
-from typing import TYPE_CHECKING
 
 from ..skin import UIElement
 from .base import DGuiDockWidget

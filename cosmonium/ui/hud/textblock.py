@@ -18,8 +18,8 @@
 #
 
 
-from panda3d.core import LVector3
 from direct.gui.OnscreenText import OnscreenText, Plain
+from panda3d.core import LVector3
 
 from ..core.ui_element import DockedUIElement
 from ..skin import UIElement

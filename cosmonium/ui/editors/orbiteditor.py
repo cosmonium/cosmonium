@@ -19,7 +19,7 @@
 
 from math import pi
 
-from ...parameters import ParametersGroup, ParametersList, UserParameter, AutoUserParameter
+from ...parameters import AutoUserParameter, ParametersGroup, ParametersList, UserParameter
 
 
 class OrbitEditorBase:

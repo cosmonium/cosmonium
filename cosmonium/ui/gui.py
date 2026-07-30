@@ -19,27 +19,27 @@
 #
 
 import os
+
 from panda3d.core import LVector2
 
-from ..catalogs import objectsDB
 from .. import settings
+from ..catalogs import objectsDB
 
 # TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
-
-from .loaders.init import init_widget_loaders
-from .loaders.config import UIConfigLoader
-from .loaders.widgets import WidgetLoaderRegistry
-from .shortcuts import Shortcuts
-from .hud.query import Query
 from .clipboard import create_clipboard
-from .templates.providers import GlobalVars
-from .managers.window_manager import WindowManager
+from .hud.query import Query
+from .loaders.config import UIConfigLoader
+from .loaders.init import init_widget_loaders
+from .loaders.widgets import WidgetLoaderRegistry
 from .managers.overlay_manager import OverlayManager
 from .managers.theme_manager import ThemeManager
-from .menus.menubuilder import MenuBuilder
+from .managers.window_manager import WindowManager
 from .menus.menubar import Menubar
+from .menus.menubuilder import MenuBuilder
 from .menus.popup import Popup
+from .shortcuts import Shortcuts
+from .templates.providers import GlobalVars
 from .windows.browser import Browser
 
 
@@ -242,7 +242,7 @@ class Gui(object):
         return state
 
     def show_with_state(self, state):
-        (hud_shown, menubar_shown) = state
+        hud_shown, menubar_shown = state
         if hud_shown:
             self.hud.show()
         if menubar_shown:
