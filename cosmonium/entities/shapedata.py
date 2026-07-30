@@ -102,7 +102,7 @@ class TextureShapeData(TextureShapeDataBase):
 
     async def load(self, shape):
         await self.data_source.load(shape)
-        (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(strict=True)
+        texture_data, texture_size, texture_lod = self.data_source.source.get_texture(strict=True)
         self.configure_data(texture_data)
 
     def clear(self):
