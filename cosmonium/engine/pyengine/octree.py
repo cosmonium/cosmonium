@@ -242,9 +242,7 @@ class OctreeNode:
     def dump_octree(self) -> None:
         """Print detailed octree information including leaf names to stdout."""
         if len(self.leaves) > 0:
-            print(
-                '  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children
-            )
+            print('  ' * self.level, self.level, self.index, self.width, self.threshold, self.center, self.has_children)
             print(
                 '  ' * self.level,
                 '->',

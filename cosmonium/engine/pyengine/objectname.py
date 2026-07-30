@@ -288,6 +288,7 @@ class ObjectName:
         full_name = self.get_full_name()
         if self.type == self.NT_bayer:
             from cosmonium.astro import bayer as _bayer
+
             return _bayer.decode_name(full_name)
         return full_name
 

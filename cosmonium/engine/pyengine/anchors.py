@@ -944,9 +944,7 @@ class OriginAnchor(CartesianAnchor):
             body: The celestial body associated with this anchor.
             names: Name(s) for this anchor. Can be a single name or a list of names.
         """
-        CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names
-        )
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names)
 
 
 class FlatSurfaceAnchor(OriginAnchor):
@@ -1016,9 +1014,7 @@ class ObserverAnchor(CartesianAnchor):
             body: The celestial body associated with this anchor.
             names: Name(s) for this anchor. Can be a single name or a list of names.
         """
-        CartesianAnchor.__init__(
-            self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names
-        )
+        CartesianAnchor.__init__(self, anchor_class, body, AbsoluteReferenceFrame(), LColor(0), names)
 
     def update(self, time: float, update_id: int) -> None:
         # Do nothing
@@ -1549,9 +1545,7 @@ class OctreeAnchor(SystemAnchor):
         abs_magnitude = app_to_abs_mag(6.0, radius * sqrt(3))
         luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
         # TODO: position should be extracted from orbit
-        self.octree = OctreeNode(
-            0, self, LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly), radius * 2, luminosity
-        )
+        self.octree = OctreeNode(0, self, LPoint3d(10 * units.Ly, 10 * units.Ly, 10 * units.Ly), radius * 2, luminosity)
         self.octree.parent = self
         # TODO: Should be done during rebuild
         self._intrinsic_luminosity = luminosity
