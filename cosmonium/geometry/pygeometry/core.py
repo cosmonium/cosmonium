@@ -24,7 +24,6 @@ Panda3D geometry primitives. These functions are used as building blocks by
 higher-level geometry generators throughout the pygeometry package.
 """
 
-
 from panda3d.core import (
     ColorAttrib,
     Geom,

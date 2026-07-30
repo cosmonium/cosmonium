@@ -75,13 +75,13 @@ def Tile(
     """
     inner = tessellation.inner
     nb_vertices = inner + 1
-    (path, node) = empty_node('uv')
+    path, node = empty_node('uv')
     nb_points = nb_vertices * nb_vertices
     nb_primitives = inner * inner
     if use_patch_skirts:
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives * 6, tanbin=True)
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('cube', nb_points, nb_primitives * 6, tanbin=True)
     node.add_geom(geom)
 
     for i in range(0, nb_vertices):
@@ -179,7 +179,7 @@ def Patch(size: float = 1.0) -> NodePath:
         - This is intended for hardware tessellation, not direct rendering.
         - No normals or texture coordinates are included.
     """
-    (path, node) = empty_node('patch')
+    path, node = empty_node('patch')
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 
@@ -262,7 +262,7 @@ def QuadPatch(
     if offset is None:
         offset = 1.0
 
-    (path, node) = empty_node('patch')
+    path, node = empty_node('patch')
     form = GeomVertexFormat.getV3()
     vdata = GeomVertexData("vertices", form, Geom.UHStatic)
 

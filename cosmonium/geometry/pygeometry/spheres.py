@@ -67,10 +67,8 @@ def UVSphere(
         - Binormal vectors point in the latitude direction.
         - Uses latitude-longitude parameterization.
     """
-    (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'uv', rings * sectors, (rings - 1) * sectors, tanbin=True
-    )
+    path, node = empty_node('uv')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('uv', rings * sectors, (rings - 1) * sectors, tanbin=True)
     node.add_geom(geom)
 
     R = 1.0 / (rings - 1)
@@ -298,8 +296,8 @@ def IcoSphere(radius: float = 1, subdivisions: int = 1) -> NodePath:
         - Higher vertex count for equivalent tessellation density.
         - Tangent/binormal generation is included for normal mapping.
     """
-    (path, node) = empty_node('ico')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('ico', 0, 0, tanbin=True)
+    path, node = empty_node('ico')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('ico', 0, 0, tanbin=True)
     node.add_geom(geom)
 
     verts = []

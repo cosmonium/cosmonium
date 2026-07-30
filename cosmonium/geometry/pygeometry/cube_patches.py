@@ -86,10 +86,10 @@ def SquarePatch(
         - Normal vectors point in +Z direction (0, 0, 1).
         - Tangents point in +X direction (1, 0, 0) and binormals in +Y (0, 1, 0).
     """
-    (nb_vertices, inner, outer, ratio) = make_config(inner, outer)
+    nb_vertices, inner, outer, ratio = make_config(inner, outer)
 
-    (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+    path, node = empty_node('uv')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom(
         'cube', nb_vertices * nb_vertices, inner * inner * 6, tanbin=True
     )
     node.add_geom(geom)
@@ -178,7 +178,7 @@ def SquaredDistanceSquarePatch(
         - Skirts prevent gaps between adjacent patches.
         - Jacobian data can be used for shader-based tangent computation.
     """
-    (path, node) = empty_node('uv')
+    path, node = empty_node('uv')
     inner = tessellation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
@@ -187,11 +187,11 @@ def SquaredDistanceSquarePatch(
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
     if use_jacobian:
-        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
+        gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian = empty_geom(
             'cube', nb_points, nb_primitives * 6, tanbin=False, jacobian=4
         )
     else:
-        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+        gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if has_offset:
@@ -510,7 +510,7 @@ def NormalizedSquarePatch(
         - Skirts prevent gaps between adjacent patches.
         - Jacobian data can be used for shader-based tangent computation.
     """
-    (path, node) = empty_node('uv')
+    path, node = empty_node('uv')
     inner = tessellation.inner
     nb_vertices = inner + 1
     nb_points = nb_vertices * nb_vertices
@@ -519,11 +519,11 @@ def NormalizedSquarePatch(
         nb_points += nb_vertices * 4
         nb_primitives += inner * 4
     if use_jacobian:
-        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian) = empty_geom(
+        gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom, jacobian = empty_geom(
             'cube', nb_points, nb_primitives * 6, tanbin=False, jacobian=3
         )
     else:
-        (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
+        gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('cube', nb_points, nb_primitives, tanbin=True)
     node.add_geom(geom)
 
     if has_offset:

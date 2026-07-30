@@ -217,8 +217,8 @@ def UVPatch(
         # Add indices for skirt: each segment becomes 2 triangles with 3 indices each
         nb_vertices += (2 * rings + 2 * sectors) * 6
 
-    (path, node) = empty_node('uv')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('uv', nb_data, nb_vertices, tanbin=True)
+    path, node = empty_node('uv')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('uv', nb_data, nb_vertices, tanbin=True)
 
     dx = x1 - x0
     dy = y1 - y0

@@ -49,8 +49,8 @@ def BoundingBoxGeom(box) -> NodePath:
         - No normals or texture coordinates are generated.
         - Vertex order follows Panda3D's BoundingBox convention.
     """
-    (path, node) = empty_node('bb')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
+    path, node = empty_node('bb')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('bb', 8, 12, normal=False, texture=False, tanbin=False)
     node.add_geom(geom)
     for i in range(8):
         gvw.set_data3(box.get_point(i))
@@ -111,10 +111,8 @@ def CubeGeom() -> NodePath:
         - Uses 12 triangles (2 per face).
         - No normals or texture coordinates are generated.
     """
-    (path, node) = empty_node('cube')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
-        'cube', 8, 12, normal=False, texture=False, tanbin=False
-    )
+    path, node = empty_node('cube')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom('cube', 8, 12, normal=False, texture=False, tanbin=False)
     node.add_geom(geom)
     gvw.add_data3(-1, -1, -1)
     gvw.add_data3(-1, -1, 1)

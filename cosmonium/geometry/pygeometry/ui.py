@@ -23,8 +23,8 @@ from .core import empty_geom, empty_node
 
 
 def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
-    (path, node) = empty_node('frame')
-    (gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom) = empty_geom(
+    path, node = empty_node('frame')
+    gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom(
         'frame', 8 * 4, 8 * 2, normal=False, texture=texture, tanbin=False
     )
     node.add_geom(geom)
