@@ -17,16 +17,21 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LPoint3d, LVector3, LVector3d, LVector4, LMatrix4
-from panda3d.core import NodePath
+from panda3d.core import LMatrix4, LPoint3d, LVector3, LVector3d, LVector4, NodePath
 
+from .. import settings
 from ..geometry import geometry
 from ..textures import TexCoord
-from .. import settings
-
 from .boundingbox import PatchBoundingBox
-from .patchedshapes import CullingFrustum, QuadTreeNode
-from .patchedshapes import PatchBase, PatchedShapeBase, BoundingBoxShape, PatchLayer, PatchFactory
+from .patchedshapes import (
+    BoundingBoxShape,
+    CullingFrustum,
+    PatchBase,
+    PatchedShapeBase,
+    PatchFactory,
+    PatchLayer,
+    QuadTreeNode,
+)
 from .patchneighbours import PatchNeighboursInterface
 
 
@@ -56,9 +61,7 @@ class Tile(PatchBase):
         normal = LVector3d.up()
         points = geometry.PatchBoundingPoints(self.x0, self.y0, self.size, 1.0, min_height, max_height)
         bounding_volume = PatchBoundingBox(points)
-        self.quadtree_node = QuadTreeNode(
-            self, self.lod, self.density, centre, self.size, normal, 0.0, bounding_volume
-        )
+        self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, self.size, normal, 0.0, bounding_volume)
 
     def update_heights(self, _axes, min_height, max_height):
         points = geometry.PatchBoundingPoints(self.x0, self.y0, self.size, 1.0, min_height, max_height)
@@ -68,7 +71,7 @@ class Tile(PatchBase):
         return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)
 
     def coord_to_uv(self, coord):
-        (x, y) = coord
+        x, y = coord
         return (x - self.x0) / self.size, (y - self.y0) / self.size
 
     def get_xy_for(self, u, v):
@@ -178,7 +181,7 @@ class TileFactory(PatchFactory):
             return (0, 0, 0)
 
     def create_patch(self, parent, lod, face, x, y):
-        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        min_height, max_height, mean_height = self.get_patch_limits(parent)
         patch = Tile(parent, lod, x, y, self.tile_density, self.size, min_height, max_height)
         # print(
         #     "Create tile", patch.lod, patch.x, patch.y, patch.size,
@@ -219,7 +222,7 @@ class TiledShape(PatchedShapeBase):
         return (x / self.tile_size, y / self.tile_size)
 
     def find_patch_at(self, coord):
-        (x, y) = coord
+        x, y = coord
         for patch in self.root_patches:
             result = self._find_patch_at(patch, x, y)
             if result is not None:
@@ -293,7 +296,7 @@ class TiledShape(PatchedShapeBase):
 
     def xform_cam_to_model(self, camera_pos):
         model_camera_pos = camera_pos / self.tile_size
-        (x, y) = model_camera_pos[0], model_camera_pos[1]
+        x, y = model_camera_pos[0], model_camera_pos[1]
         return (model_camera_pos, LVector3d(), (x, y))
 
     def get_scale(self):

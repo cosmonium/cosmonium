@@ -19,8 +19,8 @@
 
 
 from math import sqrt
-from panda3d.core import LVector3d
-from panda3d.core import BoundingBox
+
+from panda3d.core import BoundingBox, LVector3d
 
 
 class CullingFrustumBase:

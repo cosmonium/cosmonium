@@ -172,7 +172,7 @@ class PatchNeighbours(PatchNeighboursInterface):
 
     def _collect_neighbours(self, result: set[PatchBase], side: int) -> None:
         if len(self.patch.children) != 0:
-            (bl, br, tr, tl) = self.patch.children
+            bl, br, tr, tl = self.patch.children
             if side == self.NORTH:
                 tl.neighbours._collect_neighbours(result, side)
                 tr.neighbours._collect_neighbours(result, side)
@@ -256,7 +256,7 @@ class PatchNeighbours(PatchNeighboursInterface):
     # TODO: This should be moved to QuadTreeNode
     def _do_collect_children(self, result: set[PatchBase], side: int) -> None:
         if len(self.patch.children) != 0:
-            (bl, br, tr, tl) = self.patch.children
+            bl, br, tr, tl = self.patch.children
             if side == self.NORTH:
                 result.add(tl)
                 result.add(tr)
@@ -285,7 +285,7 @@ class PatchNeighbours(PatchNeighboursInterface):
         return result
 
     def split_neighbours(self, update: list[PatchBase]) -> None:
-        (bl, br, tr, tl) = self.patch.children
+        bl, br, tr, tl = self.patch.children
 
         north_neighbours = self.get_neighbours(self.NORTH)
         east_neighbours = self.get_neighbours(self.EAST)

@@ -19,6 +19,7 @@
 
 
 import math
+
 from panda3d.core import BoundingBox, LPoint3, LPoint3d
 
 

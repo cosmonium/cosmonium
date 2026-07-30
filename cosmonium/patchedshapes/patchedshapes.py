@@ -18,25 +18,43 @@
 #
 
 
-from direct.showbase.ShowBaseGlobal import globalClock
-from math import cos, sin, pi, sqrt, copysign, log
-from panda3d.core import OmniBoundingVolume, GeomNode, LMatrix3, LMatrix3d
-from panda3d.core import LVector3d, LVector4, LPoint2d, LPoint3d
-from panda3d.core import LColor, LQuaterniond, LQuaternion, LMatrix4, LVecBase4i
-from panda3d.core import NodePath
-from panda3d.core import RenderState, ColorAttrib, RenderModeAttrib, CullFaceAttrib, ShaderAttrib
+from math import copysign, cos, log, pi, sin, sqrt
 
-from ..entities.datasource import DataSource
+from direct.showbase.ShowBaseGlobal import globalClock
+from panda3d.core import (
+    ColorAttrib,
+    CullFaceAttrib,
+    GeomNode,
+    LColor,
+    LMatrix3,
+    LMatrix3d,
+    LMatrix4,
+    LPoint2d,
+    LPoint3d,
+    LQuaternion,
+    LQuaterniond,
+    LVecBase4i,
+    LVector3d,
+    LVector4,
+    NodePath,
+    OmniBoundingVolume,
+    RenderModeAttrib,
+    RenderState,
+    ShaderAttrib,
+)
+
+from .. import settings
 from ..entities.data_store import PatchDataStoreManager
+from ..entities.datasource import DataSource
 from ..geometry import geometry
 from ..mathutil.ellipse import EllipseCircumRamanujan2ndApprox
 from ..pstats import pstat
-from ..shaders.data_source.shape import SpherifiedCubeGeometryShaderDataSource
-from ..shaders.data_source.shape import ImprovedSpherifiedCubeGeometryShaderDataSource
+from ..shaders.data_source.shape import (
+    ImprovedSpherifiedCubeGeometryShaderDataSource,
+    SpherifiedCubeGeometryShaderDataSource,
+)
 from ..shapes.base import Shape
 from ..textures import TexCoord
-from .. import settings
-
 from .boundingbox import PatchBoundingBox
 from .cullingfrustum import CullingFrustum, HorizonCullingFrustum
 from .lodresult import LodResult
@@ -150,7 +168,7 @@ class PatchFactory:
 
     def patch_done(self, patch, early):
         if not early:
-            (min_height, max_height, _mean_height) = self.get_patch_limits(patch)
+            min_height, max_height, _mean_height = self.get_patch_limits(patch)
             patch.update_heights(self.owner.axes, min_height, max_height)
 
 
@@ -349,7 +367,7 @@ class SpherePatch(PatchBase):
         self.instance.setTexOffset(texture_stage, x_delta, y_delta)
 
     def coord_to_uv(self, coord):
-        (x, y) = coord
+        x, y = coord
         dx = self.x1 - self.x0
         dy = self.y1 - self.y0
         u = (x - self.x0) / dx
@@ -502,7 +520,7 @@ class SquarePatchBase(PatchBase):
         self.instance.setTexOffset(texture_stage, x_delta, y_delta)
 
     def coord_to_uv(self, coord):
-        (face, x, y) = coord
+        face, x, y = coord
         dx = self.x1 - self.x0
         dy = self.y1 - self.y0
         u = (x - self.x0) / dx
@@ -829,8 +847,8 @@ class PatchedShapeBase(Shape):
         if distance_to_obs < min_radius:
             print("Too low !")
             return [], []
-        (model_camera_pos, model_camera_vector, coord) = self.xform_cam_to_model(camera_pos)
-        (tangent, binormal, normal) = self.parent.get_tangent_plane_under(model_camera_pos * self.parent.height_scale)
+        model_camera_pos, model_camera_vector, coord = self.xform_cam_to_model(camera_pos)
+        tangent, binormal, normal = self.parent.get_tangent_plane_under(model_camera_pos * self.parent.height_scale)
         self.tbn = LMatrix3d(tangent, -normal, binormal)
         # self.tbn = LMatrix3d.ident_mat()
         self.tbn_rot = LQuaterniond()
@@ -1095,7 +1113,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
         model_camera_vector = orientation.conjugate().xform(camera_vector)
         model_camera_pos = self.local_to_model(camera_pos, position, orientation, self.parent.height_scale)
         # TODO: Retrieve parametric coordinates here
-        (x, y, distance) = (0, 0, 0)
+        x, y, distance = (0, 0, 0)
         distance
         return (model_camera_pos, model_camera_vector, (x, y))
 
@@ -1107,7 +1125,7 @@ class EllipsoidPatchedShape(PatchedShapeBase):
 class PatchedSpherePatchFactory(PatchFactory):
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        min_height, max_height, mean_height = self.get_patch_limits(parent)
         patch = SpherePatch(
             parent, lod, density, x, y, self.surface.height_scale, min_height, max_height, mean_height, self.owner.axes
         )
@@ -1145,7 +1163,7 @@ class PatchedSphereShape(EllipsoidPatchedShape):
         return (x, y)
 
     def find_patch_at(self, coord):
-        (x, y) = coord
+        x, y = coord
         for patch in self.root_patches:
             result = self._find_patch_at(patch, x, y)
             if result is not None:
@@ -1198,7 +1216,7 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         return None
 
     def xyz_to_uv(self, x, y, z):
-        (u, v) = self.xyz_to_xy(x, y, z)
+        u, v = self.xyz_to_xy(x, y, z)
         u = u * 0.5 + 0.5
         v = v * 0.5 + 0.5
         return (u, v)
@@ -1214,24 +1232,24 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         if ax >= ay and ax >= az:
             if x >= 0.0:
                 face = SquarePatchBase.RIGHT
-                (u, v) = self.xyz_to_uv(y, z, x)
+                u, v = self.xyz_to_uv(y, z, x)
             else:
                 face = SquarePatchBase.LEFT
-                (u, v) = self.xyz_to_uv(-y, z, -x)
+                u, v = self.xyz_to_uv(-y, z, -x)
         elif ay >= ax and ay >= az:
             if y >= 0.0:
                 face = SquarePatchBase.FRONT
-                (u, v) = self.xyz_to_uv(-x, z, y)
+                u, v = self.xyz_to_uv(-x, z, y)
             else:
                 face = SquarePatchBase.BACK
-                (u, v) = self.xyz_to_uv(x, z, -y)
+                u, v = self.xyz_to_uv(x, z, -y)
         elif az >= ax and az >= ay:
             if z >= 0.0:
                 face = SquarePatchBase.TOP
-                (u, v) = self.xyz_to_uv(x, y, z)
+                u, v = self.xyz_to_uv(x, y, z)
             else:
                 face = SquarePatchBase.BOTTOM
-                (u, v) = self.xyz_to_uv(x, -y, -z)
+                u, v = self.xyz_to_uv(x, -y, -z)
         return (face, u, v)
 
     def parametric_to_shape_coord(self, x, y):
@@ -1240,13 +1258,13 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
         xp = cos(theta) * cos(phi)
         yp = cos(theta) * sin(phi)
         zp = sin(theta)
-        (face, x, y) = self.xyz_to_face_xy(xp, yp, zp)
+        face, x, y = self.xyz_to_face_xy(xp, yp, zp)
         return (face, x, y)
 
     def find_patch_at(self, coord):
         if self.instance is None:
             return None
-        (face, x, y) = coord
+        face, x, y = coord
         if face < len(self.root_patches):
             return self._find_patch_at(self.root_patches[face], x, y)
         else:
@@ -1258,7 +1276,7 @@ class NormalizedSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        min_height, max_height, mean_height = self.get_patch_limits(parent)
         patch = NormalizedSquarePatch(
             face,
             x,
@@ -1293,7 +1311,7 @@ class SquaredDistanceSquarePatchFactory(PatchFactory):
 
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
-        (min_height, max_height, mean_height) = self.get_patch_limits(parent)
+        min_height, max_height, mean_height = self.get_patch_limits(parent)
         patch = SquaredDistanceSquarePatch(
             face,
             x,
