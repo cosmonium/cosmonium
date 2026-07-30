@@ -19,10 +19,11 @@
 
 
 from math import pi
-from panda3d.core import LVector3d, LQuaterniond, look_at
 
-from .base import BaseCameraController, OrbitTargetHelper
+from panda3d.core import LQuaterniond, LVector3d, look_at
+
 from .. import settings
+from .base import BaseCameraController, OrbitTargetHelper
 
 
 class FollowCameraController(BaseCameraController):

@@ -19,7 +19,8 @@
 
 
 from math import pi
-from panda3d.core import LVector3d, LQuaterniond
+
+from panda3d.core import LQuaterniond, LVector3d
 
 from .base import BaseCameraController, RotateAnchorHelper
 

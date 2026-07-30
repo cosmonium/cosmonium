@@ -19,17 +19,17 @@
 
 
 import builtins
+from math import acos, atan, cos, pi, sin, sqrt, tan
+
 from direct.interval.LerpInterval import LerpFunc
 from direct.showbase.DirectObject import DirectObject
-from math import sin, cos, acos, tan, atan, sqrt, pi
-from panda3d.core import NodePath, LPoint4, LPoint3d, LVector3d, LQuaternion, LQuaterniond, LMatrix4
-from panda3d.core import PerspectiveLens
+from panda3d.core import LMatrix4, LPoint3d, LPoint4, LQuaternion, LQuaterniond, LVector3d, NodePath, PerspectiveLens
 
+from .. import settings
 from ..astro.frame import AbsoluteReferenceFrame
 from ..engine.anchors import CameraAnchor
 from ..engine.frustum import InfiniteFrustum
 from ..mathutil.quaternion import relative_rotation
-from .. import settings
 
 
 class CameraBase(object):
@@ -355,6 +355,7 @@ class EventsControllerBase(DirectObject):
 
 class BaseCameraController(EventsControllerBase):
     """Base class for camera controllers providing shared functionality."""
+
     camera_type = None
     FIXED = 'fixed'
     TRACK = 'track'
@@ -450,9 +451,7 @@ class BaseCameraController(EventsControllerBase):
 
     def get_local_orientation(self):
         rotation = (
-            self.get_frame_orientation()
-            * self.reference_orientation
-            * self.reference_anchor.get_absolute_orientation()
+            self.get_frame_orientation() * self.reference_orientation * self.reference_anchor.get_absolute_orientation()
         )
         return rotation
 
