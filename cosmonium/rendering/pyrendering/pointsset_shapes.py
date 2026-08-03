@@ -18,13 +18,23 @@
 #
 
 
-from panda3d.core import GeomVertexArrayFormat, InternalName, GeomVertexFormat, GeomVertexData, GeomVertexWriter
-from panda3d.core import GeomPoints, Geom, GeomNode
-from panda3d.core import NodePath, LPoint3, LColor
+from panda3d.core import (
+    Geom,
+    GeomNode,
+    GeomPoints,
+    GeomVertexArrayFormat,
+    GeomVertexData,
+    GeomVertexFormat,
+    GeomVertexWriter,
+    InternalName,
+    LColor,
+    LPoint3,
+    NodePath,
+)
 
+from ... import settings
 from ...astro.astro import radiance_to_mag
 from ...utils import mag_to_scale
-from ... import settings
 
 
 class PointsSetShape:
