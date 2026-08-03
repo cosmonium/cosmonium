@@ -18,18 +18,17 @@
 #
 
 
-import numpy
-from panda3d.core import Texture, LColor
 import traceback
 
-from .entities.shapedata import TextureShapeDataBase
+import numpy
+from panda3d.core import LColor, Texture
+
 from .entities.patcheddata import PatchData, PatchedData
+from .entities.shapedata import TextureShapeDataBase
 from .filters import BilinearFilter
 from .interpolators import HardwareInterpolator
 from .shaders.data_source.heightmap import HeightmapShaderDataSource
-from .textures import TexCoord, AutoTextureSource, TextureBase, HeightMapTexture
-from .textures import TextureConfiguration
-
+from .textures import AutoTextureSource, HeightMapTexture, TexCoord, TextureBase, TextureConfiguration
 
 # TODO: HeightmapPatch has common code with Heightmap and TextureHeightmapBase, this should be refactored
 # TODO: Texture data should be refactored like appearance to be fully independent from the source
@@ -197,7 +196,7 @@ class TextureHeightmapPatch(HeightmapPatch):
     async def do_load(self, tasks_tree, patch):
         texture_config = self.create_texture_config()
         await self.data_source.load(tasks_tree, patch, texture_config)
-        (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(patch, strict=True)
+        texture_data, texture_size, texture_lod = self.data_source.source.get_texture(patch, strict=True)
         if texture_data is not None:
             self.configure_data(texture_data)
         else:
@@ -335,7 +334,7 @@ class TextureHeightmap(TextureHeightmapBase):
 
     async def load(self, shape):
         await self.data_source.load(shape)
-        (texture_data, texture_size, texture_lod) = self.data_source.source.get_texture(strict=True)
+        texture_data, texture_size, texture_lod = self.data_source.source.get_texture(strict=True)
         self.configure_data(texture_data)
 
 
