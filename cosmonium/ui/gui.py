@@ -32,6 +32,7 @@ from .hud.query import Query
 from .loaders.config import UIConfigLoader
 from .loaders.init import init_widget_loaders
 from .loaders.widgets import WidgetLoaderRegistry
+from .managers.anchor_layout_manager import AnchorLayout
 from .managers.overlay_manager import OverlayManager
 from .managers.theme_manager import ThemeManager
 from .managers.window_manager import WindowManager
@@ -70,16 +71,7 @@ class Gui(object):
         self.height = 0
 
         self.anchor = cosmonium.pixel2d
-        self.cosmonium.p2dCenter = cosmonium.pixel2d.attach_new_node('p2dCenter')
-        self.cosmonium.p2dTopCenter = cosmonium.pixel2d.attach_new_node('p2dTopCenter')
-        self.cosmonium.p2dBottomCenter = cosmonium.pixel2d.attach_new_node('p2dBottomCenter')
-        self.cosmonium.p2dLeftCenter = cosmonium.pixel2d.attach_new_node('p2dLeftCenter')
-        self.cosmonium.p2dRightCenter = cosmonium.pixel2d.attach_new_node('p2dRightCenter')
-
-        self.cosmonium.p2dTopLeft = cosmonium.pixel2d.attach_new_node('p2dTopLeft')
-        self.cosmonium.p2dTopRight = cosmonium.pixel2d.attach_new_node('p2dTopRight')
-        self.cosmonium.p2dBottomLeft = cosmonium.pixel2d.attach_new_node('p2dBottomLeft')
-        self.cosmonium.p2dBottomRight = cosmonium.pixel2d.attach_new_node('p2dBottomRight')
+        self.anchors = AnchorLayout(cosmonium)
 
         self.update_size(self.screen_width, self.screen_height)
         self.skin = None
@@ -183,40 +175,10 @@ class Gui(object):
         self.hud.info.set(text=text, pos=pos, color=color, anchor=anchor, duration=duration, fade=fade)
 
     def update_size(self, width, height):
-        if self.width == width and self.height == height:
+        if not self.anchors.update(width, height, self.screen_width, self.screen_height):
             return
         self.width = width
         self.height = height
-        # TODO: This is an ugly hack, should use the proper anchors or define new ones
-        # Update aspect2d scale and anchors
-        arx = 1.0 * self.screen_width / self.width
-        ary = 1.0 * self.screen_height / self.height
-        self.cosmonium.aspect2d.setScale(arx, 1.0, ary)
-        self.cosmonium.a2dTop = 1.0 / ary
-        self.cosmonium.a2dBottom = -1.0 / ary
-        self.cosmonium.a2dLeft = -1.0 / arx
-        self.cosmonium.a2dRight = 1.0 / arx
-        self.cosmonium.a2dTopCenter.setPos(0, 0, self.cosmonium.a2dTop)
-        self.cosmonium.a2dBottomCenter.setPos(0, 0, self.cosmonium.a2dBottom)
-        self.cosmonium.a2dLeftCenter.setPos(self.cosmonium.a2dLeft, 0, 0)
-        self.cosmonium.a2dRightCenter.setPos(self.cosmonium.a2dRight, 0, 0)
-
-        self.cosmonium.a2dTopLeft.setPos(self.cosmonium.a2dLeft, 0, self.cosmonium.a2dTop)
-        self.cosmonium.a2dTopRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dTop)
-        self.cosmonium.a2dBottomLeft.setPos(self.cosmonium.a2dLeft, 0, self.cosmonium.a2dBottom)
-        self.cosmonium.a2dBottomRight.setPos(self.cosmonium.a2dRight, 0, self.cosmonium.a2dBottom)
-
-        self.cosmonium.pixel2d.setScale(2.0 / width, 1.0, 2.0 / height)
-        self.cosmonium.p2dCenter.setPos(self.width / 2, 0, -self.height / 2)
-        self.cosmonium.p2dTopCenter.setPos(self.width / 2, 0, 0)
-        self.cosmonium.p2dBottomCenter.setPos(self.width / 2, 0, -self.height)
-        self.cosmonium.p2dLeftCenter.setPos(0, 0, -self.height / 2)
-        self.cosmonium.p2dRightCenter.setPos(self.width, 0, -self.height / 2)
-
-        self.cosmonium.p2dTopLeft.setPos(0, 0, 0)
-        self.cosmonium.p2dTopRight.setPos(self.width - 1, 0, 0)
-        self.cosmonium.p2dBottomLeft.setPos(0, 0, -self.height + 1)
-        self.cosmonium.p2dBottomRight.setPos(self.width - 1, 0, -self.height + 1)
 
         if self.hud is not None:
             self.hud.update_size()
