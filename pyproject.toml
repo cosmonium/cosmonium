@@ -10,6 +10,7 @@ extend-exclude = '''
   | data
   | build
   | dist
+  | wip
   | \..*
   | .*_parsetab\.py
 )/
@@ -25,6 +26,7 @@ skip_glob = [
     "data/*",
     "build/*",
     "dist/*",
+    "wip/*",
     ".*",
     "*_parsetab.py"
 ]
@@ -33,7 +35,7 @@ skip_glob = [
 convention = "pep257"
 add_select = ["D417"]
 match = "(?!test_).*\\.py"
-match_dir = "^(?!(third-party|source|tools|data|build|dist|\\..*)$).*"
+match_dir = "^(?!(third-party|source|tools|data|build|dist|wip|\\..*)$).*"
 
 [tool.mypy]
 python_version = "3.10"
@@ -46,6 +48,7 @@ exclude = [
     "data/",
     "build/",
     "dist/",
+    "wip/",
     ".*_parsetab\\.py$"
 ]
 

@@ -28,12 +28,10 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Check Black formatting
-        if: false
         run: |
           black --check .
 
       - name: Check isort import sorting
-        if: false
         run: |
           isort --check-only .
 
