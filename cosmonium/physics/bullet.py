@@ -19,13 +19,21 @@
 
 
 import builtins
-from panda3d.bullet import BulletWorld, BulletDebugNode, BulletRigidBodyNode
-from panda3d.bullet import BulletTriangleMesh, BulletTriangleMeshShape, BulletCapsuleShape
-from panda3d.bullet import ZUp, BulletCharacterControllerNode
-from panda3d.core import LQuaterniond, LVector3d, NodePath, LVector3, BitMask32
 
-from .base import PhysicsBase
+from panda3d.bullet import (
+    BulletCapsuleShape,
+    BulletCharacterControllerNode,
+    BulletDebugNode,
+    BulletRigidBodyNode,
+    BulletTriangleMesh,
+    BulletTriangleMeshShape,
+    BulletWorld,
+    ZUp,
+)
+from panda3d.core import BitMask32, LQuaterniond, LVector3, LVector3d, NodePath
+
 from ..controllers.kinetic import KineticMovementController
+from .base import PhysicsBase
 
 
 class BulletPhysics(PhysicsBase):

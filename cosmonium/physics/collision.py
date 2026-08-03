@@ -19,14 +19,22 @@
 
 
 import builtins
+import math
 from dataclasses import dataclass
+from typing import Any
+
 from direct.showbase.ShowBaseGlobal import globalClock
 from direct.task.TaskManagerGlobal import taskMgr
-import math
-from panda3d.core import CollisionTraverser, CollisionHandlerPusher, CollisionHandlerQueue
-from panda3d.core import CollisionNode, CollisionCapsule, CollisionRay
-from panda3d.core import BitMask32, LPoint3
-from typing import Any
+from panda3d.core import (
+    BitMask32,
+    CollisionCapsule,
+    CollisionHandlerPusher,
+    CollisionHandlerQueue,
+    CollisionNode,
+    CollisionRay,
+    CollisionTraverser,
+    LPoint3,
+)
 
 from ..controllers.position import CartesianMovementController
 from .base import PhysicsBase
