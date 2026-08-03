@@ -19,18 +19,25 @@
 
 from direct.task.Task import gather
 from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import Material, TextureStage, Texture, GeomNode, InternalName
-from panda3d.core import TransparencyAttrib
-
-from .entities.datasource import DataSource
-from .parameters import ParametersGroup, AutoUserParameter
-from .shaders.data_source.panda import PandaShaderDataSource
-from .textures import TextureBase, WrapperTexture, SurfaceTexture, TransparentTexture, EmissionTexture
-from .textures import NormalMapTexture, SpecularMapTexture, BumpMapTexture, OcclusionMapTexture
-from .textures import AutoTextureSource
-from .utils import TransparencyBlend
+from panda3d.core import GeomNode, InternalName, Material, Texture, TextureStage, TransparencyAttrib
 
 from . import settings
+from .entities.datasource import DataSource
+from .parameters import AutoUserParameter, ParametersGroup
+from .shaders.data_source.panda import PandaShaderDataSource
+from .textures import (
+    AutoTextureSource,
+    BumpMapTexture,
+    EmissionTexture,
+    NormalMapTexture,
+    OcclusionMapTexture,
+    SpecularMapTexture,
+    SurfaceTexture,
+    TextureBase,
+    TransparentTexture,
+    WrapperTexture,
+)
+from .utils import TransparencyBlend
 
 
 class TexturesBlock(object):
@@ -279,9 +286,7 @@ class Appearance(AppearanceBase):
 
     def set_emission_texture(self, emission_texture, tint=None, context=None):
         if emission_texture is not None and not isinstance(emission_texture, TextureBase):
-            emission_texture = EmissionTexture(
-                AutoTextureSource(emission_texture, context), tint, srgb=self.srgb
-            )
+            emission_texture = EmissionTexture(AutoTextureSource(emission_texture, context), tint, srgb=self.srgb)
         self.emission_texture = emission_texture
 
     def set_normal_map(self, normal_map, context=None):
@@ -344,9 +349,7 @@ class Appearance(AppearanceBase):
         if self.bump_map:
             tasks.append(taskMgr.add(self.bump_map.load(tasks_tree, shape), sort=taskMgr.getCurrentTask().sort + 1))
         if self.specular_map:
-            tasks.append(
-                taskMgr.add(self.specular_map.load(tasks_tree, shape), sort=taskMgr.getCurrentTask().sort + 1)
-            )
+            tasks.append(taskMgr.add(self.specular_map.load(tasks_tree, shape), sort=taskMgr.getCurrentTask().sort + 1))
         if self.emission_texture:
             tasks.append(
                 taskMgr.add(self.emission_texture.load(tasks_tree, shape), sort=taskMgr.getCurrentTask().sort + 1)
