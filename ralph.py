@@ -42,20 +42,23 @@ sys.path.insert(0, 'third-party/gltf')
 
 import argparse  # noqa: E402
 import builtins  # noqa: E402
+from math import pi, pow  # noqa: E402
+
 from direct.showbase.PythonUtil import clamp  # noqa: E402
 from direct.showbase.ShowBaseGlobal import globalClock  # noqa: E402
 from direct.task.TaskManagerGlobal import taskMgr  # noqa: E402
-from math import pow, pi  # noqa: E402
-from panda3d.core import LPoint3d, LQuaterniond, LQuaternion, BitMask32, NodePath, ExecutionEnvironment  # noqa: E402
 from panda3d.bullet import BulletHeightfieldShape, BulletRigidBodyNode, ZUp  # noqa: E402
+from panda3d.core import BitMask32, ExecutionEnvironment, LPoint3d, LQuaternion, LQuaterniond, NodePath  # noqa: E402
 
 from cosmonium.astro import units  # noqa: E402
+
 # TODO: Change of base unit should be done properly
 units.m = 1.0
 units.Km = 1000.0
 
+from cosmonium import mesh, settings  # noqa: E402
 from cosmonium.camera.base import CameraHolder, EventsControllerBase  # noqa: E402
-from cosmonium.controllers.position import FlatSurfaceMovementController, CartesianMovementController  # noqa: E402
+from cosmonium.controllers.position import CartesianMovementController, FlatSurfaceMovementController  # noqa: E402
 from cosmonium.cosmonium import CosmoniumBase  # noqa: E402
 from cosmonium.engine.c_settings import c_settings  # noqa: E402
 from cosmonium.foundation import BaseObject  # noqa: E402
@@ -68,7 +71,7 @@ from cosmonium.parsers.flatuniverseparser import FlatUniverseYamlParser  # noqa:
 from cosmonium.parsers.yamlparser import YamlModuleParser  # noqa: E402
 from cosmonium.patchedshapes.patchedshapes import PatchLayer  # noqa: E402
 from cosmonium.patchedshapes.tiles import TerrainLayerFactoryInterface  # noqa: E402
-from cosmonium.physics.bullet import BulletPhysics, BulletMovementController  # noqa: E402
+from cosmonium.physics.bullet import BulletMovementController, BulletPhysics  # noqa: E402
 from cosmonium.physics.collision import CollisionPhysics  # noqa: E402
 from cosmonium.procedural.water import WaterNode  # noqa: E402
 from cosmonium.scene.flatuniverse import FlatUniverse  # noqa: E402
@@ -77,7 +80,6 @@ from cosmonium.scene.sceneworld import CartesianWorld, SceneWorld  # noqa: E402
 from cosmonium.shadows.pssm import PSSMShadowMapShadowCaster  # noqa: E402
 from cosmonium.shadows.shadowmap import CustomShadowMapShadowCaster  # noqa: E402
 from cosmonium.ui.splash import NoSplash  # noqa: E402
-from cosmonium import settings, mesh  # noqa: E402
 
 
 class WaterLayer(PatchLayer):
