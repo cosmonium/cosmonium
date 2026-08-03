@@ -114,17 +114,17 @@ class SimpleTexture(TextureBase):
             if texture_config is None:
                 # TODO: Should be done by the caller
                 texture_config = self.create_texture_config(patch)
-            (texture, texture_size, texture_lod) = await self.source.load(
+            texture, texture_size, texture_lod = await self.source.load(
                 tasks_tree, patch, texture_config=texture_config
             )
 
     def apply(self, shape, instance, input_name=None):
         """Apply the loaded texture to a scene instance, falling back to a default if needed."""
-        (texture, texture_size, texture_lod) = self.source.get_texture(shape)
+        texture, texture_size, texture_lod = self.source.get_texture(shape)
         if texture is None:
             if settings.debug_tex_loading:
                 logger.debug(f"Use default texture for {shape.str_id()}")
-            (texture, texture_size, texture_lod) = self.get_default_texture()
+            texture, texture_size, texture_lod = self.get_default_texture()
         # TODO: not really apply but we need a place to detected the alpha channel
         self.has_alpha_channel = texture.get_format() in (
             Texture.F_rgba,
@@ -178,9 +178,9 @@ class DataTexture(TextureBase):
 
     def apply(self, shape, instance, input_name=None):
         """Bind the texture as a shader input on the given instance."""
-        (texture, texture_size, texture_lod) = self.source.get_texture(shape)
+        texture, texture_size, texture_lod = self.source.get_texture(shape)
         if texture is None:
-            (texture, texture_size, texture_lod) = self.get_default_texture()
+            texture, texture_size, texture_lod = self.get_default_texture()
         if texture is not None:
             if input_name is None:
                 input_name = self.input_name
