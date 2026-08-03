@@ -618,12 +618,14 @@ class TestSurfaceAndBodyDistanceFields:
 
     def test_rings_inner_outer_bare_float(self):
         """Ring inner/outer radii bare floats use km as default unit."""
-        config = StellarRingsConfig.model_validate({
-            "type": "rings",
-            "name": "Saturn-rings",
-            "inner-radius": 74500,
-            "outer-radius": 140200,
-        })
+        config = StellarRingsConfig.model_validate(
+            {
+                "type": "rings",
+                "name": "Saturn-rings",
+                "inner-radius": 74500,
+                "outer-radius": 140200,
+            }
+        )
         assert isinstance(config.inner_radius, ValueWithUnits)
         assert config.inner_radius.unit == 'km'
         assert config.inner_radius.scaled_value == 74500.0
@@ -631,23 +633,27 @@ class TestSurfaceAndBodyDistanceFields:
 
     def test_rings_inner_outer_explicit_au(self):
         """Ring inner/outer radii accept explicit AU unit."""
-        config = StellarRingsConfig.model_validate({
-            "type": "rings",
-            "name": "Saturn-rings",
-            "inner-radius": [0.000498, "au"],
-            "outer-radius": [0.000937, "au"],
-        })
+        config = StellarRingsConfig.model_validate(
+            {
+                "type": "rings",
+                "name": "Saturn-rings",
+                "inner-radius": [0.000498, "au"],
+                "outer-radius": [0.000937, "au"],
+            }
+        )
         assert config.inner_radius.unit == 'au'
         assert abs(config.inner_radius.scaled_value - 0.000498 * 149597870.7) < 1.0
 
     def test_rings_serializes_to_list(self):
         """Ring radii serialize to [value, unit_str]."""
-        config = StellarRingsConfig.model_validate({
-            "type": "rings",
-            "name": "X",
-            "inner-radius": 74500,
-            "outer-radius": 140200,
-        })
+        config = StellarRingsConfig.model_validate(
+            {
+                "type": "rings",
+                "name": "X",
+                "inner-radius": 74500,
+                "outer-radius": 140200,
+            }
+        )
         result = config.model_dump()
         assert result["inner_radius"] == [74500.0, 'km']
         assert result["outer_radius"] == [140200.0, 'km']

@@ -19,6 +19,7 @@
 
 
 from unittest.mock import Mock
+
 from panda3d.core import LVector3d
 
 from cosmonium.patchedshapes.lodresult import LodResult

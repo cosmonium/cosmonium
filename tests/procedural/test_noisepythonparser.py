@@ -20,14 +20,14 @@
 
 import pytest
 
-from cosmonium.parsers.noisepythonparser import NoisePythonParser
 from cosmonium.parsers.noiseparser import NoiseYamlParser
+from cosmonium.parsers.noisepythonparser import NoisePythonParser
 from cosmonium.procedural.primitives.arithmetic import NegNoise, NoiseAdd, NoiseDiv, NoiseMul, NoisePow, NoiseSub
 from cosmonium.procedural.primitives.fbm import FbmNoise
 from cosmonium.procedural.primitives.functions import RidgedNoise
 from cosmonium.procedural.primitives.math import AbsNoise
-from cosmonium.procedural.sources.simple import NoiseConst, NoiseCoord
 from cosmonium.procedural.sources.gpunoiselib import GpuNoiseLibPerlin3D
+from cosmonium.procedural.sources.simple import NoiseConst, NoiseCoord
 
 
 class TestBasicFunctionality:

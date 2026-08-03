@@ -26,9 +26,10 @@ including materials, vertices, and all primitive types (triangles, lines, points
 """
 
 import os
-import pytest
 import struct
 import tempfile
+
+import pytest
 
 from cosmonium.cmod.cmod_parser import CMODParser
 

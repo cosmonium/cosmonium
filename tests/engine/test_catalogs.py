@@ -20,7 +20,7 @@
 
 import pytest
 
-from cosmonium.catalogs import CatalogIndex, NameIndex, GlobalObjectsDB
+from cosmonium.catalogs import CatalogIndex, GlobalObjectsDB, NameIndex
 from cosmonium.engine.objectname import CatalogRegistry, ObjectName, ObjectNames
 
 

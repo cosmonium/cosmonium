@@ -21,6 +21,7 @@
 """Tests for appearance configuration schemas."""
 
 from panda3d.core import LColor
+
 from cosmonium.parsers.schemas.appearance import ModelAppearanceConfig, TexturesAppearanceConfig
 
 

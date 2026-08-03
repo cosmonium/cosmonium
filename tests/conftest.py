@@ -29,7 +29,6 @@ import sys
 
 import pytest
 
-
 # Add lib/ directory to import path to be able to load the c++ libraries
 # Temporarily disabled as some tests fails with C++ library
 # sys.path.insert(1, os.path.join(os.path.dirname(__file__),'../lib'))
@@ -68,7 +67,7 @@ def graphics_engine():
 @pytest.fixture(scope='module')
 def gsg(graphics_pipe, graphics_engine):
     "Returns a windowless GSG that can be used for offscreen rendering."
-    from panda3d.core import GraphicsPipe, FrameBufferProperties, WindowProperties
+    from panda3d.core import FrameBufferProperties, GraphicsPipe, WindowProperties
 
     fbprops = FrameBufferProperties()
     fbprops.force_hardware = True

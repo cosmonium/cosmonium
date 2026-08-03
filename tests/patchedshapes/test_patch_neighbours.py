@@ -320,18 +320,38 @@ class TestSpherePatchHemisphereJunction:
 
     def _split_patch(self, parent):
         """Simulate splitting a patch into four children (bl, br, tr, tl)."""
-        bl = create_mock_patch(x0=parent.x0, x1=(parent.x0 + parent.x1) / 2,
-                               y0=parent.y0, y1=(parent.y0 + parent.y1) / 2,
-                               lod=parent.lod + 1, max_level=parent.max_level)
-        br = create_mock_patch(x0=(parent.x0 + parent.x1) / 2, x1=parent.x1,
-                               y0=parent.y0, y1=(parent.y0 + parent.y1) / 2,
-                               lod=parent.lod + 1, max_level=parent.max_level)
-        tr = create_mock_patch(x0=(parent.x0 + parent.x1) / 2, x1=parent.x1,
-                               y0=(parent.y0 + parent.y1) / 2, y1=parent.y1,
-                               lod=parent.lod + 1, max_level=parent.max_level)
-        tl = create_mock_patch(x0=parent.x0, x1=(parent.x0 + parent.x1) / 2,
-                               y0=(parent.y0 + parent.y1) / 2, y1=parent.y1,
-                               lod=parent.lod + 1, max_level=parent.max_level)
+        bl = create_mock_patch(
+            x0=parent.x0,
+            x1=(parent.x0 + parent.x1) / 2,
+            y0=parent.y0,
+            y1=(parent.y0 + parent.y1) / 2,
+            lod=parent.lod + 1,
+            max_level=parent.max_level,
+        )
+        br = create_mock_patch(
+            x0=(parent.x0 + parent.x1) / 2,
+            x1=parent.x1,
+            y0=parent.y0,
+            y1=(parent.y0 + parent.y1) / 2,
+            lod=parent.lod + 1,
+            max_level=parent.max_level,
+        )
+        tr = create_mock_patch(
+            x0=(parent.x0 + parent.x1) / 2,
+            x1=parent.x1,
+            y0=(parent.y0 + parent.y1) / 2,
+            y1=parent.y1,
+            lod=parent.lod + 1,
+            max_level=parent.max_level,
+        )
+        tl = create_mock_patch(
+            x0=parent.x0,
+            x1=(parent.x0 + parent.x1) / 2,
+            y0=(parent.y0 + parent.y1) / 2,
+            y1=parent.y1,
+            lod=parent.lod + 1,
+            max_level=parent.max_level,
+        )
         for child in (bl, br, tr, tl):
             child.neighbours = PatchNeighbours(child)
         parent.children = [bl, br, tr, tl]

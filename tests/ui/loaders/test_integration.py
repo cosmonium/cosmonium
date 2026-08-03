@@ -26,17 +26,16 @@ with configuration files.
 """
 
 import os
-from pydantic import BaseModel, Field
-import pytest
 import tempfile
 
+import pytest
 from panda3d.core import LColor
+from pydantic import BaseModel, Field
 
-from cosmonium.ui.config.models import ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig
+from cosmonium.ui.config.models import ButtonWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
 from cosmonium.ui.config.validator import ConfigValidator
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
-
 from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.loaders.hud import HUDLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
@@ -48,11 +47,13 @@ from cosmonium.ui.loaders.widgets import ButtonWidgetLoader, SpacerWidgetLoader,
 
 class MockGlobalVars:
     """Mock global variables for testing."""
+
     globals: dict = {}
 
 
 class MockGUI:
     """Mock GUI class for testing."""
+
     global_vars = MockGlobalVars()
 
 
@@ -78,12 +79,10 @@ class TestShortcutsLoader:
         """Test loading default shortcuts configuration."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
-            f.write(
-                """
+            f.write("""
 event-1: 1
 event-2: [2, control-2]
-"""
-            )
+""")
         try:
             loader = ShortcutsLoader(None, validator)
             shortcuts = loader.load(filepath)
@@ -103,14 +102,12 @@ class TestSkinLoader:
         """Test loading default skin configuration."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
-            f.write(
-                """
+            f.write("""
 -
   background-color: "#330100"
 - element: menu
   text-color: [0, 0, 0, 1]
-"""
-            )
+""")
         try:
             loader = SkinLoader(None, validator)
             skin = loader.load(filepath)
@@ -138,16 +135,14 @@ class TestDockLoader:
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
-            f.write(
-                """
+            f.write("""
 dock:
  - orientation: horizontal
    anchor    : bottom
    widgets:
       - type: text
         text: "A"
-"""
-            )
+""")
         try:
             loader = DockLoader(gui, validator)
             docks = loader.load(filepath)
@@ -172,8 +167,7 @@ class TestHUDLoader:
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
-            f.write(
-                """
+            f.write("""
 hud:
   - anchor: top-left
     id: title
@@ -186,8 +180,7 @@ hud:
     type: text-list
     entries:
       - text: my-other-text
-"""
-            )
+""")
         try:
             loader = HUDLoader(None, validator)
             hud = loader.load(filepath)

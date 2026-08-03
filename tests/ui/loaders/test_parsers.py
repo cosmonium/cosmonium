@@ -25,17 +25,17 @@ This module contains comprehensive tests for all parser utilities
 used in UI configuration loading.
 """
 
-from panda3d.core import LVector4, TextNode
 import pytest
+from panda3d.core import LVector4, TextNode
 
 from cosmonium.ui.loaders.parsers import (
-    ColorParser,
-    LengthParser,
     AlignmentParser,
     BorderParser,
+    ColorParser,
     GapParser,
-    TextAlignmentParser,
+    LengthParser,
     ParsersCollection,
+    TextAlignmentParser,
 )
 
 

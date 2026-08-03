@@ -26,8 +26,9 @@ properly implements all required methods from Mistune's BaseRenderer and
 correctly renders markdown text.
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from cosmonium.ui.markdown import DirectMarkdownRenderer, create_markdown_renderer
 
