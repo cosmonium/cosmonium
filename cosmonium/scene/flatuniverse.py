@@ -20,7 +20,7 @@
 
 from ..engine.anchors import ObserverAnchor
 from ..lights import LightSources
-from .sceneworld import Worlds, ObserverCenteredWorld
+from .sceneworld import ObserverCenteredWorld, Worlds
 
 
 class FlatUniverse(Worlds):

@@ -19,7 +19,8 @@
 
 
 from math import log
-from panda3d.core import LPoint3, LPoint3d, LVector3d, LQuaternion, NodePath
+
+from panda3d.core import LPoint3, LPoint3d, LQuaternion, LVector3d, NodePath
 
 from ... import settings
 

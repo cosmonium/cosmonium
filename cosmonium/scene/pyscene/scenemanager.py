@@ -20,13 +20,22 @@
 
 from __future__ import annotations
 
-from panda3d.core import Camera, NodePath, DisplayRegion, GraphicsOutput, DirectionalLight, BitMask32
-from panda3d.core import CollisionTraverser, CollisionNode
-from panda3d.core import CollisionHandlerQueue, CollisionRay
-from panda3d.core import DrawMask
+from panda3d.core import (
+    BitMask32,
+    Camera,
+    CollisionHandlerQueue,
+    CollisionNode,
+    CollisionRay,
+    CollisionTraverser,
+    DirectionalLight,
+    DisplayRegion,
+    DrawMask,
+    GraphicsOutput,
+    NodePath,
+)
 
-from ...pstats import pstat
 from ... import settings
+from ...pstats import pstat
 
 
 class SceneManagerBase:

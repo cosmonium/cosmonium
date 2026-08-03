@@ -23,12 +23,10 @@ import re
 from panda3d.core import LColor, LVector3d
 
 from ..astro.frame import AbsoluteReferenceFrame
-from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, OriginAnchor, ObserverAnchor
+from ..engine.anchors import CartesianAnchor, FlatSurfaceAnchor, ObserverAnchor, OriginAnchor
 from ..engine.objectname import ObjectNames
 from ..foundation import CompositeObject
-
-from .sceneanchor import SceneAnchorCollection
-from .sceneanchor import SceneAnchor, AbsoluteSceneAnchor, ObserverSceneAnchor
+from .sceneanchor import AbsoluteSceneAnchor, ObserverSceneAnchor, SceneAnchor, SceneAnchorCollection
 
 
 class Worlds:
