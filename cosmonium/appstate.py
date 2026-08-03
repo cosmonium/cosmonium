@@ -20,8 +20,8 @@
 
 from panda3d.core import LPoint3d, LQuaterniond
 
-from .bodyclass import bodyClasses
 from . import settings
+from .bodyclass import bodyClasses
 
 
 class AppState(object):

@@ -23,7 +23,6 @@ from urllib import parse as urlquote
 
 from .objects.systems import StellarSystem
 
-
 starts_with_digit = re.compile(r"^\d")
 
 

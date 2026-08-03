@@ -19,12 +19,12 @@
 
 
 import builtins
-from math import pi, log, exp, sqrt
-from panda3d.core import PNMImage
-from panda3d.core import Texture, TexGenAttrib, TransparencyAttrib, TextureStage
+from math import exp, log, pi, sqrt
 
-from .utils import linear_to_srgb_channel
+from panda3d.core import PNMImage, TexGenAttrib, Texture, TextureStage, TransparencyAttrib
+
 from . import settings
+from .utils import linear_to_srgb_channel
 
 
 class PointObject(object):

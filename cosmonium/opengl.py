@@ -19,8 +19,9 @@
 
 
 import os
-from panda3d.core import FrameBufferProperties
 import sys
+
+from panda3d.core import FrameBufferProperties
 
 from . import settings
 

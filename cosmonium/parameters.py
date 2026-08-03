@@ -20,13 +20,22 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from math import log, exp
-from panda3d.core import LVecBase2, LVecBase3, LVecBase4
-from panda3d.core import LVecBase2f, LVecBase3f, LVecBase4f
-from panda3d.core import LVecBase2d, LVecBase3d, LVecBase4d
+from math import exp, log
 
-from .utils import isclose
+from panda3d.core import (
+    LVecBase2,
+    LVecBase2d,
+    LVecBase2f,
+    LVecBase3,
+    LVecBase3d,
+    LVecBase3f,
+    LVecBase4,
+    LVecBase4d,
+    LVecBase4f,
+)
+
 from . import settings
+from .utils import isclose
 
 vector_types = (
     Iterable,
@@ -158,12 +167,10 @@ class UserParameterBase(ABC):
             return value
 
     @abstractmethod
-    def do_get_param(self):
-        ...
+    def do_get_param(self): ...
 
     @abstractmethod
-    def do_set_param(self, value):
-        ...
+    def do_set_param(self, value): ...
 
     def scale_value(self, value, scale):
         if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):

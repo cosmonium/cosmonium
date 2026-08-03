@@ -18,8 +18,8 @@
 #
 
 from functools import wraps
-from panda3d.core import PStatCollector
 
+from panda3d.core import PStatCollector
 
 custom_collectors = {}
 

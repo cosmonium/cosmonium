@@ -18,9 +18,9 @@
 #
 
 
-from copy import deepcopy
 import glob
 import os
+from copy import deepcopy
 
 
 class DirContext(object):

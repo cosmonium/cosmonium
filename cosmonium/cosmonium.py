@@ -18,40 +18,64 @@
 #
 
 
-from direct.showbase.PythonUtil import clamp
-from direct.showbase.ShowBaseGlobal import globalClock
-from direct.showbase.ShowBase import ShowBase
-from direct.task.Task import Task
-from direct.task.TaskManagerGlobal import taskMgr
-from itertools import chain
-from math import pi
-from panda3d.core import loadPrcFileData, loadPrcFile, Filename, PandaSystem, PStatClient
-from panda3d.core import Texture, CullBinManager
-from panda3d.core import AntialiasAttrib
-from panda3d.core import LColor, NodePath, PerspectiveLens
-from panda3d.core import Camera
 import os
 import platform
 import sys
+from itertools import chain
+from math import pi
 
+from direct.showbase.PythonUtil import clamp
+from direct.showbase.ShowBase import ShowBase
+from direct.showbase.ShowBaseGlobal import globalClock
+from direct.task.Task import Task
+from direct.task.TaskManagerGlobal import taskMgr
+from panda3d.core import (
+    AntialiasAttrib,
+    Camera,
+    CullBinManager,
+    Filename,
+    LColor,
+    NodePath,
+    PandaSystem,
+    PerspectiveLens,
+    PStatClient,
+    Texture,
+    loadPrcFile,
+    loadPrcFileData,
+)
+
+from . import cache, mesh, pstats, settings, version, workers
 from .appstate import AppState
 from .astro import tables as astro_tables
-from .astro.astro import abs_mag_to_lum
-from .astro.frame import AnchorReferenceFrame, BodyReferenceFrames
-from .astro.frame import AbsoluteReferenceFrame, SynchroneReferenceFrame, OrbitReferenceFrame
-from .astro.units import J2000_Orientation, J200_EclipticOrientation
 from .astro import units
+from .astro.astro import abs_mag_to_lum
+from .astro.frame import (
+    AbsoluteReferenceFrame,
+    AnchorReferenceFrame,
+    BodyReferenceFrames,
+    OrbitReferenceFrame,
+    SynchroneReferenceFrame,
+)
+from .astro.units import J200_EclipticOrientation, J2000_Orientation
 from .autopilot import AutoPilot
 from .bodyclass import bodyClasses
-from .camera.base import CameraHolder, CameraController
+from .camera.base import CameraController, CameraHolder
 from .camera.fixed_controller import FixedCameraController
 from .camera.follow_controller import FollowCameraController
 from .camera.lookaround_controller import LookAroundCameraController
 from .camera.track_controller import TrackCameraController
-from .celestia.cel_url import CelUrl
-from .celestia import cel_parser, cel_engine
+from .celestia import (
+    asterisms_parser,
+    boundaries_parser,
+    cel_engine,
+    cel_parser,
+    dsc_parser,
+    ssc_parser,
+    star_parser,
+    stc_parser,
+)
 from .celestia import textures as celestia_textures
-from .celestia import ssc_parser, stc_parser, star_parser, dsc_parser, asterisms_parser, boundaries_parser
+from .celestia.cel_url import CelUrl
 from .components.annotations.grid import Grid
 from .controllers.base import MovementController
 from .controllers.position import CartesianMovementController, SurfaceMovementController
@@ -59,53 +83,56 @@ from .debug import Debug
 from .dircontext import defaultDirContext, init_default_context
 from .engine.anchors import StellarAnchor
 from .engine.c_settings import c_settings
-from .engine.traversers import UpdateTraverser, FindClosestSystemTraverser, FindLightSourceTraverser
-from .engine.traversers import FindShadowCastersTraverser
+from .engine.traversers import (
+    FindClosestSystemTraverser,
+    FindLightSourceTraverser,
+    FindShadowCastersTraverser,
+    UpdateTraverser,
+)
 from .events import EventsDispatcher
 from .fonts import fontsManager
 from .foundation import BaseObject
 from .lights import GlobalLight, LightSources
-from .nav import FreeNav, WalkNav, ControlNav
+from .nav import ControlNav, FreeNav, WalkNav
 from .objects.stellarobject import StellarObject
 from .objects.systems import StellarSystem
 from .objects.universe import Universe
 from .opengl import OpenGLConfig
-from .parsers.configparser import configParser
-from .parsers.parsers import register_parsers
 from .parsers.catalogsparser import load_catalogs
+from .parsers.configparser import configParser
+from .parsers.objectparser import ObjectYamlParser, universeYamlParser
+from .parsers.parsers import register_parsers
 from .parsers.yamlloader import YamlLoader
 from .parsers.yamlparser import YamlModuleParser
-from .parsers.objectparser import ObjectYamlParser, universeYamlParser
 from .pipeline.scenepipeline import BasicScenePipeline, ScenePipeline
 from .pstats import pstat
 from .rendering.axes import Axes
 from .rendering.halos import Halos
 from .rendering.labels import Labels
-from .rendering.orbits import Orbits
 from .rendering.markers import Markers
+from .rendering.orbits import Orbits
 from .rendering.pointsset import PointsSetShapeObject
-from .rendering.pointsset_adaptors import RegionsPointsSetShapeAdaptor, PassthroughPointsSetShapeAdaptor
-from .rendering.pointsset_shapes import EmissivePointsSetShape, ScaledEmissivePointsSetShape, HaloPointsSetShape
-from .scene.scenemanager import StaticSceneManager, DynamicSceneManager, RegionSceneManager
-from .scene.scenemanager import C_CameraHolder, remove_main_region
+from .rendering.pointsset_adaptors import PassthroughPointsSetShapeAdaptor, RegionsPointsSetShapeAdaptor
+from .rendering.pointsset_shapes import EmissivePointsSetShape, HaloPointsSetShape, ScaledEmissivePointsSetShape
 from .scene.sceneanchor import SceneAnchorCollection
+from .scene.scenemanager import (
+    C_CameraHolder,
+    DynamicSceneManager,
+    RegionSceneManager,
+    StaticSceneManager,
+    remove_main_region,
+)
 from .scene.sceneworld import ObserverCenteredWorld, Worlds
 from .ships import NoShip
 from .spaceengine import textures as spaceengine_textures
-from .sprites import GaussianPointSprite, ExpPointSprite
+from .sprites import ExpPointSprite, GaussianPointSprite
 from .support.lang import LangManager
 from .support.window_manager import WindowManager
 from .timecal import Time
 from .ui.gui import Gui
 from .ui.mouse import Mouse
-from .ui.splash import Splash, NoSplash
+from .ui.splash import NoSplash, Splash
 from .ui.windows.register import register_windows
-from . import workers
-from . import cache
-from . import mesh
-from . import settings
-from . import pstats
-from . import version
 
 
 class CosmoniumBase(ShowBase):
@@ -1015,8 +1042,7 @@ class Cosmonium(CosmoniumBase):
 
     def mark_selected(self, color=None, size=None, symbol=None, label='', occludable=True):
         if self.selected is not None:
-            self.markers.mark(self.selected, color=color, size=size, symbol=symbol,
-                              label=label, occludable=occludable)
+            self.markers.mark(self.selected, color=color, size=size, symbol=symbol, label=label, occludable=occludable)
 
     def unmark_selected(self):
         if self.selected is not None:

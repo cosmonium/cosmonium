@@ -17,8 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LColor
-from panda3d.core import ColorBlendAttrib
+from panda3d.core import ColorBlendAttrib, LColor
 
 from . import settings
 

@@ -1,5 +1,6 @@
 try:
     from . import buildversion
+
     version_str = buildversion.version
 except ImportError:
     version_str = "0.3.0"

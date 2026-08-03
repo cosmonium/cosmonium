@@ -17,7 +17,7 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from panda3d.core import LPoint3d, LVector3d, LQuaterniond
+from panda3d.core import LPoint3d, LQuaterniond, LVector3d
 
 from .camera.base import CameraController
 from .parameters import ParametersGroup

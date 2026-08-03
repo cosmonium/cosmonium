@@ -19,15 +19,15 @@
 #
 
 
-from direct.task.TaskManagerGlobal import taskMgr
 from math import pi
 
+from direct.task.TaskManagerGlobal import taskMgr
+
+from . import settings, utils
 from .astro import units
-from .objects.stellarbody import StellarBody
 from .objects.reflective import ReflectiveBody
+from .objects.stellarbody import StellarBody
 from .surface_models import EllipsoidModelInterface, HeightmapSurfaceModel
-from . import settings
-from . import utils
 
 
 def _get_surface_ellipsoid_model(surface):
@@ -266,7 +266,7 @@ class Debug:
                     relative_position = selected.anchor._orientation.conjugate().xform(
                         observer.get_local_position() - selected.anchor.get_local_position()
                     )
-                    (x, y, h) = selected.surface.cartesian_to_parametric(relative_position)
+                    x, y, h = selected.surface.cartesian_to_parametric(relative_position)
                     coord = selected.surface.parametric_to_shape_coord(x, y)
                     patch = selected.surface.shape.find_patch_at(coord)
                     if patch is not None:

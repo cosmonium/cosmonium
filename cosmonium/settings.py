@@ -19,13 +19,12 @@
 
 
 import os
-from panda3d.core import LColor
-from panda3d.core import LPoint3, LPoint3d
+
 import platformdirs
+from panda3d.core import LColor, LPoint3, LPoint3d
 
 from .astro import units
 from .bodyclass import BodyClass, bodyClasses
-
 
 app_name = 'cosmonium'
 
@@ -338,9 +337,7 @@ bodyClasses.register_class(
 bodyClasses.register_class(
     "comet",
     "comets",
-    BodyClass(
-        label_color=LColor(0.768, 0.607, 0.227, 1), orbit_color=LColor(0.639, 0.487, 0.168, 1), show_label=False
-    ),
+    BodyClass(label_color=LColor(0.768, 0.607, 0.227, 1), orbit_color=LColor(0.639, 0.487, 0.168, 1), show_label=False),
 )
 bodyClasses.register_class(
     "asteroid",

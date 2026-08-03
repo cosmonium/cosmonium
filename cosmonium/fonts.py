@@ -57,7 +57,7 @@ class FontsManager:
         basename = os.path.basename(filename)
         base, extension = os.path.splitext(basename)
         if '-' in base:
-            (family, stylename, *extra) = base.split('-')
+            family, stylename, *extra = base.split('-')
             style = 0
             if stylename.find("Regular") >= 0:
                 stylename = stylename.replace("Regular", "")

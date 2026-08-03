@@ -19,10 +19,16 @@
 
 
 from math import floor
+
 from panda3d.core import LColor, Texture
 
-from .shaders.filters import TextureNearestFilter, TextureBilinearFilter, TextureSmoothstepFilter
-from .shaders.filters import TextureQuinticFilter, TextureBSplineFilter
+from .shaders.filters import (
+    TextureBilinearFilter,
+    TextureBSplineFilter,
+    TextureNearestFilter,
+    TextureQuinticFilter,
+    TextureSmoothstepFilter,
+)
 
 
 class TexFilter(object):

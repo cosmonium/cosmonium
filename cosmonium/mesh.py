@@ -23,11 +23,10 @@ import os
 
 from gltf import GltfSettings
 from gltf._loader import GltfLoader
-from panda3d.core import loadPrcFileData, LoaderFileTypeRegistry, Filename, get_model_path
+from panda3d.core import Filename, LoaderFileTypeRegistry, get_model_path, loadPrcFileData
 
+from . import cache, settings
 from .cmod.cmod_loader import CmodLoader
-from . import cache
-from . import settings
 
 
 def _remove_loader(extension):

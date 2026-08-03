@@ -17,8 +17,9 @@
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import jdcal
 import time
+
+import jdcal
 
 from .astro.units import time_to_values, values_to_time
 
@@ -42,9 +43,7 @@ class Time(object):
 
     def set_current_date(self):
         current = time.gmtime()
-        self.set_time(
-            current.tm_year, current.tm_mon, current.tm_mday, current.tm_hour, current.tm_min, current.tm_sec
-        )
+        self.set_time(current.tm_year, current.tm_mon, current.tm_mday, current.tm_hour, current.tm_min, current.tm_sec)
 
     def time_to_values(self):
         return time_to_values(self.time_full)
