@@ -19,6 +19,7 @@
 
 
 from math import sqrt
+
 from panda3d.core import LColor, LVector3d
 
 from ...entities.datasource import DataSource

@@ -18,22 +18,22 @@
 #
 
 
-from math import pow, pi
-from panda3d.core import Texture, LVector3d, LPoint3, LMatrix4, LQuaternion
+from math import pi, pow
 
+from panda3d.core import LMatrix4, LPoint3, LQuaternion, LVector3d, Texture
+
+from ... import settings
 from ...entities.datasource import DataSource
 from ...parameters import AutoUserParameter, UserParameter
-from ...pipeline.shaders import GeneratorVertexShader
-from ...pipeline.target import ProcessTarget
-from ...pipeline.stage import ProcessStage
 from ...pipeline.factory import PipelineFactory
+from ...pipeline.shaders import GeneratorVertexShader
+from ...pipeline.stage import ProcessStage
+from ...pipeline.target import ProcessTarget
 from ...shaders.after_effects.hdr import HDR
-from ...shaders.base import StructuredShader, ShaderProgram
+from ...shaders.base import ShaderProgram, StructuredShader
 from ...shaders.lighting.scattering import ScatteringInterface as ShaderScatteringInterface
 from ...shaders.scattering import AtmosphericScattering
 from ...textures import TextureConfiguration
-from ... import settings
-
 from ..scattering import ScatteringBase
 
 
@@ -452,33 +452,27 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
                 code.append("in vec3 v3Direction;")
 
     def oneil_incoming_light_for(self, code):
-        code.append(
-            """void oneil_incoming_light_for(
+        code.append("""void oneil_incoming_light_for(
     in vec3 world_vertex,
     in vec3 world_normal,
     in vec3 light_direction,
     vec3 light_color,
     out vec3 incoming_light_color,
     out vec3 in_scatter,
-    out vec3 transmittance) {"""
-        )
+    out vec3 transmittance) {""")
         if self.calc_in_fragment:
             if self.atmosphere:
                 code.append("    vec3 v3Direction;")
             code.append("    vec3 rayleigh_inscattering;")
             code.append("    vec3 mie_inscattering;")
             if self.atmosphere:
-                code.append(
-                    """    oneil_calc_scattering(
+                code.append("""    oneil_calc_scattering(
         world_vertex, world_normal, light_direction, light_color,
-        v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);"""
-                )
+        v3Direction, rayleigh_inscattering, mie_inscattering, transmittance);""")
             else:
-                code.append(
-                    """    oneil_calc_scattering(
+                code.append("""    oneil_calc_scattering(
         world_vertex, world_normal, light_direction, light_color,
-        rayleigh_inscattering, mie_inscattering, transmittance);"""
-                )
+        rayleigh_inscattering, mie_inscattering, transmittance);""")
         if self.atmosphere:
             code.append("    vec3 oneil_light_pos = normalize(atm_descale * light_direction);")
             code.append("    float fCos = dot(oneil_light_pos, v3Direction) / length(v3Direction);")
@@ -605,10 +599,8 @@ class ONeilSimpleScatteringShader(ONeilScatteringShaderBase):
             code.append("  // Calculate the ray's starting position, then calculate its scattering offset")
             code.append("  vec3 v3Start = v3CameraPos;")
         else:
-            code.append(
-                """  // Calculate the closest intersection of the ray with the outer atmosphere
-  // (which is the near point of the ray passing through the atmosphere)"""
-            )
+            code.append("""  // Calculate the closest intersection of the ray with the outer atmosphere
+  // (which is the near point of the ray passing through the atmosphere)""")
             code.append("  float B = 2.0 * dot(v3CameraPos, v3Ray);")
             code.append("  float C = fCameraHeight2 - fOuterRadius2;")
             code.append("  float fDet = max(0.0, B*B - 4.0 * C);")
@@ -811,10 +803,8 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("float fHeight = DELTA + fInnerRadius + ((fOuterRadius - fInnerRadius) * texcoord.x);")
         code.append("vec3 v3Pos = vec3(0, fHeight, 0);                // The position of the camera")
 
-        code.append(
-            """// If the ray from vPos heading in the vRay direction intersects the inner radius
-// (i.e. the planet), then this spot is not visible from the viewpoint"""
-        )
+        code.append("""// If the ray from vPos heading in the vRay direction intersects the inner radius
+// (i.e. the planet), then this spot is not visible from the viewpoint""")
         code.append("float B = 2.0f * dot(v3Pos, v3Ray);")
         code.append("float Bsq = B * B;")
         code.append("float Cpart = dot(v3Pos,v3Pos);")
@@ -842,19 +832,15 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("fDet = Bsq - 4.0 * C;")
         code.append("float fFar = 0.5 * (-B + sqrt(fDet));")
 
-        code.append(
-            """// Next determine the length of each sample, scale the sample ray,
-// and make sure position checks are at the center of a sample ray"""
-        )
+        code.append("""// Next determine the length of each sample, scale the sample ray,
+// and make sure position checks are at the center of a sample ray""")
         code.append("float fSampleLength = fFar / nSamples;")
         code.append("float fScaledLength = fSampleLength * fScale;")
         code.append("vec3 v3SampleRay = v3Ray * fSampleLength;")
         code.append("v3Pos += v3SampleRay * 0.5;")
 
-        code.append(
-            """// Iterate through the samples to sum up the optical depth for the distance the ray travels
-// through the atmosphere"""
-        )
+        code.append("""// Iterate through the samples to sum up the optical depth for the distance the ray travels
+// through the atmosphere""")
         code.append("float fRayleighDepth = 0;")
         code.append("float fMieDepth = 0;")
         code.append("for(int i=0; i<nSamples; i++)")
@@ -871,10 +857,8 @@ class ONeilLookupTableFragmentShader(ShaderProgram):
         code.append("fRayleighDepth *= fScaledLength;")
         code.append("fMieDepth *= fScaledLength;")
 
-        code.append(
-            """// Store the results for Rayleigh to the light source, Rayleigh to the camera,
-// Mie to the light source, and Mie to the camera"""
-        )
+        code.append("""// Store the results for Rayleigh to the light source, Rayleigh to the camera,
+// Mie to the light source, and Mie to the camera""")
         code.append("frag_output = vec4(fRayleighDensityRatio, fRayleighDepth, fMieDensityRatio, fMieDepth);")
 
     def create_body(self, code):
@@ -1009,10 +993,8 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
             code.append("  float fCameraAngle = dot(bCameraAbove ? -v3Ray : v3Ray, v3CameraPos) / fCameraHeight;")
             code.append("  v4CameraDepth = texture(pbOpticalDepth, vec2(fCameraAltitude, 0.5 - fCameraAngle * 0.5));")
         else:
-            code.append(
-                """  // Calculate the closest intersection of the ray with the outer atmosphere
-  // (which is the near point of the ray passing through the atmosphere)"""
-            )
+            code.append("""  // Calculate the closest intersection of the ray with the outer atmosphere
+  // (which is the near point of the ray passing through the atmosphere)""")
             code.append("  float B = 2.0 * dot(v3CameraPos, v3Ray);")
             code.append("  float C = fCameraHeight2 - fOuterRadius2;")
             code.append("  float fDet = max(0.0, B*B - 4.0 * C);")
@@ -1058,10 +1040,8 @@ class ONeilScatteringShader(ONeilScatteringShaderBase):
         code.append("      float fMieDensity = fScaledLength * v4LightDepth[2];")
         code.append("      float fMieDepth = v4LightDepth[3];")
 
-        code.append(
-            """      // If the camera is above the point we're shading, we calculate the optical depth
-      // from the sample point to the camera"""
-        )
+        code.append("""      // If the camera is above the point we're shading, we calculate the optical depth
+      // from the sample point to the camera""")
         code.append("      // Otherwise, we calculate the optical depth from the camera to the sample point")
         code.append("      if(bCameraAbove)")
         code.append("      {")
