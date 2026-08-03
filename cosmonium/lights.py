@@ -20,12 +20,11 @@
 
 from math import pi
 
-from panda3d.core import LVector3, LVector3d, LColor, LQuaterniond
-from panda3d.core import DirectionalLight
+from panda3d.core import DirectionalLight, LColor, LQuaterniond, LVector3, LVector3d
 
+from . import settings
 from .entities.datasource import DataSource
 from .shaders.data_source.global_lights import GlobalLightsShaderDataSource
-from . import settings
 
 
 class LightInterface:

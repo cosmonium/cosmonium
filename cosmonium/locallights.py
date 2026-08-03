@@ -18,8 +18,8 @@
 
 
 from math import pi, radians
-from panda3d.core import DirectionalLight, PointLight, Spotlight
-from panda3d.core import LColor, LQuaternion, LVector3, look_at
+
+from panda3d.core import DirectionalLight, LColor, LQuaternion, LVector3, PointLight, Spotlight, look_at
 
 from .foundation import VisibleObject
 
