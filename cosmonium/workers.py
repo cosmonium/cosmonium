@@ -18,10 +18,11 @@
 #
 
 import builtins
+from queue import Empty, Queue
+
 from direct.stdpy import threading
 from direct.task.Task import Task
-from panda3d.core import AsyncFuture, Texture, Filename
-from queue import Queue, Empty
+from panda3d.core import AsyncFuture, Filename, Texture
 
 from . import settings
 
@@ -94,7 +95,7 @@ class AsyncLoader:
     def process(self, timeout=None):
         try:
             job = self.in_queue.get(timeout=timeout)
-            (func, fargs, future) = job
+            func, fargs, future = job
             if not future.cancelled():
                 result = func(*fargs)
                 self.cb_queue.put([future, result])
@@ -117,7 +118,7 @@ class AsyncLoader:
         try:
             while True:
                 job = self.cb_queue.get_nowait()
-                (future, result) = job
+                future, result = job
                 if not future.cancelled():
                     future.set_result(result)
                 else:
