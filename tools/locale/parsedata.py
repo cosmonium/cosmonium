@@ -7,10 +7,10 @@ sys.path.insert(0, filepath)
 sys.path.insert(1, os.path.join(filepath, 'third-party'))
 
 
-from cosmonium.parsers.yamlparser import YamlModuleParser  # noqa: E402
-from cosmonium.dircontext import DirContext  # noqa: E402
-from cosmonium.ui.splash import NoSplash  # noqa: E402
 from cosmonium import settings  # noqa: E402
+from cosmonium.dircontext import DirContext  # noqa: E402
+from cosmonium.parsers.yamlparser import YamlModuleParser  # noqa: E402
+from cosmonium.ui.splash import NoSplash  # noqa: E402
 
 
 class FakeBase:
@@ -45,8 +45,7 @@ class TranslationYamlParser(YamlModuleParser):
 
     @classmethod
     def output_header(cls):
-        cls.output.write(
-            """# SOME DESCRIPTIVE TITLE.
+        cls.output.write("""# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
@@ -62,8 +61,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 
 
-"""
-        )
+""")
 
     @classmethod
     def output_entry(cls, entry, rule):

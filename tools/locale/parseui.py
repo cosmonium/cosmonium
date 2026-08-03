@@ -1,6 +1,6 @@
-from collections import OrderedDict
 import os
 import sys
+from collections import OrderedDict
 
 filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, filepath)
@@ -16,8 +16,7 @@ class UIPotExtractor:
         self.msgs = OrderedDict()
 
     def output_header(self):
-        self.output.write(
-            """# SOME DESCRIPTIVE TITLE.
+        self.output.write("""# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
@@ -33,8 +32,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 
 
-"""
-        )
+""")
 
     def output_entry(self, entry, rule):
         context = rule.get('context')
