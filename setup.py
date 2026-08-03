@@ -1,30 +1,30 @@
 #
-#This file is part of Cosmonium.
+# This file is part of Cosmonium.
 #
-#Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2025 Laurent Deru.
 #
-#Cosmonium is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#Cosmonium is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#You should have received a copy of the GNU General Public License
-#along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
 
 
 import os
-import platformdirs
-from setuptools import setup
 import sys
 
-from cosmonium.version import version_str
+import platformdirs
+from setuptools import setup
 
+from cosmonium.version import version_str
 
 # Add lib/ directory to import path to be able to load the c++ libraries
 sys.path.insert(0, 'lib')
@@ -53,9 +53,9 @@ include_modules = [
     'mistune.plugins.task_lists',
     'mistune.plugins.url',
     'numpy.core._multiarray_tests',
-    ]
+]
 
-for (index, arg) in enumerate(sys.argv):
+for index, arg in enumerate(sys.argv):
     if arg == '-p':
         platform = sys.argv[index + 1]
         if platform.startswith('macos'):
@@ -74,7 +74,7 @@ if '--cosmonium-test' in sys.argv:
     sys.argv.remove('--cosmonium-test')
     log_filename = None
 
-for (index, arg) in enumerate(sys.argv):
+for index, arg in enumerate(sys.argv):
     if arg == '-r':
         requirements_path = sys.argv[index + 1]
         sys.argv.pop(index)
@@ -104,7 +104,7 @@ config = {
                 'ralph-data/**',
                 'textures/**',
                 '*.md',
-                'locale/**'
+                'locale/**',
             ],
             'exclude_patterns': [
                 'data/**/level1/**',
@@ -119,15 +119,13 @@ config = {
                 'data/tools/**',
                 'data/data/**',
             ],
-            'package_data_dirs':
-            {
-             'win32': [
-                 ('pywin32_system32/*', '', {}),
-                 ('win32/*.pyd', '', {}),
-             ],
+            'package_data_dirs': {
+                'win32': [
+                    ('pywin32_system32/*', '', {}),
+                    ('win32/*.pyd', '', {}),
+                ],
             },
-            'include_modules':
-            {
+            'include_modules': {
                 '*': include_modules,
             },
             'gui_apps': {
@@ -137,14 +135,9 @@ config = {
             'macos_main_app': 'cosmonium',
             'log_filename': log_filename,
             'log_append': False,
-            'plugins': [
-                'pandagl',
-                'p3ptloader',
-                'p3assimp',
-                'p3interrogatedb'
-            ],
-            'icons' : {
-                "cosmonium" : [
+            'plugins': ['pandagl', 'p3ptloader', 'p3assimp', 'p3interrogatedb'],
+            'icons': {
+                "cosmonium": [
                     "textures/cosmonium-512.png",
                     "textures/cosmonium-256.png",
                     "textures/cosmonium-128.png",
@@ -164,8 +157,8 @@ config = {
                 'win_amd64': 'nsis',
                 'win32': 'nsis',
             }
-        }
-    }
+        },
+    },
 }
 
 if __name__ == '__main__':
