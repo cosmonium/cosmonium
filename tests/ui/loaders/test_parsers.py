@@ -88,21 +88,19 @@ class TestColorParser:
         parser = ColorParser()
         assert parser.parse(None) is None
 
-    def test_parse_invalid_hex(self, capsys):
+    def test_parse_invalid_hex(self, caplog):
         """Test parsing invalid hex string."""
         parser = ColorParser()
         color = parser.parse("#XYZ")
         assert color is None
-        captured = capsys.readouterr()
-        assert "Invalid color" in captured.out
+        assert "Invalid color" in caplog.text
 
-    def test_parse_invalid_list(self, capsys):
+    def test_parse_invalid_list(self, caplog):
         """Test parsing invalid list."""
         parser = ColorParser()
         color = parser.parse([1.0, 0.5])  # Too few values
         assert color is None
-        captured = capsys.readouterr()
-        assert "Invalid color" in captured.out
+        assert "Invalid color" in caplog.text
 
 
 class MockSkinEntry:
@@ -208,13 +206,12 @@ class TestAlignmentParser:
         result = parser.parse(None, default=('max', 'min'))
         assert result == ('max', 'min')
 
-    def test_parse_invalid(self, capsys):
+    def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
         parser = AlignmentParser()
         result = parser.parse("invalid")
         assert result == ('min', 'min')  # Should return default
-        captured = capsys.readouterr()
-        assert "Invalid alignments" in captured.out
+        assert "Invalid alignments" in caplog.text
 
 
 class TestBorderParser:
@@ -245,13 +242,12 @@ class TestBorderParser:
         parser = BorderParser()
         assert parser.parse(None) is None
 
-    def test_parse_invalid(self, capsys):
+    def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
         parser = BorderParser()
         border = parser.parse([1, 2])  # Too few values
         assert border is None
-        captured = capsys.readouterr()
-        assert "Invalid borders" in captured.out
+        assert "Invalid borders" in caplog.text
 
 
 class TestGapParser:
@@ -275,13 +271,12 @@ class TestGapParser:
         gap = parser.parse(None, default=(3, 7))
         assert gap == (3, 7)
 
-    def test_parse_invalid(self, capsys):
+    def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
         parser = GapParser()
         gap = parser.parse("invalid")
         assert gap == (0, 0)  # Should return default
-        captured = capsys.readouterr()
-        assert "Invalid gaps" in captured.out
+        assert "Invalid gaps" in caplog.text
 
 
 class TestTextAlignmentParser:
@@ -311,13 +306,12 @@ class TestTextAlignmentParser:
         result = parser.parse(None, default=TextNode.A_boxed_center)
         assert result == TextNode.A_boxed_center
 
-    def test_parse_invalid(self, capsys):
+    def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
         parser = TextAlignmentParser()
         result = parser.parse("invalid")
         assert result == TextNode.A_boxed_left  # Should return default
-        captured = capsys.readouterr()
-        assert "Invalid text align" in captured.out
+        assert "Invalid text align" in caplog.text
 
 
 class TestParsersCollection:

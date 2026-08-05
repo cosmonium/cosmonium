@@ -77,12 +77,36 @@ class SkinLoader(BaseComponentLoader):
 
         return selector
 
-    def load_skin_entry(self, entry_config: SkinEntryConfig) -> UISkinEntry:
+    @staticmethod
+    def describe_selector(selector_config: SkinSelectorConfig) -> str:
+        """
+        Build a short human-readable description of a selector, for error reporting.
+
+        Args:
+            selector_config: SkinSelectorConfig Pydantic model
+
+        Returns:
+            A CSS-like textual rendering of the selector, e.g. "button.primary#ok:hover"
+        """
+        parts = [selector_config.element or '*']
+        if selector_config.class_:
+            parts.append(f'.{selector_config.class_}')
+        if selector_config.id:
+            parts.append(f'#{selector_config.id}')
+        if selector_config.state:
+            parts.append(f':{selector_config.state}')
+        description = ''.join(parts)
+        if selector_config.parent is not None:
+            description = f'{SkinLoader.describe_selector(selector_config.parent)} {description}'
+        return description
+
+    def load_skin_entry(self, entry_config: SkinEntryConfig, context: str = None) -> UISkinEntry:
         """
         Load a skin entry from configuration data.
 
         Args:
             entry_config: SkinEntryConfig Pydantic model
+            context: Optional context (e.g. file and entry index) for error reporting
 
         Returns:
             UISkinEntry instance
@@ -91,41 +115,45 @@ class SkinLoader(BaseComponentLoader):
         selector = self.load_skin_selector(entry_config)
         entry = UISkinEntry(selector, {})
 
+        entry_context = f'{context}, selector "{self.describe_selector(entry_config)}"' if context else None
+
         # Parse colors using Pydantic model fields
-        entry.background_color = self.parsers.color.parse(entry_config.background_color)
-        entry.text_color = self.parsers.color.parse(entry_config.text_color)
-        entry.border_color = self.parsers.color.parse(entry_config.border_color)
-        entry.border_radius = self.parsers.length.parse(entry_config.border_radius, entry)
-        entry.border_width = self.parsers.length.parse(entry_config.border_width, entry)
+        entry.background_color = self.parsers.color.parse(entry_config.background_color, entry_context)
+        entry.text_color = self.parsers.color.parse(entry_config.text_color, entry_context)
+        entry.border_color = self.parsers.color.parse(entry_config.border_color, entry_context)
+        entry.border_radius = self.parsers.length.parse(entry_config.border_radius, entry, entry_context)
+        entry.border_width = self.parsers.length.parse(entry_config.border_width, entry, entry_context)
 
         # Parse font properties
         entry.font_family = entry_config.font_family
-        entry.font_size = self.parsers.length.parse(entry_config.font_size, entry)
+        entry.font_size = self.parsers.length.parse(entry_config.font_size, entry, entry_context)
         entry.font_style = entry_config.font_style
         entry.font_weight = entry_config.font_weight
 
         # Parse layout properties
-        entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry)
-        entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry)
-        entry.width = self.parsers.length.parse(entry_config.width, entry)
-        entry.height = self.parsers.length.parse(entry_config.height, entry)
+        entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry, entry_context)
+        entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry, entry_context)
+        entry.width = self.parsers.length.parse(entry_config.width, entry, entry_context)
+        entry.height = self.parsers.length.parse(entry_config.height, entry, entry_context)
 
         return entry
 
-    def load_skin_entries(self, data: List[Any]) -> UISkin:
+    def load_skin_entries(self, data: List[Any], filepath: str = None) -> UISkin:
         """
         Load skin entries from configuration data.
 
         Args:
             data: List of skin entry configurations
+            filepath: Optional path of the skin file being loaded, for error reporting
 
         Returns:
             UISkin instance
         """
         skin = UISkin()
-        for entry_data in data:
+        for index, entry_data in enumerate(data):
             validated = self.validator.validate_dict(entry_data, SkinEntryConfig)
-            entry = self.load_skin_entry(validated)
+            context = f'{filepath or "<skin>"}, entry #{index}'
+            entry = self.load_skin_entry(validated, context)
             skin.add_entry(entry)
         return skin
 
@@ -140,5 +168,5 @@ class SkinLoader(BaseComponentLoader):
             UISkin instance
         """
         data = YamlLoader.load_file(filepath, use_splash=False)
-        skin = self.load_skin_entries(data)
+        skin = self.load_skin_entries(data, filepath)
         return skin

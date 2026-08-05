@@ -30,6 +30,8 @@ from typing import Any, Callable, List, Optional, Tuple
 
 from panda3d.core import LColor, LVector4, TextNode
 
+from ..skin import report_error
+
 
 class ColorParser:
     """
@@ -42,12 +44,13 @@ class ColorParser:
     """
 
     @staticmethod
-    def parse(data: Any) -> Optional[LColor]:
+    def parse(data: Any, context: Optional[str] = None) -> Optional[LColor]:
         """
         Parse a color value from configuration data.
 
         Args:
             data: Color specification (string or list)
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             LColor instance or None if parsing fails
@@ -57,7 +60,7 @@ class ColorParser:
                 if len(data) == 7 and data.startswith('#'):
                     color = LColor(*tuple(int(data[i : i + 2], 16) / 255 for i in (1, 3, 5)), 1.0)
                 else:
-                    print(f"Invalid color {data}")
+                    report_error(f"Invalid color {data}", context)
                     color = None
             elif isinstance(data, list):
                 if len(data) == 4:
@@ -65,7 +68,7 @@ class ColorParser:
                 elif len(data) == 3:
                     color = LColor(*data, 1.0)
                 else:
-                    print(f"Invalid color {data}")
+                    report_error(f"Invalid color {data}", context)
                     color = None
         else:
             color = None
@@ -82,13 +85,14 @@ class LengthParser:
     """
 
     @staticmethod
-    def parse(data: Any, entry: Any) -> Optional[Callable]:
+    def parse(data: Any, entry: Any, context: Optional[str] = None) -> Optional[Callable]:
         """
         Parse a length value from configuration data.
 
         Args:
             data: Length specification (string or number)
             entry: UI skin entry for calculating sizes
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             Callable that calculates the actual size, or None if parsing fails
@@ -107,19 +111,21 @@ class LengthParser:
                         value, element, font_size, skin
                     )
                 else:
-                    print(f"Invalid size {data}")
+                    report_error(f"Invalid size {data}", context)
                     size = None
             elif isinstance(data, (int, float)):
                 size = lambda element, font_size, skin: entry.calc_size_px(data, element, font_size, skin)  # noqa: E731
             else:
-                print(f"Invalid size {data}")
+                report_error(f"Invalid size {data}", context)
                 size = None
         else:
             size = None
         return size
 
     @classmethod
-    def parse_edge_lengths(cls, data: Any, entry: Any) -> Optional[List[Optional[Callable]]]:
+    def parse_edge_lengths(
+        cls, data: Any, entry: Any, context: Optional[str] = None
+    ) -> Optional[List[Optional[Callable]]]:
         """
         Parse edge lengths (margin, padding) from configuration data.
 
@@ -132,6 +138,7 @@ class LengthParser:
         Args:
             data: Length specification string or None
             entry: UI skin entry for calculating sizes
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             List of 4 callables [left, right, bottom, top] in DirectGUI order, or None
@@ -140,7 +147,7 @@ class LengthParser:
             return None
         if isinstance(data, str):
             items = data.split(' ')
-        lengths = [cls.parse(item, entry) for item in items]
+        lengths = [cls.parse(item, entry, context) for item in items]
         # DirectGUI order is: l, r, b, t
         if len(lengths) == 1:
             lengths = lengths * 4
@@ -161,13 +168,14 @@ class AlignmentParser:
     """
 
     @staticmethod
-    def parse(value: Any, default: Tuple[str, str] = ('min', 'min')) -> Tuple[str, str]:
+    def parse(value: Any, default: Tuple[str, str] = ('min', 'min'), context: Optional[str] = None) -> Tuple[str, str]:
         """
         Parse alignment specification from configuration data.
 
         Args:
             value: Alignment specification [horizontal, vertical]
             default: Default alignment if value is None
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             Tuple of alignment strings ('min', 'max', 'center')
@@ -185,7 +193,7 @@ class AlignmentParser:
         elif value is None:
             return default
         else:
-            print(f"Invalid alignments {value}")
+            report_error(f"Invalid alignments {value}", context)
             return default
 
 
@@ -197,12 +205,13 @@ class BorderParser:
     """
 
     @staticmethod
-    def parse(value: Any) -> Optional[LVector4]:
+    def parse(value: Any, context: Optional[str] = None) -> Optional[LVector4]:
         """
         Parse border specification from configuration data.
 
         Args:
             value: Border specification (list of 4 values or single value)
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             LVector4 instance or None
@@ -214,7 +223,7 @@ class BorderParser:
         elif value is None:
             return None
         else:
-            print(f"Invalid borders {value}")
+            report_error(f"Invalid borders {value}", context)
             return None
 
 
@@ -226,13 +235,14 @@ class GapParser:
     """
 
     @staticmethod
-    def parse(value: Any, default: Tuple[int, int] = (0, 0)) -> Tuple[int, int]:
+    def parse(value: Any, default: Tuple[int, int] = (0, 0), context: Optional[str] = None) -> Tuple[int, int]:
         """
         Parse gap specification from configuration data.
 
         Args:
             value: Gap specification (list of 2 values or single value)
             default: Default gap if value is None
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             Tuple of (horizontal_gap, vertical_gap)
@@ -244,7 +254,7 @@ class GapParser:
         elif value is None:
             return default
         else:
-            print(f"Invalid gaps {value}")
+            report_error(f"Invalid gaps {value}", context)
             return default
 
 
@@ -256,13 +266,14 @@ class TextAlignmentParser:
     """
 
     @staticmethod
-    def parse(value: Any, default: int = TextNode.A_boxed_left) -> int:
+    def parse(value: Any, default: int = TextNode.A_boxed_left, context: Optional[str] = None) -> int:
         """
         Parse text alignment specification from configuration data.
 
         Args:
             value: Alignment name ("left", "center", "right")
             default: Default alignment if value is None
+            context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             TextNode alignment constant
@@ -276,7 +287,7 @@ class TextAlignmentParser:
         elif value is None:
             return default
         else:
-            print(f"Invalid text align {value}")
+            report_error(f"Invalid text align {value}", context)
             return default
 
 

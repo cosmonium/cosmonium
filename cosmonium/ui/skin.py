@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
@@ -28,6 +29,23 @@ from panda3d.core import LColor
 
 from .. import settings
 from ..fonts import Font, fontsManager
+
+logger = logging.getLogger("ui")
+
+
+def report_error(message: str, context: Optional[str] = None) -> None:
+    """
+    Report a skin-related parsing or resolution error.
+
+    Args:
+        message: Description of the error
+        context: Optional extra context (e.g. file, entry index, selector) to help
+            locate the offending skin data
+    """
+    if context:
+        logger.warning(f"{message} ({context})")
+    else:
+        logger.warning(message)
 
 
 @dataclass
@@ -273,7 +291,10 @@ class UISkinEntry:
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
             }
         else:
-            print("Unknown widget", dgui_type)
+            report_error(
+                f"Unknown widget type '{dgui_type}'",
+                context=f"element type={element.type_!r} class={element.class_!r} id={element.id_!r}",
+            )
             parameters = {}
         if prefix is not None:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
