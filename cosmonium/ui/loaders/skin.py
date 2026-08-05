@@ -90,7 +90,8 @@ class SkinLoader(BaseComponentLoader):
         """
         parts = [selector_config.element or '*']
         if selector_config.class_:
-            parts.append(f'.{selector_config.class_}')
+            classes = selector_config.class_ if isinstance(selector_config.class_, list) else [selector_config.class_]
+            parts.append(''.join(f'.{class_name}' for class_name in classes))
         if selector_config.id:
             parts.append(f'#{selector_config.id}')
         if selector_config.state:

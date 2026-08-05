@@ -261,7 +261,9 @@ class SkinSelectorConfig(BaseModel):
 
     element: Optional[str] = Field(None, description="Element type (e.g., 'button', 'label')")
     state: Optional[str] = Field(None, description="Element state (e.g., 'hover', 'active')")
-    class_: Optional[str] = Field(None, alias='class', description="CSS-like class name")
+    class_: Optional[Union[str, List[str]]] = Field(
+        None, alias='class', description="CSS-like class name, or list of class names all required to match"
+    )
     id: Optional[str] = Field(None, description="Element ID")
     parent: Optional['SkinSelectorConfig'] = Field(None, description="Parent selector for nesting")
 
@@ -276,7 +278,9 @@ class SkinEntryConfig(BaseModel):
 
     element: Optional[str] = Field(None, description="Element type")
     state: Optional[str] = Field(None, description="Element state")
-    class_: Optional[str] = Field(None, alias='class', description="CSS class")
+    class_: Optional[Union[str, List[str]]] = Field(
+        None, alias='class', description="CSS class, or list of class names all required to match"
+    )
     id: Optional[str] = Field(None, description="Element ID")
     parent: Optional[SkinSelectorConfig] = Field(None, description="Parent selector")
 

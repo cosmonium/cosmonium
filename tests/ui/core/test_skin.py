@@ -314,6 +314,45 @@ class TestInheritance:
         assert result.text_color == 'default'
 
 
+class TestMultiClassSelectors:
+    """Tests for compound class selectors."""
+
+    def test_element_with_single_class_string_still_matches(self):
+        selector = Selector('button', None, 'primary', None)
+        element = UIElement(type_='button', class_='primary')
+
+        assert selector.applicable(element, None)
+
+    def test_selector_requires_all_listed_classes(self):
+        selector = Selector('button', None, ['primary', 'large'], None)
+
+        assert selector.applicable(UIElement(type_='button', class_=['primary', 'large']), None)
+        assert not selector.applicable(UIElement(type_='button', class_='primary'), None)
+        assert not selector.applicable(UIElement(type_='button', class_=None), None)
+
+    def test_element_may_have_extra_classes_not_required_by_selector(self):
+        selector = Selector('button', None, 'primary', None)
+        element = UIElement(type_='button', class_=['primary', 'large'])
+
+        assert selector.applicable(element, None)
+
+    def test_compound_class_specificity_counts_each_class(self):
+        single = Selector('button', None, 'primary', None)
+        compound = Selector('button', None, ['primary', 'large'], None)
+
+        assert compound.specificity() > single.specificity()
+        assert compound.specificity() == (0, 2, 1)
+
+    def test_compound_selector_wins_cascade_over_single_class_selector(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector('button', None, 'primary', None), {'text_color': 'single'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, ['primary', 'large'], None), {'text_color': 'compound'}))
+
+        result = skin.get(UIElement(type_='button', class_=['primary', 'large']))
+
+        assert result.text_color == 'compound'
+
+
 def _fixed(value):
     return lambda element, font_size, skin: value
 

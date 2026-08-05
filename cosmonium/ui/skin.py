@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import FrozenSet, Iterable, Optional, Union
 
 from panda3d.core import LColor
 
@@ -31,6 +31,24 @@ from .. import settings
 from ..fonts import Font, fontsManager
 
 logger = logging.getLogger("ui")
+
+
+def normalize_classes(value: Union[None, str, Iterable[str]]) -> Optional[FrozenSet[str]]:
+    """
+    Normalize a `class` value (single string, list of strings, or None) into a frozenset.
+
+    Args:
+        value: A class name, an iterable of class names (CSS-like compound class, all of
+            which must be present for a selector to match), or None (no class constraint)
+
+    Returns:
+        A frozenset of class names, or None if no class was specified
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return frozenset((value,))
+    return frozenset(value)
 
 
 def report_error(message: str, context: Optional[str] = None) -> None:
@@ -57,22 +75,25 @@ INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 
 class UIElement:
     type_: str
     parent: Optional[UIElement] = None
-    class_: Optional[str] = None
+    class_: Union[None, str, Iterable[str]] = None
     id_: Optional[str] = None
+
+    def __post_init__(self):
+        self.class_ = normalize_classes(self.class_)
 
 
 class Selector:
     def __init__(self, type_, state, class_, id_):
         self.type_ = type_
         self.state = state
-        self.class_ = class_
+        self.class_ = normalize_classes(class_)
         self.id_ = id_
 
     def applicable(self, element, state):
         return (
             (self.type_ is None or self.type_ == element.type_)
             and (self.state is None or self.state == state)
-            and (self.class_ is None or self.class_ == element.class_)
+            and (self.class_ is None or self.class_.issubset(element.class_ or frozenset()))
             and (self.id_ is None or self.id_ == element.id_)
         )
 
@@ -82,11 +103,13 @@ class Selector:
 
         Mirrors CSS (id, class/attribute/pseudo-class, type) ordering: an id
         match outweighs any number of class/state matches, which in turn
-        outweigh a type match.
+        outweigh a type match. A compound class selector (multiple required
+        classes) contributes one point per class.
         """
+        class_count = len(self.class_) if self.class_ else 0
         return (
             1 if self.id_ is not None else 0,
-            (1 if self.class_ is not None else 0) + (1 if self.state is not None else 0),
+            class_count + (1 if self.state is not None else 0),
             1 if self.type_ is not None else 0,
         )
 
@@ -319,9 +342,10 @@ class UISkinEntry:
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
             }
         else:
+            classes = sorted(element.class_) if element.class_ else None
             report_error(
                 f"Unknown widget type '{dgui_type}'",
-                context=f"element type={element.type_!r} class={element.class_!r} id={element.id_!r}",
+                context=f"element type={element.type_!r} class={classes!r} id={element.id_!r}",
             )
             parameters = {}
         if prefix is not None:
