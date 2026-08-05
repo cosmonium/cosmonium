@@ -71,6 +71,20 @@ class Selector:
             and (self.id_ is None or self.id_ == element.id_)
         )
 
+    def specificity(self) -> tuple[int, int, int]:
+        """
+        CSS-like specificity as an (id, class-or-state, type) tuple, higher wins.
+
+        Mirrors CSS (id, class/attribute/pseudo-class, type) ordering: an id
+        match outweighs any number of class/state matches, which in turn
+        outweigh a type match.
+        """
+        return (
+            1 if self.id_ is not None else 0,
+            (1 if self.class_ is not None else 0) + (1 if self.state is not None else 0),
+            1 if self.type_ is not None else 0,
+        )
+
 
 class ParentSelector:
     def __init__(self, parent, selector):
@@ -86,6 +100,12 @@ class ParentSelector:
                 element = element.parent
         return False
 
+    def specificity(self) -> tuple[int, int, int]:
+        """Specificity accumulates across the whole selector chain, like a CSS compound selector."""
+        own = self.selector.specificity()
+        parent = self.parent.specificity()
+        return tuple(a + b for a, b in zip(own, parent))
+
 
 class UISkinEntry:
     def __init__(self, selector, config):
@@ -94,6 +114,9 @@ class UISkinEntry:
 
     def applicable(self, element, state):
         return self._selector.applicable(element, state)
+
+    def specificity(self) -> tuple[int, int, int]:
+        return self._selector.specificity()
 
     def update(self, other):
         self._config.update(other._config)
@@ -319,7 +342,10 @@ class UISkin:
 
     def collect_entries_for(self, element, state):
         result = UISkinEntry(None, {})
-        for entry in self.entries:
-            if entry.applicable(element, state):
-                result.update(entry)
+        matching = [entry for entry in self.entries if entry.applicable(element, state)]
+        # Stable sort: entries with equal specificity keep their declaration order, so the
+        # last-declared one wins among ties, matching CSS specificity-then-source-order rule.
+        matching.sort(key=lambda entry: entry.specificity())
+        for entry in matching:
+            result.update(entry)
         return result

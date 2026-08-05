@@ -101,6 +101,96 @@ class TestParentSelector:
         assert selector.applicable(element, state=None) is False
 
 
+class TestSelectorSpecificity:
+    """Tests for Selector.specificity()."""
+
+    def test_empty_selector_has_zero_specificity(self):
+        selector = Selector(None, None, None, None)
+        assert selector.specificity() == (0, 0, 0)
+
+    def test_type_only(self):
+        selector = Selector('button', None, None, None)
+        assert selector.specificity() == (0, 0, 1)
+
+    def test_class_only(self):
+        selector = Selector(None, None, 'primary', None)
+        assert selector.specificity() == (0, 1, 0)
+
+    def test_state_only(self):
+        selector = Selector(None, 'hover', None, None)
+        assert selector.specificity() == (0, 1, 0)
+
+    def test_id_only(self):
+        selector = Selector(None, None, None, 'ok')
+        assert selector.specificity() == (1, 0, 0)
+
+    def test_id_outweighs_class_and_type(self):
+        id_selector = Selector(None, None, None, 'ok')
+        class_and_type_selector = Selector('button', 'hover', 'primary', None)
+        assert id_selector.specificity() > class_and_type_selector.specificity()
+
+    def test_class_outweighs_type(self):
+        class_selector = Selector(None, None, 'primary', None)
+        type_selector = Selector('button', None, None, None)
+        assert class_selector.specificity() > type_selector.specificity()
+
+    def test_parent_selector_accumulates_specificity(self):
+        selector = ParentSelector(Selector(None, None, None, 'hud'), Selector('button', None, None, None))
+        # id (from parent) + type (from own selector)
+        assert selector.specificity() == (1, 0, 1)
+
+
+class TestCascade:
+    """Tests for UISkin.collect_entries_for's specificity-based cascade."""
+
+    def test_id_selector_wins_over_later_type_selector(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector('button', None, None, 'ok'), {'text_color': 'from-id'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, None, None), {'text_color': 'from-type'}))
+
+        result = skin.get(UIElement(type_='button', id_='ok'))
+
+        assert result.text_color == 'from-id'
+
+    def test_class_selector_wins_over_type_selector_regardless_of_order(self):
+        skin = UISkin()
+        # Declared after the class rule, but less specific: must not win.
+        skin.add_entry(UISkinEntry(Selector('button', None, 'primary', None), {'text_color': 'from-class'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, None, None), {'text_color': 'from-type'}))
+
+        result = skin.get(UIElement(type_='button', class_='primary'))
+
+        assert result.text_color == 'from-class'
+
+    def test_equal_specificity_later_declaration_wins(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector('button', None, None, None), {'text_color': 'first'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, None, None), {'text_color': 'second'}))
+
+        result = skin.get(UIElement(type_='button'))
+
+        assert result.text_color == 'second'
+
+    def test_non_matching_entries_are_ignored(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector('label', None, None, None), {'text_color': 'from-label'}))
+
+        result = skin.get(UIElement(type_='button'))
+
+        assert result.text_color is None
+
+    def test_only_property_set_by_higher_specificity_entry_is_overridden(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, None, None), {'text_color': 'base', 'font_family': 'Sans'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, None, 'ok'), {'text_color': 'from-id'}))
+
+        result = skin.get(UIElement(type_='button', id_='ok'))
+
+        # Higher-specificity rule overrides text_color, but doesn't touch font_family.
+        assert result.text_color == 'from-id'
+        assert result.font_family == 'Sans'
+
+
 class TestSkinEntry:
     def test_skin_entry_getattr_returns_none_for_unset_property(self):
         entry = UISkinEntry(Selector(None, None, None, None), {})
