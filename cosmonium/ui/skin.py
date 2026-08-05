@@ -48,6 +48,11 @@ def report_error(message: str, context: Optional[str] = None) -> None:
         logger.warning(message)
 
 
+# Properties that inherit from an ancestor element's resolved style when an element (and none of its matching entries)
+# sets them
+INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 'font_weight')
+
+
 @dataclass
 class UIElement:
     type_: str
@@ -348,4 +353,21 @@ class UISkin:
         matching.sort(key=lambda entry: entry.specificity())
         for entry in matching:
             result.update(entry)
+        self._apply_inheritance(result, element)
         return result
+
+    def _apply_inheritance(self, result, element):
+        """
+        Fill in unset inheritable properties from the nearest ancestor that sets them.
+        """
+        if element.parent is None:
+            return
+        missing = [prop for prop in INHERITED_PROPERTIES if result._config.get(prop) is None]
+        if not missing:
+            return
+        # Inheritance uses the parent's own computed style (state-independent)
+        parent_style = self.collect_entries_for(element.parent, None)
+        for prop in missing:
+            value = getattr(parent_style, prop)
+            if value is not None:
+                setattr(result, prop, value)

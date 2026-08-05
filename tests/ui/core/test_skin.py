@@ -250,6 +250,70 @@ class TestSkinCascade:
         assert skin.get(element).text_color == skin.collect_entries_for(element, None).text_color
 
 
+class TestInheritance:
+    """Tests for the inheritance of text-related properties from ancestor elements."""
+
+    def test_text_color_inherits_from_parent(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, 'hud', None), {'text_color': 'hud-color'}))
+        parent = UIElement(type_='frame', class_='hud')
+        child = UIElement(type_='button', parent=parent)
+
+        result = skin.get(child)
+
+        assert result.text_color == 'hud-color'
+
+    def test_inheritance_recurses_through_multiple_ancestors(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, 'hud', None), {'font_family': 'Sans'}))
+        grandparent = UIElement(type_='frame', class_='hud')
+        parent = UIElement(type_='frame', parent=grandparent)
+        child = UIElement(type_='button', parent=parent)
+
+        result = skin.get(child)
+
+        assert result.font_family == 'Sans'
+
+    def test_own_matching_entry_takes_precedence_over_inheritance(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, 'hud', None), {'text_color': 'hud-color'}))
+        skin.add_entry(UISkinEntry(Selector('button', None, None, None), {'text_color': 'button-color'}))
+        parent = UIElement(type_='frame', class_='hud')
+        child = UIElement(type_='button', parent=parent)
+
+        result = skin.get(child)
+
+        assert result.text_color == 'button-color'
+
+    def test_non_inheritable_properties_do_not_propagate(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, 'hud', None), {'background_color': 'hud-bg'}))
+        parent = UIElement(type_='frame', class_='hud')
+        child = UIElement(type_='button', parent=parent)
+
+        result = skin.get(child)
+
+        assert result.background_color is None
+
+    def test_root_element_without_parent_has_no_inherited_value(self):
+        skin = UISkin()
+        result = skin.get(UIElement(type_='frame'))
+
+        assert result.text_color is None
+
+    def test_inheritance_ignores_the_child_state(self):
+        skin = UISkin()
+        skin.add_entry(UISkinEntry(Selector(None, None, 'hud', None), {'text_color': 'default'}))
+        skin.add_entry(UISkinEntry(Selector(None, 'hover', 'hud', None), {'text_color': 'parent-hover'}))
+        parent = UIElement(type_='frame', class_='hud')
+        child = UIElement(type_='button', parent=parent)
+
+        # The child is hovered, but that doesn't make the parent "hovered" too.
+        result = skin.get(child, state='hover')
+
+        assert result.text_color == 'default'
+
+
 def _fixed(value):
     return lambda element, font_size, skin: value
 
