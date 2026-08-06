@@ -126,6 +126,55 @@ class TestSkinLoader:
         finally:
             os.unlink(filepath)
 
+    def test_load_skin_with_variables(self, validator):
+        """Test that `variables:` blocks are substituted into referencing entries."""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+- variables:
+    primary-color: "#3388FF"
+    spacing: 8px
+- element: button
+  background-color: var(primary-color)
+  padding: var(spacing)
+- element: label
+  padding: "var(spacing) 0px"
+""")
+        try:
+            loader = SkinLoader(None, validator)
+            skin = loader.load(filepath)
+
+            # The variables block itself doesn't produce a skin entry.
+            assert len(skin.entries) == 2
+
+            button = skin.entries[0]
+            assert button.background_color == LColor(0x33 / 255, 0x88 / 255, 0xFF / 255, 1.0)
+            assert button.padding[0](None, 12, None) == 8.0  # left, from the "var(spacing)" shorthand
+
+            label = skin.entries[1]
+            assert label.padding[0](None, 12, None) == 0.0  # left, from "var(spacing) 0px"
+            assert label.padding[3](None, 12, None) == 8.0  # top
+        finally:
+            os.unlink(filepath)
+
+    def test_load_skin_with_undefined_variable(self, validator, caplog):
+        """Test that an undefined variable reference is reported and left unresolved."""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+- element: entry
+  background-color: var(does-not-exist)
+""")
+        try:
+            loader = SkinLoader(None, validator)
+            skin = loader.load(filepath)
+
+            assert len(skin.entries) == 1
+            assert skin.entries[0].background_color is None
+            assert "Undefined skin variable 'var(does-not-exist)'" in caplog.text
+        finally:
+            os.unlink(filepath)
+
 
 class TestDockLoader:
     """Tests for DockLoader with actual config files."""

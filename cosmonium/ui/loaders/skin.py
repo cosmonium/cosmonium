@@ -26,17 +26,79 @@ This module handles loading of UI skin configurations from YAML files.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List
+import re
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
+from pydantic import TypeAdapter
 
 from ...parsers.yamlloader import YamlLoader
-from ..config.models import SkinEntryConfig, SkinSelectorConfig
-from ..skin import ParentSelector, Selector, UISkin, UISkinEntry
+from ..config.models import (
+    SkinEntryConfig,
+    SkinFileEntryConfig,
+    SkinSelectorConfig,
+    SkinVariablesConfig,
+)
+from ..skin import ParentSelector, Selector, UISkin, UISkinEntry, report_error
 from .base import BaseComponentLoader
 from .parsers import ParsersCollection
 
 if TYPE_CHECKING:
     from ..config.validator import ConfigValidator
     from ..gui import Gui
+
+
+# Matches CSS custom-property-like references: var(name)
+_VAR_REFERENCE = re.compile(r'var\(([-\w]+)\)')
+
+# Classifies a raw skin file item as a `variables:` block or a regular styling entry.
+_SKIN_FILE_ENTRY_ADAPTER = TypeAdapter(SkinFileEntryConfig)
+
+
+def resolve_variables(value: Any, variables: Dict[str, Any], context: str = None) -> Any:
+    """
+    Recursively substitute `var(name)` references in a skin entry's raw YAML data.
+
+    Skin variables are similar to CSS custom properties: they are resolved
+    once, at load time, against a single flat namespace collected from every
+    `variables:` block in the skin file (regardless of where the block or the
+    reference appears) - there is no per-selector scoping or cascading override.
+
+    Note: Unresolved variable references are left as-is, and a warning is logged.
+
+    Args:
+        value: A raw YAML value possibly containing `var(name)` references
+        variables: Mapping of variable name to its resolved raw value
+        context: Optional context (e.g. file and entry index) for error reporting
+
+    Returns:
+        The value with every `var(name)` reference replaced by the variable's value
+    """
+    if isinstance(value, str):
+        stripped = value.strip()
+        full_match = _VAR_REFERENCE.fullmatch(stripped)
+        if full_match:
+            # The whole value is a single reference: substitute in place so a
+            # variable holding a non-string value (a list, a number) keeps its type.
+            name = full_match.group(1)
+            if name in variables:
+                return variables[name]
+            report_error(f"Undefined skin variable 'var({name})'", context)
+            return value
+
+        # The value is a string containing one or more references: replace them in-place.
+        def substitute(match: re.Match) -> str:
+            name = match.group(1)
+            if name in variables:
+                return str(variables[name])
+            report_error(f"Undefined skin variable 'var({name})'", context)
+            return match.group(0)
+
+        return _VAR_REFERENCE.sub(substitute, value)
+    if isinstance(value, list):
+        return [resolve_variables(item, variables, context) for item in value]
+    if isinstance(value, dict):
+        return {key: resolve_variables(item, variables, context) for key, item in value.items()}
+    return value
 
 
 class SkinLoader(BaseComponentLoader):
@@ -144,16 +206,33 @@ class SkinLoader(BaseComponentLoader):
         Load skin entries from configuration data.
 
         Args:
-            data: List of skin entry configurations
+            data: List of skin entry configurations or `variables:` blocks
             filepath: Optional path of the skin file being loaded, for error reporting
 
         Returns:
             UISkin instance
         """
         skin = UISkin()
-        for index, entry_data in enumerate(data):
-            validated = self.validator.validate_dict(entry_data, SkinEntryConfig)
+
+        # First pass: Validate every raw item and collect the variables (merged from every `variables:` block,
+        # regardless of where it appears in the file) so it's available to every entry below, irrespective of
+        # declaration order.
+        variables: Dict[str, Any] = {}
+        pending: List[Tuple[int, Any, Any]] = []
+        for index, raw_item in enumerate(data):
             context = f'{filepath or "<skin>"}, entry #{index}'
+            parsed = self.validator.validate_union(raw_item, _SKIN_FILE_ENTRY_ADAPTER, context)
+            if isinstance(parsed, SkinVariablesConfig):
+                variables.update(parsed.variables)
+                continue
+            pending.append((index, raw_item, parsed))
+
+        for index, raw_item, parsed in pending:
+            context = f'{filepath or "<skin>"}, entry #{index}'
+            # parsed is ignored as we want to re-validate it with the variables resolved,
+            # so that any `var(name)` references are replaced with their values and validated again.
+            resolved_data = resolve_variables(raw_item, variables, context)
+            validated = self.validator.validate_dict(resolved_data, SkinEntryConfig)
             entry = self.load_skin_entry(validated, context)
             skin.add_entry(entry)
         return skin

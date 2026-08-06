@@ -26,3 +26,10 @@ This module contains integration tests that verify the loaders work with configu
 - **TestDockLoader**: Tests for DockLoader with actual config files.
 - **TestHUDLoader**:  Tests for HUDLoader with actual config files.
 - **TestWidgetLoaders**: Tests for widget loaders.
+
+### 3. Skin Loader Tests (`test_skin.py`)
+
+Unit tests for the skin loader.
+
+- **TestResolveVariables**: Tests for skin variables resolution.
+- **TestSkinVariablesConfig**: Tests for the variables model.

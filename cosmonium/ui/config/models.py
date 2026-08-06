@@ -22,7 +22,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -300,6 +300,20 @@ class SkinEntryConfig(BaseModel):
     padding: Optional[Union[str, List[str]]] = Field(None, description="Padding inside the element")
     width: Optional[str] = Field(None, description="Element width (CSS value)")
     height: Optional[str] = Field(None, description="Element height (CSS value)")
+
+
+class SkinVariablesConfig(BaseModel):
+    """Configuration for a `variables:` block, declaring skin variables shared across entries."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    variables: Dict[str, Any] = Field(description="Named variables, referenced elsewhere via var(name)")
+
+
+# An item in a skin file is a variables declaration or a regular styling entry; tried in
+# that order (left to right) since a root-only entry '{element: root, font-size: ...}`
+# would also satisfy SkinEntryConfig's (all-optional) fields.
+SkinFileEntryConfig = Annotated[Union[SkinVariablesConfig, SkinEntryConfig], Field(union_mode='left_to_right')]
 
 
 class UISkinConfig(BaseModel):

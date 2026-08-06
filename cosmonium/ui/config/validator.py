@@ -22,9 +22,9 @@
 
 import logging
 from pathlib import Path
-from typing import Type, TypeVar, Union
+from typing import Any, Type, TypeVar, Union
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from ...parsers.yamlloader import YamlLoader
 
@@ -110,6 +110,34 @@ class ConfigValidator:
         except ValidationError as e:
             errors = e.errors()
             error_msg = f"Configuration validation failed for {model_class.__name__}"
+
+            if context:
+                error_msg += f" (context: {context})"
+
+            raise ConfigValidationError(error_msg, errors=errors)
+
+    def validate_union(self, data: Any, type_adapter: TypeAdapter, context: str = None) -> Any:
+        """Validate a value against a Pydantic union type, via a pre-built TypeAdapter.
+
+        Used to classify a raw value against several candidate models at once. The caller
+        then dispatches on the returned instance's type.
+
+        Args:
+            data: Value to validate
+            type_adapter: A `TypeAdapter` built from the candidate union types
+            context: Optional context for error messages
+
+        Returns:
+            An instance of whichever union member matched
+
+        Raises:
+            ConfigValidationError: If validation fails against every union member
+        """
+        try:
+            return type_adapter.validate_python(data)
+        except ValidationError as e:
+            errors = e.errors()
+            error_msg = "Configuration validation failed"
 
             if context:
                 error_msg += f" (context: {context})"
