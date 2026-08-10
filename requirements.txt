@@ -9,7 +9,7 @@ jinja2 == 3.1.6
 
 MarkupSafe == 3.0.3
 
-mistune == 3.3.3
+mistune == 3.3.4
 
 numpy==2.2.6
 
