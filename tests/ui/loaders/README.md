@@ -33,3 +33,4 @@ Unit tests for the skin loader.
 
 - **TestResolveVariables**: Tests for skin variables resolution.
 - **TestSkinVariablesConfig**: Tests for the variables model.
+- **TestRootFontSize**: Tests for root font size configuration.

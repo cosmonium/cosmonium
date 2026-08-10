@@ -302,6 +302,19 @@ class SkinEntryConfig(BaseModel):
     height: Optional[str] = Field(None, description="Element height (CSS value)")
 
 
+class SkinRootConfig(BaseModel):
+    """Configuration for the CSS-like `root` pseudo-element.
+
+    A skin entry targeting the `root` pseudo-element configures root-level skin
+    properties instead of styling a widget`.
+    """
+
+    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+
+    element: Literal['root'] = Field(description="Must be 'root' to target the root pseudo-element")
+    font_size: Optional[Union[float, str]] = Field(None, description="Root font size (plain number or px value)")
+
+
 class SkinVariablesConfig(BaseModel):
     """Configuration for a `variables:` block, declaring skin variables shared across entries."""
 
@@ -310,10 +323,12 @@ class SkinVariablesConfig(BaseModel):
     variables: Dict[str, Any] = Field(description="Named variables, referenced elsewhere via var(name)")
 
 
-# An item in a skin file is a variables declaration or a regular styling entry; tried in
-# that order (left to right) since a root-only entry '{element: root, font-size: ...}`
+# An item in a skin file is a variables declaration, a `root` directive, or a regular styling entry;
+# tried in that order (left to right) since a root-only entry `{element: root, font-size: ...}`
 # would also satisfy SkinEntryConfig's (all-optional) fields.
-SkinFileEntryConfig = Annotated[Union[SkinVariablesConfig, SkinEntryConfig], Field(union_mode='left_to_right')]
+SkinFileEntryConfig = Annotated[
+    Union[SkinVariablesConfig, SkinRootConfig, SkinEntryConfig], Field(union_mode='left_to_right')
+]
 
 
 class UISkinConfig(BaseModel):

@@ -175,6 +175,28 @@ class TestSkinLoader:
         finally:
             os.unlink(filepath)
 
+    def test_load_skin_with_root_font_size_and_rem(self, validator):
+        """Test that a `root` pseudo-element entry changes how `rem` lengths resolve."""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+- element: root
+  font-size: 20px
+- element: button
+  font-size: 1.5rem
+""")
+        try:
+            loader = SkinLoader(None, validator)
+            skin = loader.load(filepath)
+
+            assert skin.root_font_size == 20.0
+            # The root entry doesn't produce a skin entry either.
+            assert len(skin.entries) == 1
+            button = skin.entries[0]
+            assert button.font_size(None, True, skin) == 30.0  # 1.5 * 20px
+        finally:
+            os.unlink(filepath)
+
 
 class TestDockLoader:
     """Tests for DockLoader with actual config files."""

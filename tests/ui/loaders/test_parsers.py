@@ -112,6 +112,16 @@ class MockSkinEntry:
     def calc_size_em(self, value, element, font_size, skin):
         return value * font_size
 
+    def calc_size_rem(self, value, element, font_size, skin):
+        return value * skin.root_font_size
+
+
+class MockSkin:
+    """Mock skin for testing rem length resolution."""
+
+    def __init__(self, root_font_size=16):
+        self.root_font_size = root_font_size
+
 
 class TestLengthParser:
     """Tests for LengthParser."""
@@ -131,6 +141,24 @@ class TestLengthParser:
 
         size_fn = parser.parse("1.5em", entry)
         assert size_fn(None, 12, None) == 18
+
+    def test_parse_rem(self):
+        """Test parsing rem values, relative to the skin's root font size."""
+        parser = LengthParser()
+        entry = MockSkinEntry()
+        skin = MockSkin(root_font_size=20)
+
+        size_fn = parser.parse("1.5rem", entry)
+        assert size_fn(None, 12, skin) == 30
+
+    def test_parse_invalid_string_does_not_crash(self, caplog):
+        """A string containing an invalid unit should be reported."""
+        parser = LengthParser()
+        entry = MockSkinEntry()
+
+        size_fn = parser.parse("1x", entry)
+        assert size_fn is None
+        assert "Invalid size 1x" in caplog.text
 
     def test_parse_numeric(self):
         """Test parsing numeric values."""

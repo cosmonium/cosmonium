@@ -165,6 +165,9 @@ class UISkinEntry:
     def calc_size_px(self, size, element, font_size, skin):
         return size * settings.ui_scale
 
+    def calc_size_rem(self, size, element, font_size, skin):
+        return skin.root_font_size * settings.ui_scale * size
+
     def get_font_parameters(self, element, skin, prefix=None, scale3=False, ui_scale=None):
         font_family = self.font_family
         font_style = Font.STYLE_NORMAL
@@ -354,8 +357,12 @@ class UISkinEntry:
 
 
 class UISkin:
+    # Default root font size (in logical px, before ui_scale), matching the common browser default
+    DEFAULT_ROOT_FONT_SIZE = 16.0
+
     def __init__(self):
         self.entries = []
+        self.root_font_size = self.DEFAULT_ROOT_FONT_SIZE
 
     def add_entry(self, entry):
         self.entries.append(entry)

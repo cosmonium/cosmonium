@@ -25,8 +25,9 @@ Unit tests for the skin loader.
 import pytest
 from pydantic import ValidationError
 
-from cosmonium.ui.config.models import SkinVariablesConfig
-from cosmonium.ui.loaders.skin import resolve_variables
+from cosmonium.ui.config.models import SkinRootConfig, SkinVariablesConfig
+from cosmonium.ui.loaders.skin import SkinLoader, resolve_variables
+from cosmonium.ui.skin import UISkin
 
 
 class TestResolveVariables:
@@ -82,3 +83,42 @@ class TestSkinVariablesConfig:
     def test_extra_keys_alongside_variables_are_rejected(self):
         with pytest.raises(ValidationError):
             SkinVariablesConfig(variables={'a': 1}, element='button')
+
+
+class TestRootFontSize:
+    """Tests for SkinLoader.resolve_root_font_size() and UISkin default root font size."""
+
+    def test_default_matches_declared_constant(self):
+        skin = UISkin()
+
+        assert skin.root_font_size == UISkin.DEFAULT_ROOT_FONT_SIZE
+
+    def test_plain_number_is_accepted(self):
+        root_config = SkinRootConfig(element='root', **{'font-size': 20})
+
+        root_font_size = SkinLoader.resolve_root_font_size(root_config)
+
+        assert root_font_size == 20.0
+
+    def test_px_string_is_accepted(self):
+        root_config = SkinRootConfig(element='root', **{'font-size': '18px'})
+
+        root_font_size = SkinLoader.resolve_root_font_size(root_config)
+
+        assert root_font_size == 18.0
+
+    def test_no_font_size_returns_none(self):
+        root_config = SkinRootConfig(element='root')
+
+        root_font_size = SkinLoader.resolve_root_font_size(root_config)
+
+        assert root_font_size is None
+
+    def test_em_or_rem_value_is_rejected(self, caplog):
+        root_config = SkinRootConfig(element='root', **{'font-size': '1.5em'})
+
+        root_font_size = SkinLoader.resolve_root_font_size(root_config, context='test-context')
+
+        assert root_font_size is None
+        assert "Invalid root font-size" in caplog.text
+        assert 'test-context' in caplog.text

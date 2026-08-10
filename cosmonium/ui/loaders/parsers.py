@@ -81,8 +81,12 @@ class LengthParser:
 
     Supports:
     - Pixel values: "16px" or numeric values
-    - Em values: "1.5em" (relative to font size)
+    - Em values: "1.5em" (relative to the element's own font size)
+    - Rem values: "1.5rem" (relative to the skin's root font size)
     """
+
+    # Longest suffix first, so "rem" isn't misdetected as "em".
+    _UNIT_SUFFIXES = ('rem', 'px', 'em')
 
     @staticmethod
     def parse(data: Any, entry: Any, context: Optional[str] = None) -> Optional[Callable]:
@@ -99,15 +103,23 @@ class LengthParser:
         """
         if data is not None:
             if isinstance(data, str):
-                if len(data) >= 3:
-                    value = float(data[0:-2])
-                    unit = data[-2:]
+                unit = next((suffix for suffix in LengthParser._UNIT_SUFFIXES if data.endswith(suffix)), None)
+                if unit is not None:
+                    try:
+                        value = float(data[: -len(unit)])
+                    except ValueError:
+                        report_error(f"Invalid size {data}", context)
+                        return None
                 if unit == 'px':
                     size = lambda element, font_size, skin: entry.calc_size_px(  # noqa: E731
                         value, element, font_size, skin
                     )
                 elif unit == 'em':
                     size = lambda element, font_size, skin: entry.calc_size_em(  # noqa: E731
+                        value, element, font_size, skin
+                    )
+                elif unit == 'rem':
+                    size = lambda element, font_size, skin: entry.calc_size_rem(  # noqa: E731
                         value, element, font_size, skin
                     )
                 else:

@@ -27,7 +27,7 @@ This module handles loading of UI skin configurations from YAML files.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from pydantic import TypeAdapter
 
@@ -35,6 +35,7 @@ from ...parsers.yamlloader import YamlLoader
 from ..config.models import (
     SkinEntryConfig,
     SkinFileEntryConfig,
+    SkinRootConfig,
     SkinSelectorConfig,
     SkinVariablesConfig,
 )
@@ -201,12 +202,41 @@ class SkinLoader(BaseComponentLoader):
 
         return entry
 
+    @staticmethod
+    def resolve_root_font_size(root_config: SkinRootConfig, context: str = None) -> Optional[float]:
+        """
+        Resolve a validated `root` entry `font-size` into a plain pixel value.
+
+        The root font size is what "rem" lengths are relative to. It must be a plain
+        pixel value (a bare number or a "px" string).
+
+        Args:
+            root_config: SkinRootConfig Pydantic model
+            context: Optional context (e.g. file and entry index) for error reporting
+
+        Returns:
+            The root font size in px, or None if unset or invalid
+        """
+        value = root_config.font_size
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str) and value.endswith('px'):
+            try:
+                return float(value[:-2])
+            except ValueError:
+                report_error(f"Invalid root font-size {value!r}", context)
+                return None
+        report_error(f"Invalid root font-size {value!r} (must be a plain number or px value)", context)
+        return None
+
     def load_skin_entries(self, data: List[Any], filepath: str = None) -> UISkin:
         """
         Load skin entries from configuration data.
 
         Args:
-            data: List of skin entry configurations or `variables:` blocks
+            data: List of skin entry configurations, root definition, or `variables:` blocks
             filepath: Optional path of the skin file being loaded, for error reporting
 
         Returns:
@@ -229,7 +259,12 @@ class SkinLoader(BaseComponentLoader):
 
         for index, raw_item, parsed in pending:
             context = f'{filepath or "<skin>"}, entry #{index}'
-            # parsed is ignored as we want to re-validate it with the variables resolved,
+            if isinstance(parsed, SkinRootConfig):
+                root_font_size = self.resolve_root_font_size(parsed, context)
+                if root_font_size is not None:
+                    skin.root_font_size = root_font_size
+                continue
+            # parsed is ignored for entries as we want to re-validate it with the variables resolved,
             # so that any `var(name)` references are replaced with their values and validated again.
             resolved_data = resolve_variables(raw_item, variables, context)
             validated = self.validator.validate_dict(resolved_data, SkinEntryConfig)
