@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ class Dock(DockedUIElement):
         self.element = UIElement('frame', class_='dock', id_=self.id_)
         self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
         self.layout.create(self, self, self.skin)
+        # Call update_size() to update the dock size and position it correctly relative to its configured location.
+        self.update_size()
 
     def update_instance(self):
         if self.instance is None:
@@ -74,4 +76,6 @@ class Dock(DockedUIElement):
         self.update_instance()
 
     def update(self, global_vars):
-        self.layout.update(global_vars)
+        if self.layout.update(global_vars):
+            # Call update_size() to update the dock size and position it correctly relative to its configured location.
+            self.update_size()
