@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectGuiBase import DirectGuiWidget
-from panda3d.core import LVector3, TextNode
+from panda3d.core import LVector3, NodePath, TextNode
 
 from ..skin import UIElement
 from .base import DGuiDockWidget
@@ -69,8 +69,9 @@ class ButtonDockWidget(DGuiDockWidget):
         else:
             command = messenger.send
             extra_args = [self.event]
-        button = DirectButton(
-            **skin.get_style(button_element),
+        style = skin.get_style(button_element)
+        button_kwargs = dict(
+            **style,
             relief=None,
             pressEffect=1,
             text=self.text,
@@ -80,6 +81,15 @@ class ButtonDockWidget(DGuiDockWidget):
             command=command,
             extraArgs=extra_args,
         )
+        is_icon = len(self.text) == 1
+        if is_icon:
+            # A single-glyph icon button. Without an explicit frameSize, DirectButton auto-fits the frame to that
+            # glyph's own tight bounds, which varies per icon,-so a row of icon buttons ends up unevenly aligned.
+            # We force a uniform square frame instead and _center_icon() below then centers the glyph in it.
+            button_kwargs['frameSize'] = (0, font_size, -font_size, 0)
+        button = DirectButton(**button_kwargs)
+        if is_icon:
+            self._center_icon(button, font_size)
         bounds = button.getBounds()
         if self.rescale and bounds is not None:
             width = bounds[1] - bounds[0]
@@ -87,3 +97,35 @@ class ButtonDockWidget(DGuiDockWidget):
             max_size = max(width, height)
             button.set_scale(scale * font_size / max_size)
         return button
+
+    def _center_icon(self, button, font_size):
+        """Center an icon glyph within the button frame.
+
+        TextNode has no vertical-centering concept, so a glyph is always placed with its baseline at the frame local
+        origin. Different icons have different bounds, the offset needed varies per glyph.
+
+        Correcting DirectGui 'text_pos' property by the measured error does not fully fix the issue, so we apply the
+        fix via the plain NodePath transform instead.
+        That correction has to be measured and applied relative to stateNodePath[0], not the button itself.
+
+        All four button states (ready/press/rollover/disabled) render the same glyph in the same place, so one
+        measurement (state 0) is enough to correct all of them.
+        """
+        reference = button.stateNodePath[0]
+        text_node = button.component('text0')
+        bounds = text_node.getTightBounds(reference)
+        if bounds is None:
+            return
+        lo, hi = bounds
+        glyph_center_x = (lo[0] + hi[0]) / 2
+        glyph_center_z = (lo[2] + hi[2]) / 2
+        frame_center_x = font_size / 2
+        frame_center_z = -font_size / 2
+        delta_x = frame_center_x - glyph_center_x
+        delta_z = frame_center_z - glyph_center_z
+        for component_name in button.components():
+            if not component_name.startswith('text'):
+                continue
+            component = button.component(component_name)
+            pos = NodePath.getPos(component, reference)
+            NodePath.setPos(component, reference, pos[0] + delta_x, pos[1], pos[2] + delta_z)
