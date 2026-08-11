@@ -261,9 +261,33 @@ class Gui(object):
         self.cosmonium.save_settings()
 
     def show_context_menu(self):
+        if self.popup_menu_config is None or self.popup_menu_shown:
+            return
         over = self.mouse.get_over()
         if over is None and self.menubar_shown:
             return
         popup_menu = Popup(self.cosmonium, self.scale, self.popup_menu_config, over, self, self.popup_done)
+        popup_menu.create()
+        self.popup_menu_shown = True
+
+    def open_named_menu(self, name):
+        """Open one of self.named_menus (see MenuBuilder.get_auto_menu) as a
+        standalone popup, e.g. from a dock button (ButtonWidgetConfig.menu)
+        instead of a persistent menubar.
+
+        A no-op while a popup is already open (from this or any other
+        source) - without this guard, repeatedly clicking a menu button
+        (e.g. the top-bar logo) stacks a new Popup on top of the existing
+        one on every click instead of leaving the open one alone."""
+        if self.popup_menu_shown:
+            return
+        popup_menu = Popup(
+            self.cosmonium,
+            self.scale,
+            lambda: self.menu_builder.get_auto_menu(name),
+            None,
+            self,
+            self.popup_done,
+        )
         popup_menu.create()
         self.popup_menu_shown = True

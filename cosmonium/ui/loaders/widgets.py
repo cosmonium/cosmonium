@@ -134,7 +134,13 @@ class ButtonWidgetLoader(BaseWidgetLoader):
             text = None
 
         return ButtonDockWidget(
-            text, widget_config.event, widget_config.size, rescale=rescale, alignments=alignments, borders=borders
+            text,
+            widget_config.event,
+            menu=widget_config.menu,
+            size=widget_config.size,
+            rescale=rescale,
+            alignments=alignments,
+            borders=borders,
         )
 
 

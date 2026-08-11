@@ -51,6 +51,9 @@ class ButtonWidgetConfig(BaseModel):
     text: Optional[str] = Field(None, description="Button label text")
     code: Optional[str] = Field(None, pattern=r'^[0-9a-fA-F]+$', description="Unicode hex code for icon")
     event: Optional[str] = Field(None, description="Event name to send when clicked")
+    menu: Optional[str] = Field(
+        None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
+    )
     size: Optional[float] = Field(None, ge=1, description="Button size in pixels")
     rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
@@ -64,6 +67,13 @@ class ButtonWidgetConfig(BaseModel):
             raise ValueError("Button must have either 'text' or 'code' field")
         if self.text is not None and self.code is not None:
             raise ValueError("Button cannot have both 'text' and 'code' fields")
+        return self
+
+    @model_validator(mode='after')
+    def validate_event_or_menu(self):
+        """A button cannot both send an event and open a menu."""
+        if self.event is not None and self.menu is not None:
+            raise ValueError("Button cannot have both 'event' and 'menu' fields")
         return self
 
 
