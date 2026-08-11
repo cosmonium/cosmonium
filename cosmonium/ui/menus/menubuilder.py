@@ -38,11 +38,6 @@ class MenuConfig(NamedTuple):
     entries: list
 
 
-class MenubarEntry(NamedTuple):
-    text: str
-    entries: list
-
-
 class MenuSeparator(NamedTuple):
     visible: str
 
@@ -174,5 +169,11 @@ class MenuBuilder:
     def create_menubar(self, menubar_config):
         menu = []
         for item in menubar_config.entries:
-            menu.append((self.translation.gettext(item.text), partial(self.create_submenu, item.entries)))
+            if not isinstance(item, SubMenuEntry) or not item.visible():
+                continue
+            if isinstance(item.entries, str):
+                generator = partial(self.get_auto_menu, item.entries)
+            else:
+                generator = partial(self.create_submenu, item.entries)
+            menu.append((self.translation.gettext(item.text), generator))
         return menu

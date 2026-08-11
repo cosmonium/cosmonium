@@ -212,24 +212,13 @@ class MenuEntryConfig(BaseModel):
 MenuEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
 
 
-class MenubarEntryConfig(BaseModel):
-    """Configuration for a menubar entry."""
+class MenusConfigModel(BaseModel):
+    """Configuration for the menus and menubar."""
 
     model_config = ConfigDict(extra='forbid')
 
-    title: str = Field(description="Menubar entry title")
-    entries: List[Union[MenuEntryConfig, None]] = Field(
-        default_factory=list, description="Menu entries (None for separator)"
-    )
-
-
-class MenubarConfigModel(BaseModel):
-    """Configuration for the menubar."""
-
-    model_config = ConfigDict(extra='forbid')
-
-    menus: Dict[str, List[MenuEntryConfig]] = Field(default_factory=dict, description="Named menus")
-    menubar: List[MenubarEntryConfig] = Field(default_factory=list, description="Menubar entries")
+    menus: Dict[str, List[Union[MenuEntryConfig, None]]] = Field(default_factory=dict, description="Named menus")
+    menubar: Optional[List[MenuEntryConfig]] = Field(None, description="Menubar entries")
 
 
 class PopupMenuConfig(BaseModel):
@@ -349,7 +338,10 @@ class UIConfigModel(BaseModel):
 
     skin: Optional[str] = Field(None, description="Path to skin YAML file")
     shortcuts: Optional[str] = Field(None, description="Path to shortcuts YAML file")
-    menubar: Optional[str] = Field(None, description="Path to menubar YAML file")
+    menus: Optional[str] = Field(
+        None,
+        description="Path to a YAML file with the menus definitions",
+    )
     popup: Optional[str] = Field(None, description="Path to popup menu YAML file")
     dock: Optional[str] = Field(None, description="Path to dock YAML file")
     hud: Optional[str] = Field(None, description="Path to HUD YAML file")

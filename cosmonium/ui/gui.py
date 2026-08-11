@@ -99,24 +99,30 @@ class Gui(object):
 
         self.browser = Browser(parent=self)
 
-        menu_builder = MenuBuilder(
+        self.menu_builder = MenuBuilder(
             self.translation, self.messenger, self.shortcuts, self.cosmonium, self.mouse, self.browser
         )
-        menu_builder.add_named_menus(self.named_menus)
-        self.menubar = Menubar(menu_builder.create_menubar(self.menubar_config), self.scale, parent=self)
-        self.menubar.create()
+        self.menu_builder.add_named_menus(self.named_menus)
 
-        self.popup_menu_config = menu_builder.create_menu(self.popup_config)
+        self.menubar_shown = False
+        if self.menubar_config is not None:
+            self.menubar = Menubar(self.menu_builder.create_menubar(self.menubar_config), self.scale, parent=self)
+            self.menubar.create()
+        else:
+            self.menubar = None
+
+        self.popup_menu_config = self.menu_builder.create_menu(self.popup_config) if self.popup_config else None
         self.popup_menu_shown = False
 
         if settings.show_hud:
             self.show_hud()
         else:
             self.hide_hud()
-        if settings.show_menubar:
-            self.show_menu()
-        else:
-            self.hide_menu()
+        if self.menubar is not None:
+            if settings.show_menubar:
+                self.show_menu()
+            else:
+                self.hide_menu()
 
     def get_ui(self):
         return self
@@ -184,7 +190,7 @@ class Gui(object):
             self.hud.update_size()
 
     def get_limits(self):
-        if self.menubar_shown:
+        if self.menubar_shown and self.menubar is not None:
             y_offset = self.menubar.get_height() / self.scale[1]
         else:
             y_offset = 0
@@ -225,6 +231,8 @@ class Gui(object):
         self.cosmonium.save_settings()
 
     def show_menu(self):
+        if self.menubar is None:
+            return
         self.menubar.show()
         self.menubar_shown = True
         limits = self.get_limits()
@@ -233,6 +241,8 @@ class Gui(object):
             window.set_limits(limits)
 
     def hide_menu(self):
+        if self.menubar is None:
+            return
         self.menubar.hide()
         self.menubar_shown = False
         self.hud.set_y_offset(0)
@@ -241,6 +251,8 @@ class Gui(object):
             window.set_limits(limits)
 
     def toggle_menu(self):
+        if self.menubar is None:
+            return
         if self.menubar_shown:
             self.hide_menu()
         else:

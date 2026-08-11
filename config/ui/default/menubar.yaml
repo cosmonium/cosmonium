@@ -29,9 +29,7 @@ menus:
       state: 'settings.stereo_swap_eyes'
       event: 'toggle-swap-eyes'
 
-menubar:
-- title: '_Cosmonium'
-  entries:
+  menu-cosmonium:
     - title: '_Find object'
       event: 'gui-search-object'
     -
@@ -52,8 +50,7 @@ menubar:
     - title: '_Quit'
       event: 'exit'
 
-- title: '_Select'
-  entries:
+  menu-select:
     - title: '_Info'
       event: 'gui-show-info'
       enabled: 'engine.selected'
@@ -96,8 +93,7 @@ menubar:
       event: 'mark-selected'
       enabled: 'engine.selected'
 
-- title: '_Time'
-  entries:
+  menu-time:
     - title: '_Increase rate 10x'
       event: 'accelerate-time-10'
     - title: 'I_ncrease rate 2x'
@@ -120,8 +116,7 @@ menubar:
     - title: 'Set _J2000 epoch'
       event: 'set-j2000-date'
 
-- title: 'Camera'
-  entries:
+  menu-camera:
     - title: '_Mode'
       menu: 'select-camera-controller'
     -
@@ -147,8 +142,7 @@ menubar:
       event: 'gui-show-ship-editor'
       enabled: 'engine.ship.editable'
 
-- title: '_Render'
-  entries:
+  menu-render:
     - title: '_Labels'
       entries:
         - title: '_Galaxies'
@@ -273,8 +267,7 @@ menubar:
           state: 'settings.show_reference_axis'
           event: 'toggle-reference-axis'
 
-- title: '_Window'
-  entries:
+  menu-window:
     - title: 'Toggle _fullscreen'
       event: 'toggle-fullscreen'
     - title: 'Toggle _menubar'
@@ -289,8 +282,7 @@ menubar:
     - title: 'Set screenshots directory...'
       event: 'gui-show-select-screenshots'
 
-- title: '_Debug'
-  entries:
+  menu-debug:
     - title: 'Toggle filled wireframe'
       event: 'debug-toggle-filled-wireframe'
     - title: 'Toggle wireframe'
@@ -372,8 +364,7 @@ menubar:
     - title: 'Dump octree'
       event: 'debug-dump-octree'
 
-- title: '_Help'
-  entries:
+  menu-help:
     - title: 'User _guide'
       event: 'gui-show-help'
     -
@@ -384,3 +375,46 @@ menubar:
     -
     - title: '_About'
       event: 'gui-show-about'
+
+  app-menu:
+    - title: '_Cosmonium'
+      menu: menu-cosmonium
+    - title: '_Select'
+      menu: menu-select
+    - title: '_Time'
+      menu: menu-time
+    - title: 'Camera'
+      menu: menu-camera
+    - title: '_Render'
+      menu: menu-render
+    - title: '_Window'
+      menu: menu-window
+    - title: '_Debug'
+      menu: menu-debug
+    - title: '_Help'
+      menu: menu-help
+
+menubar:
+- title: '_Cosmonium'
+  menu: menu-cosmonium
+
+- title: '_Select'
+  menu: menu-select
+
+- title: '_Time'
+  menu: menu-time
+
+- title: 'Camera'
+  menu: menu-camera
+
+- title: '_Render'
+  menu: menu-render
+
+- title: '_Window'
+  menu: menu-window
+
+- title: '_Debug'
+  menu: menu-debug
+
+- title: '_Help'
+  menu: menu-help

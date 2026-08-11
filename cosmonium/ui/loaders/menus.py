@@ -29,8 +29,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from ...parsers.yamlloader import YamlLoader
-from ..config.models import MenubarConfigModel, MenuEntryConfig, PopupMenuConfig
-from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenubarEntry, MenuConfig, MenuSeparator, SubMenuEntry
+from ..config.models import MenuEntryConfig, MenusConfigModel, PopupMenuConfig
+from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenuConfig, MenuSeparator, SubMenuEntry
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
 from .base import BaseComponentLoader
 
@@ -122,36 +122,46 @@ class MenuLoader(BaseComponentLoader):
             submenu.append(entry)
         return submenu
 
-    def load_menubar(self, filepath: str) -> Tuple[Dict[str, List[Any]], MenubarConfig]:
+    def load_named_menus(self, menus_data: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
         """
-        Load a menubar configuration from a YAML file.
+        Load a 'menus' mapping (named, reusable submenus) from configuration data.
 
         Args:
-            filepath: Path to menubar YAML file
+            menus_data: Dict of menu name -> list of menu entry configurations
 
         Returns:
-            Tuple with named menus dict and MenubarConfig instance
+            Dict of menu name -> list of loaded MenuEntry instances
+        """
+        named_menus = {}
+        for name, entries in menus_data.items():
+            named_menus[name] = self.load_submenu(entries)
+        return named_menus
+
+    def load_menus(self, filepath: str) -> Tuple[Dict[str, List[Any]], MenubarConfig]:
+        """
+        Load a menus configuration from a YAML file.
+
+        Args:
+            filepath: Path to menus YAML file
+
+        Returns:
+            Tuple with named menus dict and optional MenubarConfig instance
         """
         data = YamlLoader.load_file(filepath, use_splash=False)
 
-        # Validate menubar configuration
-        validated = self.validator.validate_dict(data, MenubarConfigModel)
+        # Validate menus configuration
+        validated = self.validator.validate_dict(data, MenusConfigModel)
 
         # Load named menus that can be referenced elsewhere
-        named_menus = {}
-        for name, entries in validated.menus.items():
-            submenu = self.load_submenu(entries)
-            named_menus[name] = submenu
+        named_menus = self.load_named_menus(validated.menus)
 
-        # Load menubar entries
-        entries = []
-        for menu_entry in validated.menubar:
-            # menu_entry is MenubarEntryConfig Pydantic model
-            submenu = self.load_submenu(menu_entry.entries)
-            entry = MenubarEntry(menu_entry.title, submenu)
-            entries.append(entry)
+        # Load menubar if specified
+        if validated.menubar is not None:
+            entries = self.load_submenu(validated.menubar)
+            menubar = MenubarConfig(entries)
+        else:
+            menubar = None
 
-        menubar = MenubarConfig(entries)
         return named_menus, menubar
 
     def load_popup(self, filepath: str) -> MenuConfig:

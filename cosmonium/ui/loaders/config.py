@@ -107,7 +107,7 @@ class UIConfigLoader:
 
         The main config file should contain paths to component-specific files:
         - shortcuts: path to shortcuts.yaml
-        - menubar: path to menubar.yaml
+        - menus: path to menu.yaml
         - popup: path to popup.yaml
         - dock: path to dock.yaml
         - hud: path to hud.yaml
@@ -142,11 +142,13 @@ class UIConfigLoader:
         else:
             self.gui.shortcuts_config = []
 
-        # Load menubar
-        menubar_file = self._resolve_path(data.menubar, basedir)
-        if menubar_file is not None:
-            named_menus, menubar_config = self.menu_loader.load_menubar(menubar_file)
-            self.gui.named_menus = named_menus
+        # Load named menus and menubar.
+        self.gui.named_menus = {}
+
+        menus_file = self._resolve_path(data.menus, basedir)
+        if menus_file is not None:
+            named_menus, menubar_config = self.menu_loader.load_menus(menus_file)
+            self.gui.named_menus.update(named_menus)
             self.gui.menubar_config = menubar_config
         else:
             self.gui.menubar_config = None
