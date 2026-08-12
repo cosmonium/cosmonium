@@ -62,7 +62,7 @@ class Shortcuts(DirectObject):
             method(*extraArgs)
 
     def accept(self, event, method, extraArgs=[], direct=False):
-        if len(event) == 1 and not direct:
+        if len(event) == 1 and not direct and not ('A' <= event <= 'z'):
             self.keystrokes[event] = [method, extraArgs]
         else:
             DirectObject.accept(self, event, method, extraArgs=extraArgs)
