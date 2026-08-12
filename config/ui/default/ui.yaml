@@ -1,0 +1,6 @@
+skin: skin.yaml
+shortcuts: shortcuts.yaml
+menus: ../celestia/menus.yaml
+popup: popup
+hud: ../celestia/hud.yaml
+dock: dock.yaml

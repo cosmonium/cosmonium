@@ -26,7 +26,7 @@ PYTHONHASHSEED=0
 export SOURCE_DATE_EPOCH
 export PYTHONHASHSEED
 
-UI_LIST=celestia
+UI_LIST=celestia default
 
 
 ifneq ($(COUNT),)

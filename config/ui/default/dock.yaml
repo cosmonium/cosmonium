@@ -1,0 +1,139 @@
+dock:
+
+  - anchor: top
+    orientation: horizontal
+    padding: 6px 10px
+    gap: 10px
+    widgets:
+      - type: button
+        id: dock-title
+        text: COSMONIUM
+        menu: app-menu
+      - type: search
+        placeholder: Search…
+        width: 26
+      - type: spacer
+        grow: 1
+      - type: button
+        class: icon
+        code: F02FD
+        event: gui-show-info
+        enabled: 'engine.selected'
+        tooltip: Object info
+      - type: button
+        class: icon
+        code: F0493  # mdi-cog
+        event: gui-show-preferences
+        tooltip: Preferences
+      - type: button
+        class: icon
+        code: F0293  # mdi-fullscreen
+        event: toggle-fullscreen
+        tooltip: Toggle fullscreen
+      - type: button
+        class: icon
+        code: F0625  # mdi-help-circle-outline
+        tooltip: User guide
+        event: gui-show-help
+
+  - anchor: right
+    orientation: vertical
+    padding: 10px 6px
+    gap: 10px
+    widgets:
+      - type: button
+        class: icon
+        code: F02F2  # mdi-image-filter-center-focus-weak
+        tooltip: Center selected
+        event: center-selected
+      - type: button
+        class: icon
+        code: F01A4  # mdi-crosshairs-gps
+        tooltip: Track selected
+        event: track-selected
+        checked: 'engine.track'
+      - type: button
+        class: icon
+        code: F001D  # mdi-airplane
+        tooltip: Follow selected
+        event: follow-selected
+        checked: 'engine.follow'
+      - type: button
+        class: icon
+        code: F0018  # mdi-orbit
+        tooltip: Orbit selected
+        event: sync-selected
+        checked: 'engine.sync'
+      - type: spacer
+        size: [0, 6]
+      - type: button
+        class: icon
+        code: F02DC  # mdi-home
+        tooltip: Go to home
+        event: select-home
+
+  - anchor: bottom
+    orientation: horizontal
+    padding: 6px 10px
+    gap: 12px
+    widgets:
+      - type: layout
+        orientation: horizontal
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F0F86  # mdi-speedometer-slow
+            event: slow-time-2
+            tooltip: Decelerate time
+          - type: button
+            class: icon
+            code: F03E4  # mdi-pause
+            code_checked: F040A  # mdi-play
+            checked: 'not time.is_running'
+            event: toggle-freeze-time
+            tooltip: Play / pause time
+          - type: button
+            class: icon
+            code: F0F85  # mdi-speedometer-medium
+            event: set-real-time
+            tooltip: Real time
+          - type: button
+            class: icon
+            code: F04C5  # mdi-speedometer
+            event: accelerate-time-2
+            tooltip: Accelerate time
+          - type: button
+            class: icon
+            code: F04E1  # mdi-swap
+            checked: 'time.is_inverted'
+            event: invert-time
+            tooltip: Invert time
+      - type: layout
+        orientation: vertical
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: text
+            text: '{time.date}'
+          - type: text
+            justify: left
+            text: '{time.multiplier}x'
+      - type: layout
+        orientation: horizontal
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F0150  # mdi-clock-outline
+            event: set-current-date
+            tooltip: Jump to current time
+          - type: button
+            class: icon
+            code: F0E18  # mdi-calendar-month-outline
+            event: gui-show-time-editor
+            tooltip: Open time editor

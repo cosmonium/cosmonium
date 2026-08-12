@@ -1,0 +1,344 @@
+- variables:
+    transparent: [0, 0, 0, 0]
+
+    # Backgrounds
+    bg-base: "#0c0e12" # application background / opaque panels
+    bg-panel: [0.06, 0.067, 0.086, 0.92] # translucent panel background
+    bg-inset: "#1b1f28" # idle inputs, idle icon buttons, grouped toolbar clusters
+    bg-hover: "#262c37" # hover background
+
+    # Accent
+    accent: "#3b82d6"
+    accent-bright: "#7fb3e8"
+    accent-wash: [0.231, 0.510, 0.839, 0.18]
+
+    # Border.
+    border: [0.227, 0.255, 0.314, 0.5]
+
+    # Text
+    text-primary: "#e9edf2" # titles, values, primary labels
+    text-secondary: "#a3aebd" # default body/icon colour
+    text-muted: "#7b8494" # secondary readouts, placeholders
+    text-disabled: "#4d5566"
+    text-on-accent: "#ffffff" # text drawn on top of an accent-background
+
+# Base defaults, applied to every element unless overridden below
+
+-
+  background-color: var(bg-base)
+  text-color: var(text-secondary)
+  border-color: var(border)
+  font-family: DejaVuSans
+  font-size: 12px
+
+# Menu bar and popup menu
+
+- element: menu
+  text-color: var(text-secondary)
+  background-color: var(bg-panel)
+
+- element: menu
+  state: hover
+  text-color: var(text-primary)
+  background-color: var(accent)
+
+- element: menu
+  state: active
+  text-color: var(text-on-accent)
+  background-color: var(accent-bright)
+
+- element: menu
+  state: disabled
+  text-color: var(text-disabled)
+
+# HUD readouts
+
+- parent:
+    class: hud
+  text-color: var(text-muted)
+
+- element: onscreen-text
+  id: title
+  parent:
+    class: hud
+  text-color: var(accent-bright)
+  font-size: 16px
+  font-weight: bold
+
+# Quick-search popup
+
+- parent:
+    id: query
+  text-color: var(text-primary)
+  background-color: var(transparent)
+
+- element: frame
+  parent:
+    id: query
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+  border-radius: 6px
+
+- parent:
+    id: query
+  class: query-entry
+  font-size: 15px
+
+- element: label
+  id: query-suggestion
+  text-color: var(text-muted)
+  background-color: var(bg-hover)
+
+# Window frames
+
+- element: borders
+  class: border
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+  border-radius: 8px
+
+- element: frame
+  class: title-frame
+  background-color: var(transparent)
+
+- element: onscreen-text
+  class: title-text
+  text-color: var(text-primary)
+  font-weight: bold
+
+- element: frame
+  class: close-frame
+  background-color: var(transparent)
+
+- element: onscreen-text
+  class: close-text
+  text-color: var(text-muted)
+
+# Generic widgets
+
+- element: button
+  background-color: var(bg-inset)
+  text-color: var(text-secondary)
+  border-color: var(border)
+
+- element: button
+  state: hover
+  background-color: var(bg-hover)
+  text-color: var(text-primary)
+
+- element: button
+  state: active
+  background-color: var(accent)
+  text-color: var(text-on-accent)
+
+- element: button
+  state: disabled
+  text-color: var(text-disabled)
+
+- element: button
+  class: thumb
+  background-color: var(accent-bright)
+  border-color: var(accent-bright)
+
+- element: button
+  class: indicator
+  background-color: var(accent)
+  text-color: var(text-on-accent)
+
+- element: button
+  class: inc-button
+  background-color: var(bg-inset)
+  text-color: var(text-secondary)
+
+- element: button
+  class: dec-button
+  background-color: var(bg-inset)
+  text-color: var(text-secondary)
+
+- element: entry
+  background-color: var(bg-inset)
+  text-color: var(text-primary)
+  border-color: var(border)
+
+- element: entry
+  class: value-entry
+  background-color: var(bg-inset)
+  text-color: var(text-primary)
+
+- element: check-button
+  background-color: var(bg-inset)
+
+- element: check-button
+  state: active
+  background-color: var(accent)
+
+- element: slider
+  text-color: var(bg-inset)
+
+- element: scroll-bar
+  background-color: var(bg-inset)
+
+- element: scrolled-frame
+  background-color: var(transparent)
+
+- element: spin-box
+  background-color: var(bg-inset)
+
+- element: option-menu
+  background-color: var(bg-inset)
+  text-color: var(text-primary)
+  border-color: var(border)
+
+- element: option-menu
+  state: hover
+  background-color: var(bg-hover)
+
+- element: tabbed-frame
+  text-color: var(text-primary)
+
+- element: tabbed-frame
+  state: selected
+  background-color: var(accent-wash)
+
+- element: tabbed-frame
+  state: hover
+  background-color: var(bg-hover)
+
+- element: tabbed-frame
+  state: active
+  background-color: var(accent)
+
+# Editor windows
+
+- element: slider
+  parent:
+    class: editor
+  width: 16em
+  height: 6em
+
+- element: label
+  class: editor-section-label
+  text-color: var(text-primary)
+  font-weight: bold
+  margin: .5em 0em .25em .5em
+
+- element: sizer
+  class: editor-entry-sizer
+  margin: 0.25em 0em 0.25em 1em
+  gap: 0em 0.75em
+
+- element: sizer
+  class: editor-entry-vector
+  margin: 0.25em 0em 0.25em 0em
+  gap: 0em 0.25em
+
+# Object info window
+
+- element: sizer
+  class: entry-sizer
+  parent:
+    class: info
+  gap: 0.5em
+  margin: 0.25em
+
+- element: label
+  class: info-section-label
+  text-color: var(accent-bright)
+  font-size: 1.17em
+  font-weight: bold
+
+# Dock
+
+- element: frame
+  class: dock
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+  border-radius: 8px
+
+- element: frame
+  class: layout
+  parent:
+    class: dock
+  background-color: var(transparent)
+
+- element: frame
+  class: [layout, group]
+  parent:
+    class: dock
+  background-color: var(bg-inset)
+  border-radius: 6px
+
+- element: label
+  parent:
+    class: dock
+  text-color: var(text-secondary)
+  font-size: 11px
+
+- element: button
+  parent:
+    class: dock
+  background-color: var(transparent)
+  text-color: var(text-secondary)
+  border-color: var(transparent)
+
+- element: button
+  class: icon
+  parent:
+    class: dock
+  font-family: Material Design Icons
+  font-size: 16px
+
+# The "COSMONIUM" button.
+- element: button
+  id: dock-title
+  text-color: var(text-primary)
+  font-weight: bold
+
+- element: button
+  state: hover
+  parent:
+    class: dock
+  text-color: var(text-primary)
+
+- element: button
+  state: active
+  parent:
+    class: dock
+  background-color: var(accent)
+  text-color: var(text-on-accent)
+
+- element: button
+  state: checked
+  parent:
+    class: dock
+  background-color: var(accent)
+  text-color: var(text-on-accent)
+
+- element: entry
+  parent:
+    class: dock
+  background-color: var(bg-inset)
+  text-color: var(text-primary)
+  border-color: var(border)
+  font-family: DejaVuSans
+  font-size: 12px
+
+- element: frame
+  class: search-results
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+
+- element: button
+  class: search-results
+  background-color: var(transparent)
+  text-color: var(text-secondary)
+
+- element: button
+  class: search-results
+  state: hover
+  background-color: var(bg-hover)
+  text-color: var(text-primary)
