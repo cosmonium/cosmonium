@@ -22,7 +22,7 @@ from panda3d.core import CullFaceAttrib, LVector2
 from .core import empty_geom, empty_node
 
 
-def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
+def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False, fill=False):
     path, node = empty_node('frame')
     gvw, gcw, gtw, gnw, gtanw, gbiw, prim, geom = empty_geom(
         'frame', 8 * 4, 8 * 2, normal=False, texture=texture, tanbin=False
@@ -142,7 +142,23 @@ def FrameGeom(frame_size, border_size=(1, 1), outer=False, texture=False):
         gtw.add_data2(u_mid_right, v_bottom)
         gtw.add_data2(u_mid_left, v_bottom)
 
-    for i in range(8):
+    if fill:
+        # Fill the center area
+        gvw.add_data3(left + border_size[0], 0, top - border_size[1])
+        gvw.add_data3(right - border_size[0], 0, top - border_size[1])
+        gvw.add_data3(right - border_size[0], 0, bottom + border_size[1])
+        gvw.add_data3(left + border_size[0], 0, bottom + border_size[1])
+        if texture:
+            gtw.add_data2(u_mid_left, v_mid_top)
+            gtw.add_data2(u_mid_right, v_mid_top)
+            gtw.add_data2(u_mid_right, v_mid_bottom)
+            gtw.add_data2(u_mid_left, v_mid_bottom)
+
+    nb_rectangles = 8
+    if fill:
+        nb_rectangles += 1
+
+    for i in range(nb_rectangles):
         offset = i * 4
         prim.add_vertices(offset + 0, offset + 3, offset + 1)
         prim.add_vertices(offset + 1, offset + 3, offset + 2)
