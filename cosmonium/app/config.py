@@ -33,7 +33,7 @@ class CosmoniumConfig:
         self.main_dir = base_path
         self.common = os.path.join(base_path, 'data/defaults.yaml')
         self.main = os.path.join(base_path, 'data/cosmonium.yaml')
-        self.ui = os.path.join(base_path, 'config/ui/default/ui.yaml')
+        self.ui = os.path.join(base_path, 'config/ui/celestia/ui.yaml')
         self.catalogs = 'config/catalogs.yaml'
         self.default_home = None
         self.default_target = None

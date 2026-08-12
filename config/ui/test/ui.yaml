@@ -1,5 +1,5 @@
 skin: skin.yaml
-shortcuts: ../default/shortcuts.yaml
-menus: ../default/menubar.yaml
-popup: ../default/popup.yaml
+shortcuts: ../celestia/shortcuts.yaml
+menus: ../celestia/menubar.yaml
+popup: ../celestia/popup.yaml
 dock: dock.yaml
