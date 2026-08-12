@@ -71,8 +71,10 @@ class LayoutDockWidget(DockWidgetBase):
         border_x, border_y = self.widget.border
         corner_radius = self.widget.corner_radius
         if corner_radius:
-            delta = LVector4(max(border_x, (corner_radius - border_x) * 0.707))
-            self.widget_borders = LVector4(delta)
+            border_width = max(border_x, border_y)
+            # Margin to not overlap the rounded corners
+            margin = corner_radius - (corner_radius - border_width) * 0.70710678118654752
+            self.widget_borders = LVector4(margin)
         else:
             self.widget_borders = LVector4(border_x, border_x, border_y, border_y)
         for i, widget in enumerate(self.widgets):
