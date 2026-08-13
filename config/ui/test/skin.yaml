@@ -4,7 +4,9 @@
   border-color: "#00004D"
   font-family: DejaVuSans
   font-size: 12px
-- class: dock-button
+- element: button
+  parent:
+    class: dock
   font-family: Material Design Icons
   font-size: 12px
 - element: frame

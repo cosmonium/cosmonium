@@ -229,6 +229,38 @@ dock:
         finally:
             os.unlink(filepath)
 
+    def test_load_dock_with_user_class_and_id(self, gui, init_registry, validator):
+        """A dock and its widgets can carry a user-supplied class/id on top of the hardcoded ones."""
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+dock:
+ - id: main-dock
+   class: transparent
+   orientation: horizontal
+   anchor    : bottom
+   widgets:
+      - type: button
+        text: "A"
+        class: [primary, danger]
+        id: my-button
+""")
+        try:
+            loader = DockLoader(gui, validator)
+            docks = loader.load(filepath)
+
+            dock = docks[0]
+            assert dock.id_ == 'main-dock'
+            # The user class merges with the hardcoded structural 'dock' class, it does not replace it.
+            assert dock.layout.element.class_ == frozenset({'dock', 'transparent'})
+
+            button = dock.layout.widgets[0]
+            assert button.id_ == 'my-button'
+            assert button.class_ == ['primary', 'danger']
+        finally:
+            os.unlink(filepath)
+
 
 class TestHUDLoader:
     """Tests for HUDLoader with actual config files."""
@@ -274,6 +306,28 @@ hud:
         finally:
             os.unlink(filepath)
 
+    def test_load_hud_with_user_class(self, validator):
+        """A HUD widget can carry a user-supplied class, used to skin its text lines."""
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+hud:
+  - anchor: top-left
+    id: title
+    class: debug-hud
+    type: text-list
+    entries:
+      - text: my-text
+""")
+        try:
+            loader = HUDLoader(None, validator)
+            hud = loader.load(filepath)
+
+            assert hud[0].class_ == 'debug-hud'
+        finally:
+            os.unlink(filepath)
+
 
 class TestWidgetLoaders:
     """Tests for widget loaders."""
@@ -290,6 +344,13 @@ class TestWidgetLoaders:
         widget = loader.load(config, parsers, {})
         assert widget is not None
         assert widget.event == 'test-event'
+
+        # Test with a user-supplied class and id
+        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'class': 'primary', 'id': 'my-button'}
+        config = validator.validate_dict(data, ButtonWidgetConfig)
+        widget = loader.load(config, parsers, {})
+        assert widget.class_ == 'primary'
+        assert widget.id_ == 'my-button'
 
     def test_text_widget_loader(self, validator):
         """Test TextWidgetLoader."""

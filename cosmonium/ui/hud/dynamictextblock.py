@@ -61,8 +61,8 @@ class DynamicTextBlockEntries(DynamicTextBlockEntryInterface):
 
 
 class DynamicTextBlock(TextBlock):
-    def __init__(self, id_, location, align, down, count, entries, parent=None):
-        TextBlock.__init__(self, id_, location, align, down, count, parent=parent)
+    def __init__(self, id_, location, align, down, count, entries, parent=None, class_=None):
+        TextBlock.__init__(self, id_, location, align, down, count, parent=parent, class_=class_)
         self.entries = entries
         self._cursor = 0
 

@@ -141,7 +141,13 @@ class HUDLoader(BaseComponentLoader):
         entries = self.load_hud_entries(data.entries)
 
         widget = DynamicTextBlock(
-            data.id, location=data.anchor, align=align, down=down, count=data.size, entries=entries
+            data.id,
+            location=data.anchor,
+            align=align,
+            down=down,
+            count=data.size,
+            entries=entries,
+            class_=data.class_,
         )
         return widget
 

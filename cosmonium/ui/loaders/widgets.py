@@ -141,6 +141,8 @@ class ButtonWidgetLoader(BaseWidgetLoader):
             rescale=rescale,
             alignments=alignments,
             borders=borders,
+            class_=widget_config.class_,
+            id_=widget_config.id,
         )
 
 
@@ -176,7 +178,14 @@ class TextWidgetLoader(BaseWidgetLoader):
         template = self.fstring_template_parser.create_template(widget_config.text)
         align = parsers.text_alignment.parse(widget_config.align)
 
-        return TextDockWidget(template, align=align, alignments=alignments, borders=borders)
+        return TextDockWidget(
+            template,
+            align=align,
+            alignments=alignments,
+            borders=borders,
+            class_=widget_config.class_,
+            id_=widget_config.id,
+        )
 
 
 class SpacerWidgetLoader(BaseWidgetLoader):
@@ -247,4 +256,6 @@ class LayoutWidgetLoader(BaseWidgetLoader):
             alignments=alignments,
             borders=borders,
             gaps=gaps,
+            class_=widget_config.class_,
+            id_=widget_config.id,
         )

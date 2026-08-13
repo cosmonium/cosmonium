@@ -23,7 +23,7 @@ from direct.gui.DirectFrame import DirectFrame
 from panda3d.core import LVector3
 
 from ..core.ui_element import DockedUIElement
-from ..skin import UIElement
+from ..skin import UIElement, combine_classes
 
 
 class Dock(DockedUIElement):
@@ -37,7 +37,7 @@ class Dock(DockedUIElement):
         self.pos = LVector3(0)
 
     def create(self):
-        self.element = UIElement('frame', class_='dock', id_=self.id_)
+        self.element = UIElement('frame', class_=combine_classes('dock', self.layout.element.class_), id_=self.id_)
         self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
         self.layout.create(self, self, self.skin)
         # Call update_size() to update the dock size and position it correctly relative to its configured location.

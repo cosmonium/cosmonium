@@ -51,6 +51,27 @@ def normalize_classes(value: Union[None, str, Iterable[str]]) -> Optional[Frozen
     return frozenset(value)
 
 
+def combine_classes(*values: Union[None, str, Iterable[str]]) -> Optional[FrozenSet[str]]:
+    """
+    Merge several `class` values (each a class name, iterable of class names, or None) into one frozenset.
+
+    Used to combine a widget's own structural class, to let skins target its internal parts,
+    with extra classes a user attached to that widget in its configuration.
+
+    Args:
+        *values: Any number of class specs, as accepted by `normalize_classes`
+
+    Returns:
+        A frozenset of all class names found, or None if none were specified
+    """
+    classes = set()
+    for value in values:
+        normalized = normalize_classes(value)
+        if normalized:
+            classes.update(normalized)
+    return frozenset(classes) if classes else None
+
+
 def report_error(message: str, context: Optional[str] = None) -> None:
     """
     Report a skin-related parsing or resolution error.

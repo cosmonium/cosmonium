@@ -26,7 +26,7 @@ from ..skin import UIElement
 
 
 class TextBlock(DockedUIElement):
-    def __init__(self, id_, location, align, down, count, parent=None):
+    def __init__(self, id_, location, align, down, count, parent=None, class_=None):
         DockedUIElement.__init__(self, id_, location, parent=parent)
         self.align = align
         self.down = down
@@ -34,6 +34,7 @@ class TextBlock(DockedUIElement):
         self.text = []
         self.instances = []
         self.scale = None
+        self.class_ = class_
 
     def get_height(self):
         return self.scale[1] * self.count
@@ -59,7 +60,7 @@ class TextBlock(DockedUIElement):
             self.instances[i].set_pos(pos)
 
     def create_line(self, i):
-        text_line_element = UIElement('onscreen-text', parent=self.parent.element, id_=self.id_)
+        text_line_element = UIElement('onscreen-text', parent=self.parent.element, id_=self.id_, class_=self.class_)
         style = self.skin.get_style(text_line_element)
         self.scale = style['scale']
         return OnscreenText(text="", style=Plain, parent=self.instance, align=self.align, mayChange=True, **style)

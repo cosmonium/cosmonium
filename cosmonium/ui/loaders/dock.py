@@ -94,6 +94,7 @@ class DockLoader(BaseComponentLoader):
             gaps=gaps,
             borders=borders,
             element_class='dock',
+            class_=validated.class_,
         )
         dock = Dock(validated.id, validated.orientation, validated.anchor, layout)
 

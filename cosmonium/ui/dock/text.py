@@ -33,14 +33,26 @@ if TYPE_CHECKING:
 
 class TextDockWidget(DGuiDockWidget):
 
-    def __init__(self, template: str, align, proportions=None, alignments=None, borders=None, index=None):
+    def __init__(
+        self,
+        template: str,
+        align,
+        proportions=None,
+        alignments=None,
+        borders=None,
+        index=None,
+        class_=None,
+        id_=None,
+    ):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
         self.align = align
         self.template = template
         self.text = None
+        self.class_ = class_
+        self.id_ = id_
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        label_element = UIElement('label', parent=parent.element)
+        label_element = UIElement('label', class_=self.class_, id_=self.id_, parent=parent.element)
         self.text = ""
         label = DirectLabel(**skin.get_style(label_element), text=self.text, text_align=self.align, textMayChange=True)
         return label

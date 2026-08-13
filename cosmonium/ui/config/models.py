@@ -42,10 +42,22 @@ def to_kebab(name):
 # ============================================================================
 
 
-class ButtonWidgetConfig(BaseModel):
-    """Configuration for button dock widgets."""
+class StyleableConfig(BaseModel):
+    """Base class for UI configuration models that can be targeted by a skin selector.
 
-    model_config = ConfigDict(extra='forbid')
+    Adds the CSS-like `class` and `id` fields used for skin targeting.
+    """
+
+    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+
+    class_: Optional[Union[str, List[str]]] = Field(
+        None, alias='class', description="Extra CSS-like class name(s) for skin targeting"
+    )
+    id: Optional[str] = Field(None, description="Element ID for skin targeting")
+
+
+class ButtonWidgetConfig(StyleableConfig):
+    """Configuration for button dock widgets."""
 
     type: Literal['button'] = Field(description="Widget type identifier")
     text: Optional[str] = Field(None, description="Button label text")
@@ -77,10 +89,8 @@ class ButtonWidgetConfig(BaseModel):
         return self
 
 
-class TextWidgetConfig(BaseModel):
+class TextWidgetConfig(StyleableConfig):
     """Configuration for text dock widgets."""
-
-    model_config = ConfigDict(extra='forbid')
 
     type: Literal['text'] = Field(description="Widget type identifier")
     text: str = Field(description="Template text to display")
@@ -98,10 +108,8 @@ class SpacerWidgetConfig(BaseModel):
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
 
 
-class LayoutWidgetConfig(BaseModel):
+class LayoutWidgetConfig(StyleableConfig):
     """Configuration for layout dock widgets."""
-
-    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
 
     type: Literal['layout'] = Field(description="Widget type identifier")
     orientation: OrientationLiteral = Field('horizontal', description="Layout orientation")
@@ -123,12 +131,9 @@ LayoutWidgetConfig.model_rebuild()  # Rebuild to resolve forward reference
 # ============================================================================
 
 
-class DockConfig(BaseModel):
+class DockConfig(StyleableConfig):
     """Configuration for dock widgets."""
 
-    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
-
-    id: Optional[str] = Field(None, description="Unique identifier for the dock")
     orientation: OrientationLiteral = Field('horizontal', description="Dock orientation")
     anchor: AnchorLiteral = Field('bottom', description="Screen location for the dock")
     widgets: List[WidgetConfig] = Field(default_factory=list, description="Widgets in the dock")
@@ -160,12 +165,9 @@ class HUDEntryConfig(BaseModel):
 HUDEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
 
 
-class HUDWidgetConfig(BaseModel):
+class HUDWidgetConfig(StyleableConfig):
     """Configuration for HUD widgets."""
 
-    model_config = ConfigDict(extra='forbid')
-
-    id: Optional[str] = Field(None, description="Unique identifier for the HUD widget")
     anchor: CornerLiteral = Field(description="Screen anchor position")
     size: int = Field(5, ge=1, description="Maximum number of lines to display")
     entries: List[HUDEntryConfig] = Field(default_factory=list, description="HUD entries to display")

@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 
 from panda3d.core import LVector4
 
-from ..skin import UIElement
+from ..skin import UIElement, combine_classes
 from .base import DockWidgetBase
 from .decorated_sizer import DecoratedSizer
 
@@ -53,11 +53,13 @@ class LayoutDockWidget(DockWidgetBase):
         index=None,
         gaps=(0, 0),
         element_class='layout',
+        class_=None,
+        id_=None,
     ):
         DockWidgetBase.__init__(self, proportions, alignments, borders, index)
         self.size = size
         self.direction = direction
-        self.element = UIElement('frame', class_=element_class)
+        self.element = UIElement('frame', class_=combine_classes(element_class, class_), id_=id_)
         self.widget = DecoratedSizer(self.element, image, geom, direction, gaps=gaps)
         self.sizer = self.widget
         self.frame = None

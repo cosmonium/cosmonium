@@ -46,6 +46,8 @@ class ButtonDockWidget(DGuiDockWidget):
         alignments=None,
         borders=None,
         index=None,
+        class_=None,
+        id_=None,
     ):
         DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
         self.text = text
@@ -53,12 +55,14 @@ class ButtonDockWidget(DGuiDockWidget):
         self.menu = menu
         self.size = size
         self.rescale = rescale
+        self.class_ = class_
+        self.id_ = id_
 
     def _open_menu(self):
         builtins.base.gui.open_named_menu(self.menu)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        button_element = UIElement('button', class_='dock-button', parent=parent.element)
+        button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
         style = skin.get(button_element)
         size = self.size or parent.size
         font_size = style.font_size(button_element, True, skin)
