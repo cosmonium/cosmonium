@@ -29,10 +29,18 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from ..config.models import ButtonWidgetConfig, LayoutWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
+from ..config.models import (
+    ButtonWidgetConfig,
+    LayoutWidgetConfig,
+    OptionMenuWidgetConfig,
+    SpacerWidgetConfig,
+    TextWidgetConfig,
+)
 from ..dock.button import ButtonDockWidget
 from ..dock.layouts import LayoutDockWidget, SpaceDockWidget
+from ..dock.option_menu import OptionMenuDockWidget
 from ..dock.text import TextDockWidget
+from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
 from .base import BaseWidgetLoader
 from .parsers import ParsersCollection
@@ -139,6 +147,51 @@ class ButtonWidgetLoader(BaseWidgetLoader):
             menu=widget_config.menu,
             size=widget_config.size,
             rescale=rescale,
+            alignments=alignments,
+            borders=borders,
+            class_=widget_config.class_,
+            id_=widget_config.id,
+        )
+
+
+class OptionMenuWidgetLoader(BaseWidgetLoader):
+    """
+    Loader for option-menu widgets.
+
+    Handles loading of dock widgets that show a DirectOptionMenu dropdown.
+    """
+
+    def __init__(self):
+        """
+        Initialize the option-menu widget loader with an expression parser.
+        """
+        self.expression_parser = PythonExpressionParser()
+
+    def load(
+        self, widget_config: OptionMenuWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
+    ) -> OptionMenuDockWidget:
+        """
+        Load an option-menu widget from configuration data.
+
+        Args:
+            widget_config: OptionMenuWidgetConfig Pydantic model
+            parsers: ParsersCollection instance
+            global_vars: Dictionary of global variables for expression evaluation
+
+        Returns:
+            OptionMenuDockWidget instance
+        """
+        alignments = parsers.alignment.parse(widget_config.align)
+        borders = parsers.border.parse(widget_config.borders)
+
+        selected = None
+        if widget_config.selected is not None:
+            selected = self.expression_parser.compile_expression(widget_config.selected, global_vars)
+
+        return OptionMenuDockWidget(
+            widget_config.items,
+            widget_config.event,
+            selected=selected,
             alignments=alignments,
             borders=borders,
             class_=widget_config.class_,

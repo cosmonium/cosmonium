@@ -89,6 +89,19 @@ class ButtonWidgetConfig(StyleableConfig):
         return self
 
 
+class OptionMenuWidgetConfig(StyleableConfig):
+    """Configuration for option-menu dock widgets."""
+
+    type: Literal['option-menu'] = Field(description="Widget type identifier")
+    items: List[str] = Field(min_length=1, description="Selectable option labels")
+    event: str = Field(description="Event name to send, with the selected label as argument, on selection")
+    selected: Optional[str] = Field(None, description="Python expression evaluating to the initially selected item")
+    size: Optional[float] = Field(None, ge=1, description="Widget size in pixels")
+    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
+    borders: Optional[Any] = Field(None, description="Border configuration")
+    tooltip: Optional[str] = Field(None, description="Tooltip text")
+
+
 class TextWidgetConfig(StyleableConfig):
     """Configuration for text dock widgets."""
 
@@ -121,7 +134,9 @@ class LayoutWidgetConfig(StyleableConfig):
 
 
 # Union type for all widget configs
-WidgetConfig = Union[ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig, LayoutWidgetConfig]
+WidgetConfig = Union[
+    ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig, LayoutWidgetConfig, OptionMenuWidgetConfig
+]
 
 LayoutWidgetConfig.model_rebuild()  # Rebuild to resolve forward reference
 

@@ -189,24 +189,25 @@ class UISkinEntry:
     def calc_size_rem(self, size, element, font_size, skin):
         return skin.root_font_size * settings.ui_scale * size
 
-    def get_font_parameters(self, element, skin, prefix=None, scale3=False, ui_scale=None):
+    def get_font_parameters(self, element, skin, prefix=None, skip_scale=False, scale3=False, ui_scale=None):
         font_family = self.font_family
         font_style = Font.STYLE_NORMAL
         if self.font_style == 'italic':
             font_style |= Font.STYLE_ITALIC
         if self.font_weight == 'bold':
             font_style |= Font.STYLE_BOLD
-        font_size = self.font_size(element, True, skin)
-        if ui_scale is None:
-            ui_scale = (1, 1)
-        if scale3:
-            scale = (ui_scale[0] * font_size, 1, ui_scale[1] * font_size)
-        else:
-            scale = (ui_scale[0] * font_size, ui_scale[1] * font_size)
         parameters = {
-            'scale': scale,
             'font': fontsManager.load_font(font_family, font_style),
         }
+        if not skip_scale:
+            font_size = self.font_size(element, True, skin)
+            if ui_scale is None:
+                ui_scale = (1, 1)
+            if scale3:
+                scale = (ui_scale[0] * font_size, 1, ui_scale[1] * font_size)
+            else:
+                scale = (ui_scale[0] * font_size, ui_scale[1] * font_size)
+            parameters['scale'] = scale
         if prefix is not None:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
         return parameters
@@ -288,6 +289,21 @@ class UISkinEntry:
             parameters = {
                 'fg': self.text_color,
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
+            }
+        elif dgui_type == 'option-menu':
+            hover = skin.get(element, 'hover')
+            parameters = {
+                'frameColor': self.background_color,
+                'text_fg': self.text_color,
+                # Item entries in the popup list share the closed menu's base colors; 'highlightColor' is
+                # DirectOptionMenu's own hover tint for whichever item is under the mouse.
+                'item_frameColor': self.background_color,
+                'item_text_fg': self.text_color,
+                'highlightColor': hover.background_color,
+                'scale': (font_size, 1, font_size),
+                'popupMenu_frameColor': self.background_color,
+                **(self.get_font_parameters(element, skin, 'text_', skip_scale=True) if not skip_font else {}),
+                **(self.get_font_parameters(element, skin, 'item_text_', skip_scale=True) if not skip_font else {}),
             }
         elif dgui_type == 'scroll-bar':
             parameters = {'frameColor': self.background_color}

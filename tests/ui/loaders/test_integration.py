@@ -32,7 +32,12 @@ import pytest
 from panda3d.core import LColor
 from pydantic import BaseModel, Field
 
-from cosmonium.ui.config.models import ButtonWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
+from cosmonium.ui.config.models import (
+    ButtonWidgetConfig,
+    OptionMenuWidgetConfig,
+    SpacerWidgetConfig,
+    TextWidgetConfig,
+)
 from cosmonium.ui.config.validator import ConfigValidator
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
@@ -42,7 +47,13 @@ from cosmonium.ui.loaders.init import init_widget_loaders
 from cosmonium.ui.loaders.parsers import ParsersCollection
 from cosmonium.ui.loaders.shortcuts import ShortcutsLoader
 from cosmonium.ui.loaders.skin import SkinLoader
-from cosmonium.ui.loaders.widgets import ButtonWidgetLoader, SpacerWidgetLoader, TextWidgetLoader, WidgetLoaderRegistry
+from cosmonium.ui.loaders.widgets import (
+    ButtonWidgetLoader,
+    OptionMenuWidgetLoader,
+    SpacerWidgetLoader,
+    TextWidgetLoader,
+    WidgetLoaderRegistry,
+)
 
 
 class MockGlobalVars:
@@ -374,6 +385,43 @@ class TestWidgetLoaders:
         widget = loader.load(config, parsers, {})
         assert widget is not None
 
+    def test_option_menu_widget_loader(self, validator):
+        """Test OptionMenuWidgetLoader."""
+
+        parsers = ParsersCollection()
+        loader = OptionMenuWidgetLoader()
+
+        data = {'type': 'option-menu', 'items': ['Low', 'Medium', 'High'], 'event': 'set-quality'}
+        config = validator.validate_dict(data, OptionMenuWidgetConfig)
+        widget = loader.load(config, parsers, {})
+        assert widget is not None
+        assert widget.items == ['Low', 'Medium', 'High']
+        assert widget.event == 'set-quality'
+        assert widget.selected is None
+
+        # Test with a user-supplied class, id and a 'selected' expression reflecting live app state
+        class Settings:
+            quality = 'Medium'
+
+        global_vars = {'settings': Settings()}
+        data = {
+            'type': 'option-menu',
+            'items': ['Low', 'Medium', 'High'],
+            'event': 'set-quality',
+            'selected': 'settings.quality',
+            'class': 'primary',
+            'id': 'my-option-menu',
+        }
+        config = validator.validate_dict(data, OptionMenuWidgetConfig)
+        widget = loader.load(config, parsers, global_vars)
+        assert widget.selected() == 'Medium'
+        assert widget.class_ == 'primary'
+        assert widget.id_ == 'my-option-menu'
+
+        # The expression is re-evaluated on each call, reflecting the live value at read time
+        Settings.quality = 'High'
+        assert widget.selected() == 'High'
+
     def test_widget_registry(self, validator):
         """Test WidgetLoaderRegistry."""
 
@@ -397,6 +445,12 @@ class TestWidgetLoaders:
         space_config = validator.validate_dict(spacer_data, SpacerWidgetConfig)
         spacer = registry.load(space_config, {})
         assert spacer is not None
+
+        # Test loading option-menu
+        option_menu_data = {'type': 'option-menu', 'items': ['A', 'B'], 'event': 'test'}
+        option_menu_config = validator.validate_dict(option_menu_data, OptionMenuWidgetConfig)
+        option_menu = registry.load(option_menu_config, {})
+        assert option_menu is not None
 
         # Test unknown type
         class UnknownConfig(BaseModel):

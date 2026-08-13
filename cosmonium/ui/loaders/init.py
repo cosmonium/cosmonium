@@ -22,7 +22,13 @@
 Init module to register all the default loaders.
 """
 
-from .widgets import ButtonWidgetLoader, LayoutWidgetLoader, SpacerWidgetLoader, TextWidgetLoader
+from .widgets import (
+    ButtonWidgetLoader,
+    LayoutWidgetLoader,
+    OptionMenuWidgetLoader,
+    SpacerWidgetLoader,
+    TextWidgetLoader,
+)
 
 
 def init_widget_loaders(registry):
@@ -31,3 +37,4 @@ def init_widget_loaders(registry):
     registry.register('text', TextWidgetLoader())
     registry.register('spacer', SpacerWidgetLoader())
     registry.register('layout', LayoutWidgetLoader())
+    registry.register('option-menu', OptionMenuWidgetLoader())
