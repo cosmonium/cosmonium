@@ -66,7 +66,7 @@ class ButtonWidgetConfig(StyleableConfig):
     menu: Optional[str] = Field(
         None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
     )
-    size: Optional[float] = Field(None, ge=1, description="Button size in pixels")
+    size: Optional[float] = Field(None, ge=1, description="Icon box size in pixels (icon button only)")
     rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
@@ -79,6 +79,13 @@ class ButtonWidgetConfig(StyleableConfig):
             raise ValueError("Button must have either 'text' or 'code' field")
         if self.text is not None and self.code is not None:
             raise ValueError("Button cannot have both 'text' and 'code' fields")
+        return self
+
+    @model_validator(mode='after')
+    def validate_text_no_size(self):
+        """Text button can not use size property."""
+        if self.text is not None and self.size is not None:
+            raise ValueError("Text button can not use size property")
         return self
 
     @model_validator(mode='after')

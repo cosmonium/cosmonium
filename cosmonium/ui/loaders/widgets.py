@@ -133,19 +133,23 @@ class ButtonWidgetLoader(BaseWidgetLoader):
 
         if widget_config.text:
             text = widget_config.text
+            is_icon = False
             rescale = False
         elif widget_config.code:
             code = int(widget_config.code, 16)
             text = chr(code)
+            is_icon = True
             rescale = widget_config.rescale
         else:
             text = None
+            is_icon = False
 
         return ButtonDockWidget(
             text,
             widget_config.event,
             menu=widget_config.menu,
             size=widget_config.size,
+            is_icon=is_icon,
             rescale=rescale,
             alignments=alignments,
             borders=borders,

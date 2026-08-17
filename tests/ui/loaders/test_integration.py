@@ -350,11 +350,18 @@ class TestWidgetLoaders:
         loader = ButtonWidgetLoader()
 
         # Test with text button
-        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'size': 32}
+        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event'}
         config = validator.validate_dict(data, ButtonWidgetConfig)
         widget = loader.load(config, parsers, {})
         assert widget is not None
         assert widget.event == 'test-event'
+        assert widget.is_icon is False
+
+        # Test with icon button
+        data = {'type': 'button', 'code': 'f001', 'event': 'test-event', 'size': 32}
+        config = validator.validate_dict(data, ButtonWidgetConfig)
+        widget = loader.load(config, parsers, {})
+        assert widget.is_icon is True
 
         # Test with a user-supplied class and id
         data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'class': 'primary', 'id': 'my-button'}

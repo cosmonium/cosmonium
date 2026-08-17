@@ -41,6 +41,7 @@ class ButtonDockWidget(DGuiDockWidget):
         event: str,
         menu: str = None,
         size: float = None,
+        is_icon: bool = False,
         rescale: bool = False,
         proportions=None,
         alignments=None,
@@ -54,6 +55,7 @@ class ButtonDockWidget(DGuiDockWidget):
         self.event = event
         self.menu = menu
         self.size = size
+        self.is_icon = is_icon
         self.rescale = rescale
         self.class_ = class_
         self.id_ = id_
@@ -64,9 +66,14 @@ class ButtonDockWidget(DGuiDockWidget):
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
         style = skin.get(button_element)
-        size = self.size or parent.size
         font_size = style.font_size(button_element, True, skin)
-        scale = LVector3(size / font_size)
+        if self.is_icon:
+            # Icon buttons: size defines the square box the glyph must fill, which may differ from the skin's font-size.
+            # Scaling the whole node by size / font_size stretches the glyph to exactly fill that box.
+            size = self.size or parent.size
+            scale = LVector3(size / font_size)
+        else:
+            scale = LVector3(1, 1, 1)
         if self.menu is not None:
             command = self._open_menu
             extra_args = []
@@ -85,14 +92,13 @@ class ButtonDockWidget(DGuiDockWidget):
             command=command,
             extraArgs=extra_args,
         )
-        is_icon = len(self.text) == 1
-        if is_icon:
+        if self.is_icon:
             # A single-glyph icon button. Without an explicit frameSize, DirectButton auto-fits the frame to that
             # glyph's own tight bounds, which varies per icon,-so a row of icon buttons ends up unevenly aligned.
             # We force a uniform square frame instead and _center_icon() below then centers the glyph in it.
             button_kwargs['frameSize'] = (0, font_size, -font_size, 0)
         button = DirectButton(**button_kwargs)
-        if is_icon:
+        if self.is_icon:
             self._center_icon(button, font_size)
         bounds = button.getBounds()
         if self.rescale and bounds is not None:

@@ -7,6 +7,7 @@ dock:
         text: "A"
       - type: layout
         orientation: horizontal
+        size: 48
         widgets:
           - type: button
             code: F0F65
