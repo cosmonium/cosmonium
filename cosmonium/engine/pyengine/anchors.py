@@ -1471,7 +1471,7 @@ class SystemAnchor(StellarAnchor):
             The anchor of the child body, or None when out of range.
         """
         if index < len(self.children):
-            return self.children[index].body
+            return self.children[index]
         return None
 
     def rebuild(self) -> None:
