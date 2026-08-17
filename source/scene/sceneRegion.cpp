@@ -77,10 +77,9 @@ SceneRegion::overlap(SceneRegion *other)
 
 
 bool
-SceneRegion::overlap(double near_distance, double far_distance)
+SceneRegion::overlap(double other_near, double other_far)
 {
-    return ((near_distance <= near_distance) && (near_distance < far_distance)) || ((near_distance <= near_distance) && (near_distance < far_distance)) ||
-           ((far_distance >= far_distance) && (far_distance > near_distance)) || ((far_distance >= far_distance) && (far_distance > near_distance));
+    return other_near < far_distance && near_distance < other_far;
 }
 
 
