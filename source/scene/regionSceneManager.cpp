@@ -216,7 +216,6 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
           }
       }
   }
-  background_region = regions.back();
   for (auto body : background_resolved) {
       background_region->add_body(body);
   }

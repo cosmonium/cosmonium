@@ -442,9 +442,8 @@ class RegionSceneManager(SceneManagerBase):
             for region in self.regions:
                 if region.overlap_range(near_distance, far_distance):
                     region.add_body(scene_anchor)
-        background_region = self.regions[-1]
         for scene_anchor in background_resolved:
-            background_region.add_body(scene_anchor)
+            self.background_region.add_body(scene_anchor)
         current_region_index = 0
         current_region = self.regions[0]
         for visible in visibles:
