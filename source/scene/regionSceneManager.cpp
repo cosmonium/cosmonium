@@ -229,7 +229,12 @@ RegionSceneManager::build_scene(NodePath world, CameraHolder *camera_holder, Sce
           continue;
       }
       while (anchor->z_distance  / scale > current_region->get_far()) {
-          ++current_region_it;
+          auto next_region_it = current_region_it;
+          ++next_region_it;
+          if (next_region_it == regions.end()) {
+              break;
+          }
+          current_region_it = next_region_it;
           current_region = *current_region_it;
       }
       current_region->add_point(visible);
