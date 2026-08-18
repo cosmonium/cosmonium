@@ -17,7 +17,7 @@ isort == 8.0.1
 
 pydocstyle == 6.3.0
 
-mypy == 2.3.0
+mypy == 2.3.1
 
 pre-commit == 4.6.1
 
