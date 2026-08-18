@@ -59,70 +59,79 @@ class HeightmapGenerationStage(ProcessStage):
 
 
 class ShaderHeightmap(TextureHeightmapBase):
-    tex_generators = {}
-
     def __init__(
         self,
         name,
         width,
         height,
+        min_height,
+        max_height,
         height_scale,
+        height_offset,
         noise,
         offset=None,
         scale=None,
         coord=TexCoord.Cylindrical,
         interpolator=None,
+        filter=None,
     ):
-        TextureHeightmapBase.__init__(self, name, width, height, height_scale, 1.0, 1.0, interpolator)
+        TextureHeightmapBase.__init__(
+            self, name, width, height, min_height, max_height, height_scale, height_offset, interpolator, filter
+        )
         self.noise = noise
         self.offset = offset
         self.scale = scale
         self.coord = coord
-        self.shader = None
+        self.generator = None
 
     def set_noise(self, noise):
         self.noise = noise
-        self.shader = None
+        # The noise function is baked into the generated shader, so the pipeline must be rebuilt.
+        if self.generator is not None:
+            self.generator.remove()
+            self.generator = None
         self.reset()
 
     def set_offset(self, offset):
         self.offset = offset
-        if self.shader is not None:
-            self.shader.offset = offset
         self.reset()
 
     def set_scale(self, scale):
         self.scale = scale
-        if self.shader is not None:
-            self.shader.scale = scale
         self.reset()
 
     def apply(self, shape):
         shape.instance.set_shader_input("heightmap_%s" % self.name, self.texture)
 
-    async def load(self, tasks_tree, patch):
-        result = await self.do_load(patch)
-        data = result['heightmap']['heightmap']
-        self.configure_data(data)
+    def create_generator(self):
+        chain = PipelineFactory.instance().create_process_pipeline()
+        stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
+        chain.add_stage(stage)
+        chain.create()
+        self.generator = chain
 
-    def do_load(self, shape):
-        if self.tex_id not in ShaderHeightmap.tex_generators:
-            chain = PipelineFactory.instance().create_process_pipeline()
-            stage = HeightmapGenerationStage(self.coord, self.width, self.height, self.noise)
-            chain.add_stage(stage)
-            chain.create()
-            ShaderHeightmapPatch.tex_generators[self.tex_id] = chain
-        tex_generator = ShaderHeightmap.tex_generators[self.tex_id]
-        if self.shader is None:
-            self.shader = NoiseShader(
-                noise_source=self.noise,
-                noise_target=FloatTarget(),
-                coord=self.coord,
-                offset=self.offset,
-                scale=self.scale,
-            )
-            self.shader.create_and_register_shader(None, None)
-        return tex_generator.generate(self.shader, 0, self.texture)
+    async def load(self, shape):
+        if self.generator is None:
+            self.create_generator()
+        shader_data = {
+            'heightmap': {
+                'offset': self.offset if self.offset is not None else (0.0, 0.0, 0.0),
+                'scale': self.scale if self.scale is not None else (1.0, 1.0, 1.0),
+            }
+        }
+        data = {
+            'prepare': {'heightmap': {'color': self.create_texture_config()}},
+            'shader': shader_data,
+        }
+        result = await self.generator.generate("hm - " + self.name, data)
+        if result is not None:
+            self.configure_data(result['heightmap'].get('color'))
+
+    def clear(self):
+        TextureHeightmapBase.clear(self)
+        if self.generator is not None:
+            self.generator.remove()
+            self.generator = None
 
 
 class HeightmapPatchGenerator:

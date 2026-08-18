@@ -23,7 +23,7 @@ from math import pi
 from ..filters import BilinearFilter, BSplineFilter, NearestFilter, QuinticFilter, SmoothstepFilter
 from ..heightmap import TextureHeightmap, TexturePatchedHeightmap, heightmapRegistry
 from ..interpolators import HardwareInterpolator, SoftwareInterpolator
-from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderPatchedHeightmap
+from ..procedural.shaderheightmap import HeightmapPatchGenerator, ShaderHeightmap, ShaderPatchedHeightmap
 from ..textures import HeightMapTexture
 from .noiseparser import NoiseYamlParser
 from .objectparser import ObjectYamlParser
@@ -113,9 +113,24 @@ class HeightmapYamlParser(YamlModuleParser):
                 func = data.noise
                 print("Warning: 'noise' entry is deprecated, use 'func' instead")
             heightmap_function = noise_parser.decode(func)
-            heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, coord_scale)
-            # TODO: The actual heightmap class is parametric until heightmaps are also a data source like the textures
-            heightmap_class = ShaderPatchedHeightmap
+            if patched:
+                heightmap_data_source = HeightmapPatchGenerator(size, size, heightmap_function, coord_scale)
+                # TODO: The actual heightmap class is parametric until heightmaps are also a data source like the
+                # textures
+                heightmap_class = ShaderPatchedHeightmap
+            else:
+                return ShaderHeightmap(
+                    name,
+                    size,
+                    size // 2,
+                    min_height,
+                    max_height,
+                    height_scale,
+                    height_offset,
+                    heightmap_function,
+                    interpolator=interpolator,
+                    filter=filter,
+                )
         else:
             heightmap_data = data.data
             overlap = data.overlap
