@@ -32,19 +32,13 @@ import pytest
 from panda3d.core import LColor
 from pydantic import BaseModel, Field
 
-from cosmonium.ui.config.models import (
-    ButtonWidgetConfig,
-    OptionMenuWidgetConfig,
-    SpacerWidgetConfig,
-    TextWidgetConfig,
-)
-from cosmonium.ui.config.validator import ConfigValidator
+from cosmonium.parsers.validator import ConfigValidator
+from cosmonium.ui.config.models import ButtonWidgetConfig, OptionMenuWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
 from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.loaders.hud import HUDLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
-from cosmonium.ui.loaders.parsers import ParsersCollection
 from cosmonium.ui.loaders.shortcuts import ShortcutsLoader
 from cosmonium.ui.loaders.skin import SkinLoader
 from cosmonium.ui.loaders.widgets import (
@@ -52,7 +46,7 @@ from cosmonium.ui.loaders.widgets import (
     OptionMenuWidgetLoader,
     SpacerWidgetLoader,
     TextWidgetLoader,
-    WidgetLoaderRegistry,
+    WidgetYamlParser,
 )
 
 
@@ -70,7 +64,7 @@ class MockGUI:
 
 @pytest.fixture
 def init_registry(scope='module'):
-    init_widget_loaders(WidgetLoaderRegistry.get_instance())
+    init_widget_loaders()
 
 
 @pytest.fixture
@@ -346,13 +340,12 @@ class TestWidgetLoaders:
     def test_button_widget_loader(self, validator):
         """Test ButtonWidgetLoader."""
 
-        parsers = ParsersCollection()
         loader = ButtonWidgetLoader()
 
         # Test with text button
         data = {'type': 'button', 'text': 'Click me', 'event': 'test-event'}
         config = validator.validate_dict(data, ButtonWidgetConfig)
-        widget = loader.load(config, parsers, {})
+        widget = loader.decode(config, global_vars={})
         assert widget is not None
         assert widget.event == 'test-event'
         assert widget.is_icon is False
@@ -360,47 +353,24 @@ class TestWidgetLoaders:
         # Test with icon button
         data = {'type': 'button', 'code': 'f001', 'event': 'test-event', 'size': 32}
         config = validator.validate_dict(data, ButtonWidgetConfig)
-        widget = loader.load(config, parsers, {})
+        widget = loader.decode(config, global_vars={})
         assert widget.is_icon is True
 
         # Test with a user-supplied class and id
         data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'class': 'primary', 'id': 'my-button'}
         config = validator.validate_dict(data, ButtonWidgetConfig)
-        widget = loader.load(config, parsers, {})
+        widget = loader.decode(config, global_vars={})
         assert widget.class_ == 'primary'
         assert widget.id_ == 'my-button'
-
-    def test_text_widget_loader(self, validator):
-        """Test TextWidgetLoader."""
-
-        parsers = ParsersCollection()
-        loader = TextWidgetLoader()
-
-        data = {'type': 'text', 'text': 'Hello World', 'align': 'left'}
-        config = validator.validate_dict(data, TextWidgetConfig)
-        widget = loader.load(config, parsers, {})
-        assert widget is not None
-
-    def test_spacer_widget_loader(self, validator):
-        """Test SpacerWidgetLoader."""
-
-        parsers = ParsersCollection()
-        loader = SpacerWidgetLoader()
-
-        data = {'type': 'spacer', 'size': [10, 10]}
-        config = validator.validate_dict(data, SpacerWidgetConfig)
-        widget = loader.load(config, parsers, {})
-        assert widget is not None
 
     def test_option_menu_widget_loader(self, validator):
         """Test OptionMenuWidgetLoader."""
 
-        parsers = ParsersCollection()
         loader = OptionMenuWidgetLoader()
 
         data = {'type': 'option-menu', 'items': ['Low', 'Medium', 'High'], 'event': 'set-quality'}
         config = validator.validate_dict(data, OptionMenuWidgetConfig)
-        widget = loader.load(config, parsers, {})
+        widget = loader.decode(config, global_vars={})
         assert widget is not None
         assert widget.items == ['Low', 'Medium', 'High']
         assert widget.event == 'set-quality'
@@ -420,7 +390,7 @@ class TestWidgetLoaders:
             'id': 'my-option-menu',
         }
         config = validator.validate_dict(data, OptionMenuWidgetConfig)
-        widget = loader.load(config, parsers, global_vars)
+        widget = loader.decode(config, global_vars=global_vars)
         assert widget.selected() == 'Medium'
         assert widget.class_ == 'primary'
         assert widget.id_ == 'my-option-menu'
@@ -429,39 +399,55 @@ class TestWidgetLoaders:
         Settings.quality = 'High'
         assert widget.selected() == 'High'
 
-    def test_widget_registry(self, validator):
-        """Test WidgetLoaderRegistry."""
+    def test_spacer_widget_loader(self, validator):
+        """Test SpacerWidgetLoader."""
 
-        registry = WidgetLoaderRegistry()
-        init_widget_loaders(registry)
+        loader = SpacerWidgetLoader()
+
+        data = {'type': 'spacer', 'size': [10, 10]}
+        config = validator.validate_dict(data, SpacerWidgetConfig)
+        widget = loader.decode(config, global_vars={})
+        assert widget is not None
+
+    def test_text_widget_loader(self, validator):
+        """Test TextWidgetLoader."""
+
+        loader = TextWidgetLoader()
+
+        data = {'type': 'text', 'text': 'Hello World', 'align': 'left'}
+        config = validator.validate_dict(data, TextWidgetConfig)
+        widget = loader.decode(config, global_vars={})
+        assert widget is not None
+
+    def test_widget_yaml_parser(self, validator, init_registry):
+        """Test WidgetYamlParser dispatch."""
 
         # Test loading button
         button_data = {'type': 'button', 'text': 'Test', 'event': 'test'}
         button_config = validator.validate_dict(button_data, ButtonWidgetConfig)
-        button = registry.load(button_config, {})
+        button = WidgetYamlParser.decode_object(button_config, global_vars={})
         assert button is not None
 
         # Test loading text
         text_data = {'type': 'text', 'text': 'Test'}
         text_config = validator.validate_dict(text_data, TextWidgetConfig)
-        text = registry.load(text_config, {})
+        text = WidgetYamlParser.decode_object(text_config, global_vars={})
         assert text is not None
 
         # Test loading spacer
         spacer_data = {'type': 'spacer', 'size': [5, 5]}
         space_config = validator.validate_dict(spacer_data, SpacerWidgetConfig)
-        spacer = registry.load(space_config, {})
+        spacer = WidgetYamlParser.decode_object(space_config, global_vars={})
         assert spacer is not None
 
         # Test loading option-menu
         option_menu_data = {'type': 'option-menu', 'items': ['A', 'B'], 'event': 'test'}
         option_menu_config = validator.validate_dict(option_menu_data, OptionMenuWidgetConfig)
-        option_menu = registry.load(option_menu_config, {})
+        option_menu = WidgetYamlParser.decode_object(option_menu_config, global_vars={})
         assert option_menu is not None
 
         # Test unknown type
         class UnknownConfig(BaseModel):
             type: str = Field()
 
-        with pytest.raises(NotImplementedError):
-            registry.load(UnknownConfig(type='unknown'), {})
+        assert WidgetYamlParser.decode_object(UnknownConfig(type='unknown'), global_vars={}) is None

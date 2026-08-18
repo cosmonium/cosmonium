@@ -22,19 +22,28 @@
 Init module to register all the default loaders.
 """
 
+from ..config.models import (
+    ButtonWidgetConfig,
+    LayoutWidgetConfig,
+    OptionMenuWidgetConfig,
+    SpacerWidgetConfig,
+    TextWidgetConfig,
+)
 from .widgets import (
     ButtonWidgetLoader,
     LayoutWidgetLoader,
     OptionMenuWidgetLoader,
     SpacerWidgetLoader,
     TextWidgetLoader,
+    WidgetYamlParser,
 )
 
 
-def init_widget_loaders(registry):
+def init_widget_loaders():
     """Register all default widget loaders."""
-    registry.register('button', ButtonWidgetLoader())
-    registry.register('text', TextWidgetLoader())
-    registry.register('spacer', SpacerWidgetLoader())
-    registry.register('layout', LayoutWidgetLoader())
-    registry.register('option-menu', OptionMenuWidgetLoader())
+
+    WidgetYamlParser.register_parser('button', ButtonWidgetLoader(), ButtonWidgetConfig)
+    WidgetYamlParser.register_parser('layout', LayoutWidgetLoader(), LayoutWidgetConfig)
+    WidgetYamlParser.register_parser('option-menu', OptionMenuWidgetLoader(), OptionMenuWidgetConfig)
+    WidgetYamlParser.register_parser('spacer', SpacerWidgetLoader(), SpacerWidgetConfig)
+    WidgetYamlParser.register_parser('text', TextWidgetLoader(), TextWidgetConfig)

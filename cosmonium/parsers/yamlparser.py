@@ -25,7 +25,7 @@ This module provides base classes for parsers that convert validated data
 into domain objects. This is the instantiation layer.
 
 The YAML loading layer is in yamlloader.py.
-The validation layer is in schemavalidator.py.
+The validation layer is in validator.py, shared with the UI config loaders.
 """
 
 import functools
@@ -33,6 +33,7 @@ import functools
 from pydantic import BaseModel
 
 from ..catalogs import objectsDB
+from .validator import ConfigValidator
 from .yamlloader import YamlLoader
 
 
@@ -146,6 +147,7 @@ class TypedYamlParser(YamlModuleParser):
     detect_trivial = True
     models = {}
     parsers = {}
+    _validator = ConfigValidator()
 
     def __init_subclass__(cls, **kwargs):
         """Ensure each subclass gets its own parsers and models dictionaries."""
@@ -226,13 +228,8 @@ class TypedYamlParser(YamlModuleParser):
             Validated Pydantic model if model is registered, otherwise raw dict
         """
         if type_name in cls.models:
-            try:
-                model_class = cls.models[type_name]
-                # Validate and create model instance
-                validated = model_class.model_validate(parameters)
-                return validated
-            except Exception as e:
-                raise ValueError(f"Validation error for {type_name}: {e}")
+            model_class = cls.models[type_name]
+            return cls._validator.validate_dict(parameters, model_class, context=type_name)
         else:
             print(f"No model registered for {type_name}, skipping validation.")
         return parameters

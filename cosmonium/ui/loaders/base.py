@@ -21,39 +21,13 @@
 """
 Base classes and interfaces for UI configuration loading.
 
-This module provides the abstract base classes that define the interface
-for widget loaders and component loaders.
+This module provides the abstract base class that defines the interface
+for component loaders. Widget loading is dispatched through
+`WidgetYamlParser`.
 """
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-
-from .parsers import ParsersCollection
-
-
-class BaseWidgetLoader(ABC):
-    """
-    Abstract base class for widget loaders.
-
-    Widget loaders are responsible for creating widget instances from
-    configuration data. Each widget type should have its own loader
-    that implements this interface.
-    """
-
-    @abstractmethod
-    def load(self, data: Dict[str, Any], parsers: ParsersCollection, global_vars: Dict[str, Any]) -> Optional[Any]:
-        """
-        Load a widget from configuration data.
-
-        Args:
-            data: Dictionary containing widget configuration
-            parsers: ParsersCollection instance for parsing common values
-            global_vars: Dictionary of global variables for expression evaluation
-
-        Returns:
-            Widget instance or None if loading fails
-        """
-        ...
 
 
 class BaseComponentLoader(ABC):

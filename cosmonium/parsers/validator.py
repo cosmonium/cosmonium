@@ -18,7 +18,9 @@
 #
 
 
-"""Configuration validation utilities."""
+"""
+Configuration validation layer.
+"""
 
 import logging
 from pathlib import Path
@@ -26,15 +28,18 @@ from typing import Any, Type, TypeVar, Union
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from ...parsers.yamlloader import YamlLoader
+from .yamlloader import YamlLoader
 
-logger = logging.getLogger('ui')
+logger = logging.getLogger('config')
 
 T = TypeVar('T', bound=BaseModel)
 
 
-class ConfigValidationError(Exception):
-    """Error during configuration validation."""
+class ConfigValidationError(ValueError):
+    """Error during configuration validation.
+
+    Subclasses `ValueError` so existing code that catches the more generic `ValueError` catches also validation errors.
+    """
 
     def __init__(self, message: str, errors: list = None, filepath: str = None):
         self.message = message
@@ -58,7 +63,7 @@ class ConfigValidationError(Exception):
 
 
 class ConfigValidator:
-    """Validator for UI configuration files."""
+    """Validator for configuration files."""
 
     def validate_file(self, filepath: Union[str, Path], model_class: Type[T]) -> T:
         """Validate a YAML configuration file.
@@ -66,7 +71,6 @@ class ConfigValidator:
         Args:
             filepath: Path to YAML file
             model_class: Pydantic model class to validate against
-            context: Optional context dictionary for error messages
 
         Returns:
             Validated model instance if successful

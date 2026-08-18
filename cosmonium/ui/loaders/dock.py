@@ -33,10 +33,11 @@ from ..config.models import DockConfig
 from ..dock.dock import Dock
 from ..dock.layouts import LayoutDockWidget
 from .base import BaseComponentLoader
-from .widgets import WidgetLoaderRegistry
+from .parsers import ParsersCollection
+from .widgets import WidgetYamlParser
 
 if TYPE_CHECKING:
-    from ..config.validator import ConfigValidator
+    from ...parsers.validator import ConfigValidator
     from ..gui import Gui
 
 
@@ -72,9 +73,7 @@ class DockLoader(BaseComponentLoader):
         # Validate dock configuration
         validated = self.validator.validate_dict(data, DockConfig)
 
-        registry = WidgetLoaderRegistry.get_instance()
-        # TODO: Should retrieve parsers from a central location instead of registry
-        parsers = registry._parsers
+        parsers = ParsersCollection.get_instance()
 
         # Parse borders, and gaps values
         borders = parsers.border.parse(validated.borders)
@@ -83,7 +82,7 @@ class DockLoader(BaseComponentLoader):
         # Recursively load child widgets
         widgets = []
         for child_widget_config in validated.widgets:
-            widget = registry.load(child_widget_config, self.gui.global_vars.globals)
+            widget = WidgetYamlParser.decode_object(child_widget_config, global_vars=self.gui.global_vars.globals)
             if widget is not None:
                 widgets.append(widget)
 

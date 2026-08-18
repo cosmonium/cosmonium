@@ -31,7 +31,6 @@ from .clipboard import create_clipboard
 from .hud.query import Query
 from .loaders.config import UIConfigLoader
 from .loaders.init import init_widget_loaders
-from .loaders.widgets import WidgetLoaderRegistry
 from .managers.anchor_layout_manager import AnchorLayout
 from .managers.overlay_manager import OverlayManager
 from .managers.theme_manager import ThemeManager
@@ -80,7 +79,7 @@ class Gui(object):
 
         self.global_vars = GlobalVars(self.base, self)
 
-        init_widget_loaders(WidgetLoaderRegistry.get_instance())
+        init_widget_loaders()
         self.load(config_file)
         self.translation = self.cosmonium.lang_manager.load_lang("ui", self.locale)
 

@@ -44,7 +44,7 @@ from .base import BaseComponentLoader
 from .parsers import ParsersCollection
 
 if TYPE_CHECKING:
-    from ..config.validator import ConfigValidator
+    from ...parsers.validator import ConfigValidator
     from ..gui import Gui
 
 

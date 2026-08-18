@@ -19,16 +19,19 @@
 
 
 """
-Widget loader registry and widget-specific loaders.
+Widget parsers for dock widget configuration.
 
-This module implements the registry pattern for widget loaders, allowing
-new widget types to be registered dynamically without modifying core code.
+Dock widget type dispatch (button/text/spacer/layout) is built on
+`TypedYamlParser`, the same type-registry dispatch mechanism used by the
+universe object parsers (`ObjectYamlParser` and friends), so both
+infrastructures share one polymorphic-node dispatch pattern instead of two.
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from ...parsers.yamlparser import TypedYamlParser, YamlModuleParser
 from ..config.models import (
     ButtonWidgetConfig,
     LayoutWidgetConfig,
@@ -42,123 +45,63 @@ from ..dock.option_menu import OptionMenuDockWidget
 from ..dock.text import TextDockWidget
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
-from .base import BaseWidgetLoader
 from .parsers import ParsersCollection
 
 
-class WidgetLoaderRegistry:
-    """
-    Registry for widget loaders.
-
-    The registry maintains a mapping of widget type names to their
-    corresponding loader instances. This allows dynamic dispatch of
-    widget loading based on the 'type' field in configuration data.
-    """
-
-    _instance = None
-
-    def __init__(self):
-        """
-        Initialize the registry with a parser collection.
-        """
-        self._parsers = ParsersCollection.get_instance()
-        self._loaders = {}
-
-    @classmethod
-    def get_instance(cls) -> WidgetLoaderRegistry:
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def register(self, widget_type: str, loader: BaseWidgetLoader) -> None:
-        """
-        Register a widget loader for a specific type.
-
-        Args:
-            widget_type: String identifier for the widget type
-            loader: BaseWidgetLoader instance to handle this widget type
-
-        Example:
-            registry.register('button', ButtonWidgetLoader())
-        """
-        if not isinstance(loader, BaseWidgetLoader):
-            raise TypeError(f"Loader must be an instance of BaseWidgetLoader, got {type(loader)}")
-        self._loaders[widget_type] = loader
-
-    def load(self, widget_config: Any, global_vars: Dict[str, Any]) -> Optional[Any]:
-        """
-        Load a widget from configuration data.
-
-        Args:
-            widget_config: WidgetConfig Pydantic model
-            global_vars: Dictionary of global variables for expression evaluation
-
-        Returns:
-            Widget instance or None if loading fails
-        """
-
-        # Get widget type from Pydantic model
-        widget_type = widget_config.type
-
-        if widget_type not in self._loaders:
-            raise NotImplementedError(f"Unsupported widget type: {widget_type}")
-
-        loader = self._loaders[widget_type]
-        return loader.load(widget_config, self._parsers, global_vars)
+class WidgetYamlParser(TypedYamlParser):
+    """Widgets registry for dock widgets"""
 
 
-class ButtonWidgetLoader(BaseWidgetLoader):
+class ButtonWidgetLoader(YamlModuleParser):
     """
     Loader for button widgets.
 
     Handles loading of button dock widgets with text or icon codes.
     """
 
-    def load(
-        self, widget_config: ButtonWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
-    ) -> ButtonDockWidget:
+    def decode(self, data: ButtonWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> ButtonDockWidget:
         """
         Load a button widget from configuration data.
 
         Args:
             widget_config: ButtonWidgetConfig Pydantic model
-            parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             ButtonDockWidget instance
         """
-        alignments = parsers.alignment.parse(widget_config.align)
-        borders = parsers.border.parse(widget_config.borders)
+        parsers = ParsersCollection.get_instance()
+        alignments = parsers.alignment.parse(data.align)
+        borders = parsers.border.parse(data.borders)
 
-        if widget_config.text:
-            text = widget_config.text
+        if data.text:
+            text = data.text
             is_icon = False
             rescale = False
-        elif widget_config.code:
-            code = int(widget_config.code, 16)
+        elif data.code:
+            code = int(data.code, 16)
             text = chr(code)
             is_icon = True
-            rescale = widget_config.rescale
+            rescale = data.rescale
         else:
             text = None
             is_icon = False
 
         return ButtonDockWidget(
             text,
-            widget_config.event,
-            menu=widget_config.menu,
-            size=widget_config.size,
+            data.event,
+            menu=data.menu,
+            size=data.size,
             is_icon=is_icon,
             rescale=rescale,
             alignments=alignments,
             borders=borders,
-            class_=widget_config.class_,
-            id_=widget_config.id,
+            class_=data.class_,
+            id_=data.id,
         )
 
 
-class OptionMenuWidgetLoader(BaseWidgetLoader):
+class OptionMenuWidgetLoader(YamlModuleParser):
     """
     Loader for option-menu widgets.
 
@@ -171,39 +114,37 @@ class OptionMenuWidgetLoader(BaseWidgetLoader):
         """
         self.expression_parser = PythonExpressionParser()
 
-    def load(
-        self, widget_config: OptionMenuWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
-    ) -> OptionMenuDockWidget:
+    def decode(self, data: OptionMenuWidgetConfig, global_vars: Dict[str, Any]) -> OptionMenuDockWidget:
         """
         Load an option-menu widget from configuration data.
 
         Args:
-            widget_config: OptionMenuWidgetConfig Pydantic model
-            parsers: ParsersCollection instance
+            data: OptionMenuWidgetConfig Pydantic model
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             OptionMenuDockWidget instance
         """
-        alignments = parsers.alignment.parse(widget_config.align)
-        borders = parsers.border.parse(widget_config.borders)
+        parsers = ParsersCollection.get_instance()
+        alignments = parsers.alignment.parse(data.align)
+        borders = parsers.border.parse(data.borders)
 
         selected = None
-        if widget_config.selected is not None:
-            selected = self.expression_parser.compile_expression(widget_config.selected, global_vars)
+        if data.selected is not None:
+            selected = self.expression_parser.compile_expression(data.selected, global_vars)
 
         return OptionMenuDockWidget(
-            widget_config.items,
-            widget_config.event,
+            data.items,
+            data.event,
             selected=selected,
             alignments=alignments,
             borders=borders,
-            class_=widget_config.class_,
-            id_=widget_config.id,
+            class_=data.class_,
+            id_=data.id,
         )
 
 
-class TextWidgetLoader(BaseWidgetLoader):
+class TextWidgetLoader(YamlModuleParser):
     """
     Loader for text widgets.
 
@@ -216,103 +157,96 @@ class TextWidgetLoader(BaseWidgetLoader):
         """
         self.fstring_template_parser = FStringTemplateParser()
 
-    def load(
-        self, widget_config: TextWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
-    ) -> TextDockWidget:
+    def decode(self, data: TextWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> TextDockWidget:
         """
         Load a text widget from configuration data.
 
         Args:
             widget_config: TextWidgetConfig Pydantic model
-            parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             TextDockWidget instance
         """
-        alignments = parsers.alignment.parse(widget_config.align)
-        borders = parsers.border.parse(widget_config.borders)
-        template = self.fstring_template_parser.create_template(widget_config.text)
-        align = parsers.text_alignment.parse(widget_config.align)
+        parsers = ParsersCollection.get_instance()
+        alignments = parsers.alignment.parse(data.align)
+        borders = parsers.border.parse(data.borders)
+        template = self.fstring_template_parser.create_template(data.text)
+        align = parsers.text_alignment.parse(data.align)
 
         return TextDockWidget(
             template,
             align=align,
             alignments=alignments,
             borders=borders,
-            class_=widget_config.class_,
-            id_=widget_config.id,
+            class_=data.class_,
+            id_=data.id,
         )
 
 
-class SpacerWidgetLoader(BaseWidgetLoader):
+class SpacerWidgetLoader(YamlModuleParser):
     """
     Loader for spacer widgets.
 
     Handles loading of spacer dock widgets used for layout spacing.
     """
 
-    def load(
-        self, widget_config: SpacerWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
-    ) -> SpaceDockWidget:
+    def decode(self, data: SpacerWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> SpaceDockWidget:
         """
         Load a spacer widget from configuration data.
 
         Args:
             widget_config: SpacerWidgetConfig Pydantic model
-            parsers: ParsersCollection instance
             global_vars: Dictionary of global variables for expression evaluation
 
         Returns:
             SpaceDockWidget instance
         """
-        alignments = parsers.alignment.parse(widget_config.align, ("min", "min"))
-        size = tuple(widget_config.size)
+        parsers = ParsersCollection.get_instance()
+        alignments = parsers.alignment.parse(data.align, ("min", "min"))
+        size = tuple(data.size)
 
         return SpaceDockWidget(size=size, alignments=alignments, borders=None)
 
 
-class LayoutWidgetLoader(BaseWidgetLoader):
+class LayoutWidgetLoader(YamlModuleParser):
     """
     Loader for layout widgets.
 
     Handles loading of layout dock widgets that contain child widgets.
-    This loader recursively loads child widgets using the registry.
+    This loader recursively loads child widgets through `WidgetYamlParser`.
     """
 
-    def load(
-        self, widget_config: LayoutWidgetConfig, parsers: ParsersCollection, global_vars: Dict[str, Any]
-    ) -> LayoutDockWidget:
+    def decode(self, data: LayoutWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> LayoutDockWidget:
         """
         Load a layout widget from configuration data.
 
         Args:
             widget_config: LayoutWidgetConfig Pydantic model
-            parsers: ParsersCollection instance
             global_vars: Dictionary of global_vars for expression evaluation
 
         Returns:
             LayoutDockWidget instance
         """
-        alignments = parsers.alignment.parse(widget_config.align)
-        borders = parsers.border.parse(widget_config.borders)
-        gaps = parsers.gap.parse(widget_config.gaps)
+        parsers = ParsersCollection.get_instance()
+        alignments = parsers.alignment.parse(data.align)
+        borders = parsers.border.parse(data.borders)
+        gaps = parsers.gap.parse(data.gaps)
 
         # Recursively load child widgets
-        registry = WidgetLoaderRegistry.get_instance()
         widgets = []
-        for child_widget_config in widget_config.widgets:
-            widget = registry.load(child_widget_config, global_vars)
+        for child_widget_config in data.widgets:
+            widget = WidgetYamlParser.decode_object(child_widget_config, global_vars=global_vars)
             if widget is not None:
                 widgets.append(widget)
 
         return LayoutDockWidget(
-            widget_config.size,
-            widget_config.orientation,
+            data.size,
+            data.orientation,
             widgets,
             alignments=alignments,
             borders=borders,
             gaps=gaps,
-            class_=widget_config.class_,
-            id_=widget_config.id,
+            class_=data.class_,
+            id_=data.id,
         )

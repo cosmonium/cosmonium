@@ -27,9 +27,9 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Optional
 
+from ...parsers.validator import ConfigValidator
 from ...parsers.yamlloader import YamlLoader
 from ..config.models import UIConfigModel
-from ..config.validator import ConfigValidator
 from .dock import DockLoader
 from .hud import HUDLoader
 from .menus import MenuLoader
@@ -54,7 +54,6 @@ class UIConfigLoader:
     Attributes:
         global_vars: Dictionary of global variables for expressions
         parsers: ParsersCollection for parsing common values
-        widget_registry: WidgetLoaderRegistry for widget loading
         menu_loader: MenuLoader for menu/menubar loading
         dock_loader: DockLoader for dock loading
         hud_loader: HUDLoader for HUD loading
@@ -121,7 +120,7 @@ class UIConfigLoader:
         raw_data = YamlLoader.load_file(ui_config_file, use_splash=False)
 
         # Validate main config
-        data = UIConfigModel.model_validate(raw_data)
+        data = self.validator.validate_dict(raw_data, UIConfigModel, context=ui_config_file)
 
         # Load skin first (needed by other components)
         skin_file = self._resolve_path(data.skin, basedir)

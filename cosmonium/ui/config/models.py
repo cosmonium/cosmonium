@@ -24,7 +24,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
+
+from ...parsers.schemas.base import ConfigBase
 
 AlignmentLiteral = Literal['left', 'right', 'center', 'min', 'max']
 AnchorLiteral = Literal['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
@@ -33,22 +35,18 @@ OrientationLiteral = Literal['horizontal', 'vertical']
 TextAlignLiteral = Literal['left', 'center', 'right']
 
 
-def to_kebab(name):
-    return name.replace('_', '-')
-
-
 # ============================================================================
 # Widget Configuration Models
 # ============================================================================
 
 
-class StyleableConfig(BaseModel):
+class StyleableConfig(ConfigBase):
     """Base class for UI configuration models that can be targeted by a skin selector.
 
     Adds the CSS-like `class` and `id` fields used for skin targeting.
     """
 
-    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+    model_config = ConfigDict(extra='forbid')
 
     class_: Optional[Union[str, List[str]]] = Field(
         None, alias='class', description="Extra CSS-like class name(s) for skin targeting"
@@ -118,7 +116,7 @@ class TextWidgetConfig(StyleableConfig):
     borders: Optional[Any] = Field(None, description="Border configuration")
 
 
-class SpacerWidgetConfig(BaseModel):
+class SpacerWidgetConfig(ConfigBase):
     """Configuration for spacer dock widgets."""
 
     model_config = ConfigDict(extra='forbid')
@@ -164,7 +162,7 @@ class DockConfig(StyleableConfig):
     borders: Optional[Any] = Field(None, description="Border configuration")
 
 
-class HUDEntryConfig(BaseModel):
+class HUDEntryConfig(ConfigBase):
     """Configuration for a HUD text entry."""
 
     model_config = ConfigDict(extra='forbid')
@@ -196,13 +194,13 @@ class HUDWidgetConfig(StyleableConfig):
     type: Optional[str] = Field(None, description="Type of HUD widget")
 
 
-class UIDocksConfig(BaseModel):
+class UIDocksConfig(ConfigBase):
     """Configuration for dock file."""
 
     dock: List[DockConfig] = Field(default_factory=list)
 
 
-class UIHudsConfig(BaseModel):
+class UIHudsConfig(ConfigBase):
     """Configuration for hud file."""
 
     hud: List[HUDWidgetConfig] = Field(default_factory=list)
@@ -213,7 +211,7 @@ class UIHudsConfig(BaseModel):
 # ============================================================================
 
 
-class MenuEntryConfig(BaseModel):
+class MenuEntryConfig(ConfigBase):
     """Configuration for a menu entry."""
 
     model_config = ConfigDict(extra='forbid')
@@ -246,7 +244,7 @@ class MenuEntryConfig(BaseModel):
 MenuEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
 
 
-class MenusConfigModel(BaseModel):
+class MenusConfigModel(ConfigBase):
     """Configuration for the menus and menubar."""
 
     model_config = ConfigDict(extra='forbid')
@@ -255,7 +253,7 @@ class MenusConfigModel(BaseModel):
     menubar: Optional[List[MenuEntryConfig]] = Field(None, description="Menubar entries")
 
 
-class PopupMenuConfig(BaseModel):
+class PopupMenuConfig(ConfigBase):
     """Configuration for popup menus."""
 
     model_config = ConfigDict(extra='forbid')
@@ -263,7 +261,7 @@ class PopupMenuConfig(BaseModel):
     popup: List[Union[MenuEntryConfig, None]] = Field(default_factory=list, description="Popup menu entries")
 
 
-class ShortcutConfig(BaseModel):
+class ShortcutConfig(ConfigBase):
     """Configuration for a keyboard shortcut."""
 
     model_config = ConfigDict(extra='forbid')
@@ -277,7 +275,7 @@ class ShortcutConfig(BaseModel):
 # ============================================================================
 
 
-class SkinSelectorConfig(BaseModel):
+class SkinSelectorConfig(ConfigBase):
     """Configuration for a skin selector."""
 
     model_config = ConfigDict(extra='forbid')
@@ -294,10 +292,10 @@ class SkinSelectorConfig(BaseModel):
 SkinSelectorConfig.model_rebuild()  # Rebuild to resolve forward reference
 
 
-class SkinEntryConfig(BaseModel):
+class SkinEntryConfig(ConfigBase):
     """Configuration for a skin style entry."""
 
-    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+    model_config = ConfigDict(extra='forbid')
 
     element: Optional[str] = Field(None, description="Element type")
     state: Optional[str] = Field(None, description="Element state")
@@ -325,20 +323,20 @@ class SkinEntryConfig(BaseModel):
     height: Optional[str] = Field(None, description="Element height (CSS value)")
 
 
-class SkinRootConfig(BaseModel):
+class SkinRootConfig(ConfigBase):
     """Configuration for the CSS-like `root` pseudo-element.
 
     A skin entry targeting the `root` pseudo-element configures root-level skin
     properties instead of styling a widget`.
     """
 
-    model_config = ConfigDict(extra='forbid', alias_generator=to_kebab)
+    model_config = ConfigDict(extra='forbid')
 
     element: Literal['root'] = Field(description="Must be 'root' to target the root pseudo-element")
     font_size: Optional[Union[float, str]] = Field(None, description="Root font size (plain number or px value)")
 
 
-class SkinVariablesConfig(BaseModel):
+class SkinVariablesConfig(ConfigBase):
     """Configuration for a `variables:` block, declaring skin variables shared across entries."""
 
     model_config = ConfigDict(extra='forbid')
@@ -354,7 +352,7 @@ SkinFileEntryConfig = Annotated[
 ]
 
 
-class UISkinConfig(BaseModel):
+class UISkinConfig(ConfigBase):
     """Configuration for a skin style."""
 
     entries: List[SkinEntryConfig] = Field(default_factory=list)
@@ -365,7 +363,7 @@ class UISkinConfig(BaseModel):
 # ============================================================================
 
 
-class UIConfigModel(BaseModel):
+class UIConfigModel(ConfigBase):
     """Main UI configuration file model."""
 
     model_config = ConfigDict(extra='forbid')
