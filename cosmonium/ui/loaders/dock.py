@@ -87,7 +87,6 @@ class DockLoader(BaseComponentLoader):
                 widgets.append(widget)
 
         layout = LayoutDockWidget(
-            size=validated.size,
             direction=validated.orientation,
             widgets=widgets,
             gaps=gaps,

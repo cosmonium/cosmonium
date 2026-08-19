@@ -11,5 +11,11 @@
   font-size: 12px
 - element: frame
   class: dock
+  height: 96px
   border-width: 10px
   border-radius: 50px
+- element: button
+  parent:
+    class: large-icons
+  width: 24px
+  height: 24px

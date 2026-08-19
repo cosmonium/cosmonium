@@ -39,7 +39,7 @@ class InfoWindow(UIWindow):
         UIWindow.__init__(self, parent=parent)
         self.body = body
         self.element = UIElement('window', id_='info-window')
-        self.font_size = self.skin.get(self.element).font_size(None, False, None)
+        self.font_size = self.skin.get(self.element).resolved_font_size(self.element, self.skin)
         self.width = settings.default_window_width / 2
         self.height = settings.default_window_height
 

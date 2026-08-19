@@ -91,7 +91,6 @@ class ButtonWidgetLoader(YamlModuleParser):
             text,
             data.event,
             menu=data.menu,
-            size=data.size,
             is_icon=is_icon,
             rescale=rescale,
             alignments=alignments,
@@ -169,7 +168,6 @@ class TextWidgetLoader(YamlModuleParser):
             TextDockWidget instance
         """
         parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align)
         borders = parsers.border.parse(data.borders)
         template = self.fstring_template_parser.create_template(data.text)
         align = parsers.text_alignment.parse(data.align)
@@ -177,7 +175,6 @@ class TextWidgetLoader(YamlModuleParser):
         return TextDockWidget(
             template,
             align=align,
-            alignments=alignments,
             borders=borders,
             class_=data.class_,
             id_=data.id,
@@ -203,10 +200,12 @@ class SpacerWidgetLoader(YamlModuleParser):
             SpaceDockWidget instance
         """
         parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align, ("min", "min"))
-        size = tuple(data.size)
+        alignments = parsers.alignment.parse(data.align)
+        # A spacer has no skin entry of its own (yet), the lengths are resolved using the layout contaoining it.
+        width = parsers.length.parse(data.size[0])
+        height = parsers.length.parse(data.size[1])
 
-        return SpaceDockWidget(size=size, alignments=alignments, borders=None)
+        return SpaceDockWidget(width, height, alignments=alignments, borders=None)
 
 
 class LayoutWidgetLoader(YamlModuleParser):
@@ -241,7 +240,6 @@ class LayoutWidgetLoader(YamlModuleParser):
                 widgets.append(widget)
 
         return LayoutDockWidget(
-            data.size,
             data.orientation,
             widgets,
             alignments=alignments,

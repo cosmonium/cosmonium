@@ -48,9 +48,19 @@ class Dock(DockedUIElement):
             return
         self.instance.set_pos(self.pos + LVector3(self.offset[0], 0, self.offset[1]))
 
+    def get_size(self):
+        """The dock outer size."""
+        return self.layout.sizer.get_size()
+
+    def get_width(self):
+        return self.get_size()[0]
+
+    def get_height(self):
+        return self.get_size()[1]
+
     def update_size(self):
         self.layout.update_layout()
-        size = self.layout.sizer.get_size()
+        size = self.get_size()
         if self.direction == "horizontal":
             if self.center:
                 self.pos[0] = -size[0] / 2

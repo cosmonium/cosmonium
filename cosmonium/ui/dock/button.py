@@ -34,13 +34,13 @@ if TYPE_CHECKING:
 
 
 class ButtonDockWidget(DGuiDockWidget):
+    """A dock button, showing either a text label or a single icon glyph."""
 
     def __init__(
         self,
         text: str,
         event: str,
         menu: str = None,
-        size: float = None,
         is_icon: bool = False,
         rescale: bool = False,
         proportions=None,
@@ -54,7 +54,6 @@ class ButtonDockWidget(DGuiDockWidget):
         self.text = text
         self.event = event
         self.menu = menu
-        self.size = size
         self.is_icon = is_icon
         self.rescale = rescale
         self.class_ = class_
@@ -66,12 +65,12 @@ class ButtonDockWidget(DGuiDockWidget):
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
         style = skin.get(button_element)
-        font_size = style.font_size(button_element, True, skin)
+        font_size = style.resolved_font_size(button_element, skin)
         if self.is_icon:
-            # Icon buttons: size defines the square box the glyph must fill, which may differ from the skin's font-size.
-            # Scaling the whole node by size / font_size stretches the glyph to exactly fill that box.
-            size = self.size or parent.size
-            scale = LVector3(size / font_size)
+            # Icon buttons: width and height define the box the glyph must fill, which may differ from the skin's
+            # font-size. Scaling the whole node by width / font_size stretches the glyph to exactly fill that box.
+            width, height = style.resolved_size(button_element, skin)
+            scale = LVector3(width / font_size, 1, height / font_size)
         else:
             scale = LVector3(1, 1, 1)
         if self.menu is not None:
@@ -102,10 +101,12 @@ class ButtonDockWidget(DGuiDockWidget):
             self._center_icon(button, font_size)
         bounds = button.getBounds()
         if self.rescale and bounds is not None:
-            width = bounds[1] - bounds[0]
-            height = bounds[3] - bounds[2]
-            max_size = max(width, height)
-            button.set_scale(scale * font_size / max_size)
+            glyph_width = bounds[1] - bounds[0]
+            glyph_height = bounds[3] - bounds[2]
+            max_size = max(glyph_width, glyph_height)
+            # Shrink the button so the glyph's largest dimension matches the requested size.
+            ratio = font_size / max_size
+            button.set_scale(LVector3(scale[0] * ratio, 1, scale[2] * ratio))
         return button
 
     def _center_icon(self, button, font_size):

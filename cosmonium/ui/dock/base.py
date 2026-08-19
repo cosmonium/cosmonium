@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,10 +40,12 @@ class DockWidgetBase:
         self.index = index
 
     def add_to(self, dock: Dock, parent, borders, skin) -> None:
+        # A widget that does not have an alignment use the default one from the layout.
+        alignments = self.alignments if self.alignments is not None else parent.default_alignments()
         parent.sizer.add(
             self.widget,
             self.proportions,
-            self.alignments,
+            alignments,
             (self.borders + borders) if self.borders else borders,
             self.index,
         )

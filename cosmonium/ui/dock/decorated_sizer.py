@@ -29,28 +29,41 @@ from ..textures.circle_generator import CircleTextureGenerator
 
 
 class DecoratedSizer(Sizer):
+    """A sizer drawing a skinned frame (background, border and rounded corners) behind its content."""
 
-    def __init__(self, element, image, geom, *args, **kwargs):
+    def __init__(self, element, *args, **kwargs):
         Sizer.__init__(self, *args, **kwargs)
         self.frame = None
         self.border = (0, 0)
         self.element = element
-        self.image = image
-        self.geom = geom
         self.border_color = None
         self.corner_radius = 0
         self.corner_texture = None
         self.frame_size = None
+
+    def set_declared_size(self, size):
+        """Apply the size declared by the skin."""
+        # default_size is a property managed by the Sizer base class,
+        # which is used as the minimal size in each direction.
+        self.default_size = size
+        # Tell the sizer to use all the available space in the primary direction.
+        if self.prim_dim == 0:
+            # Horizontal direction of growing
+            self.set_row_proportion(0, 1.0)
+        else:
+            # Vertical direction of growing
+            self.set_column_proportion(0, 1.0)
 
     def create(self, dock, parent, skin):
         skin_entry = skin.get(self.element)
         self.background_color = skin_entry.background_color
         self.border_color = skin_entry.border_color
         if skin_entry.border_width is not None:
-            border_val = skin_entry.border_width(self.element, False, skin)
+            border_val = skin_entry.border_width(self.element, skin)
             self.border = (border_val, border_val)
         if skin_entry.border_radius is not None:
-            self.corner_radius = skin_entry.border_radius(self.element, False, skin)
+            self.corner_radius = skin_entry.border_radius(self.element, skin)
+        self.set_declared_size(skin_entry.resolved_size(self.element, skin, default=0))
         style = skin.get_style(self.element)
         if self.corner_radius:
             # With rounded corners, the whole frame is rendered via geometry and texture.

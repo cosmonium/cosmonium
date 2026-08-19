@@ -7,7 +7,7 @@ dock:
         text: "A"
       - type: layout
         orientation: horizontal
-        size: 48
+        class: large-icons
         widgets:
           - type: button
             code: F0F65
@@ -16,7 +16,6 @@ dock:
             code: F09BA
       - type: layout
         orientation: vertical
-        size: 16
         gaps: [2, 2]
         widgets:
           - type: text
@@ -25,7 +24,6 @@ dock:
           - type: layout
             orientation: horizontal
             align: [min, min]
-            size: 16
             widgets:
                - type: button
                  code: F040E

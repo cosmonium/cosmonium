@@ -37,6 +37,7 @@ from cosmonium.ui.loaders.parsers import (
     ParsersCollection,
     TextAlignmentParser,
 )
+from cosmonium.ui.skin import Selector, UIElement, UISkin, UISkinEntry
 
 
 class TestColorParser:
@@ -103,108 +104,109 @@ class TestColorParser:
         assert "Invalid color" in caplog.text
 
 
-class MockSkinEntry:
-    """Mock skin entry for testing length parsing."""
-
-    def calc_size_px(self, value, element, font_size, skin):
-        return value
-
-    def calc_size_em(self, value, element, font_size, skin):
-        return value * font_size
-
-    def calc_size_rem(self, value, element, font_size, skin):
-        return value * skin.root_font_size
-
-
-class MockSkin:
-    """Mock skin for testing rem length resolution."""
-
-    def __init__(self, root_font_size=16):
-        self.root_font_size = root_font_size
-
-
 class TestLengthParser:
     """Tests for LengthParser."""
+
+    @staticmethod
+    def make_skin(root_font_size=16, **entry_config):
+        """Build a skin whose single entry, matching any element, holds the given properties."""
+        skin = UISkin()
+        skin.root_font_size = root_font_size
+        entry = UISkinEntry(Selector(None, None, None, None), {})
+        for key, value in entry_config.items():
+            setattr(entry, key, value)
+        skin.add_entry(entry)
+        return skin
 
     def test_parse_pixels(self):
         """Test parsing pixel values."""
         parser = LengthParser()
-        entry = MockSkinEntry()
 
-        size_fn = parser.parse("16px", entry)
-        assert size_fn(None, 12, None) == 16
+        size_fn = parser.parse("16px")
+        assert size_fn(None, None) == 16
 
     def test_parse_em(self):
-        """Test parsing em values."""
+        """Test parsing em values, relative to the font size of the element."""
         parser = LengthParser()
-        entry = MockSkinEntry()
+        skin = self.make_skin(font_size=parser.parse("12px"))
+        element = UIElement('button')
 
-        size_fn = parser.parse("1.5em", entry)
-        assert size_fn(None, 12, None) == 18
+        size_fn = parser.parse("1.5em")
+        assert size_fn(element, skin) == 18
+
+    def test_parse_em_of_font_size_is_relative_to_the_parent(self):
+        """For font-size property, em is relative to the parent's font size."""
+        parser = LengthParser()
+        skin = self.make_skin(font_size=parser.parse("12px"))
+        element = UIElement('button', parent=UIElement('frame'))
+
+        size_fn = parser.parse("1.5em", relative_to_parent=True)
+        assert size_fn(element, skin) == 18
+
+    def test_parse_em_falls_back_to_the_root_font_size(self):
+        """An em length applied to an element who has no defined font size, uses the root font size."""
+        parser = LengthParser()
+        skin = self.make_skin(root_font_size=20)
+
+        size_fn = parser.parse("1.5em")
+        assert size_fn(UIElement('button'), skin) == 30
 
     def test_parse_rem(self):
         """Test parsing rem values, relative to the skin's root font size."""
         parser = LengthParser()
-        entry = MockSkinEntry()
-        skin = MockSkin(root_font_size=20)
+        skin = self.make_skin(root_font_size=20)
 
-        size_fn = parser.parse("1.5rem", entry)
-        assert size_fn(None, 12, skin) == 30
+        size_fn = parser.parse("1.5rem")
+        assert size_fn(None, skin) == 30
 
     def test_parse_invalid_string_does_not_crash(self, caplog):
         """A string containing an invalid unit should be reported."""
         parser = LengthParser()
-        entry = MockSkinEntry()
 
-        size_fn = parser.parse("1x", entry)
+        size_fn = parser.parse("1x")
         assert size_fn is None
         assert "Invalid size 1x" in caplog.text
 
     def test_parse_numeric(self):
         """Test parsing numeric values."""
         parser = LengthParser()
-        entry = MockSkinEntry()
 
-        size_fn = parser.parse(20, entry)
-        assert size_fn(None, 12, None) == 20
+        size_fn = parser.parse(20)
+        assert size_fn(None, None) == 20
 
-        size_fn = parser.parse(15.5, entry)
-        assert size_fn(None, 12, None) == 15.5
+        size_fn = parser.parse(15.5)
+        assert size_fn(None, None) == 15.5
 
     def test_parse_none(self):
         """Test parsing None returns None."""
         parser = LengthParser()
-        entry = MockSkinEntry()
-        assert parser.parse(None, entry) is None
+        assert parser.parse(None) is None
 
     def test_parse_edge_lengths_single(self):
         """Test parsing single edge length (all edges same)."""
         parser = LengthParser()
-        entry = MockSkinEntry()
 
-        lengths = parser.parse_edge_lengths("10px", entry)
+        lengths = parser.parse_edge_lengths("10px")
         assert len(lengths) == 4
         for length in lengths:
-            assert length(None, 12, None) == 10
+            assert length(None, None) == 10
 
     def test_parse_edge_lengths_two(self):
         """Test parsing two edge lengths (vertical horizontal)."""
         parser = LengthParser()
-        entry = MockSkinEntry()
 
-        lengths = parser.parse_edge_lengths("10px 20px", entry)
+        lengths = parser.parse_edge_lengths("10px 20px")
         assert len(lengths) == 4
         # DirectGUI order: left, right, bottom, top
-        assert lengths[0](None, 12, None) == 20  # left
-        assert lengths[1](None, 12, None) == 20  # right
-        assert lengths[2](None, 12, None) == 10  # bottom
-        assert lengths[3](None, 12, None) == 10  # top
+        assert lengths[0](None, None) == 20  # left
+        assert lengths[1](None, None) == 20  # right
+        assert lengths[2](None, None) == 10  # bottom
+        assert lengths[3](None, None) == 10  # top
 
     def test_parse_edge_lengths_none(self):
         """Test parsing None returns None."""
         parser = LengthParser()
-        entry = MockSkinEntry()
-        assert parser.parse_edge_lengths(None, entry) is None
+        assert parser.parse_edge_lengths(None) is None
 
 
 class TestAlignmentParser:
@@ -234,10 +236,15 @@ class TestAlignmentParser:
         result = parser.parse(None, default=('max', 'min'))
         assert result == ('max', 'min')
 
+    def test_parse_none_without_default_is_unspecified(self):
+        """With no default, an unspecified alignment stays unspecified."""
+        parser = AlignmentParser()
+        assert parser.parse(None) is None
+
     def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
         parser = AlignmentParser()
-        result = parser.parse("invalid")
+        result = parser.parse("invalid", default=('min', 'min'))
         assert result == ('min', 'min')  # Should return default
         assert "Invalid alignments" in caplog.text
 

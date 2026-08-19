@@ -40,7 +40,7 @@ class TimeEditor(UIWindow):
         UIWindow.__init__(self, parent=parent)
         self.time = time
         self.element = UIElement('window', id_='time-window')
-        self.font_size = self.skin.get(self.element).font_size(None, False, None)
+        self.font_size = self.skin.get(self.element).resolved_font_size(self.element, self.skin)
         self.borders = (self.font_size / 4.0, self.font_size / 4.0, self.font_size / 4.0, self.font_size / 4.0)
         self.width = settings.default_window_width
         self.height = settings.default_window_height

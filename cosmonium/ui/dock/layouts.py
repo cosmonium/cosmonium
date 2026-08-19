@@ -32,21 +32,29 @@ if TYPE_CHECKING:
 
 
 class SpaceDockWidget(DockWidgetBase):
+    """An empty widget of a fixed size, used to separate adjacent widgets."""
 
-    def __init__(self, size: tuple, proportions=None, alignments=None, borders=None, index=None):
+    def __init__(self, width, height, proportions=None, alignments=None, borders=None, index=None):
         DockWidgetBase.__init__(self, proportions, alignments, borders, index)
-        self.widget = size
+        self.width = width
+        self.height = height
+
+    def add_to(self, dock: Dock, parent, borders, skin) -> None:
+        element = parent.element
+        width = self.width(element, skin) if self.width is not None else 0
+        height = self.height(element, skin) if self.height is not None else 0
+        # A sizer takes a plain tuple as an empty cell of the given size.
+        self.widget = (width, height)
+        DockWidgetBase.add_to(self, dock, parent, borders, skin)
 
 
 class LayoutDockWidget(DockWidgetBase):
+    """A layout of dock widgets, with an optionally decorated frame."""
 
     def __init__(
         self,
-        size: int,
         direction: str,
         widgets: list[DockWidgetBase],
-        image=None,
-        geom=None,
         proportions=None,
         alignments=None,
         borders=None,
@@ -57,14 +65,22 @@ class LayoutDockWidget(DockWidgetBase):
         id_=None,
     ):
         DockWidgetBase.__init__(self, proportions, alignments, borders, index)
-        self.size = size
         self.direction = direction
         self.element = UIElement('frame', class_=combine_classes(element_class, class_), id_=id_)
-        self.widget = DecoratedSizer(self.element, image, geom, direction, gaps=gaps)
+        self.widget = DecoratedSizer(self.element, direction, gaps=gaps)
         self.sizer = self.widget
         self.frame = None
         self.widgets = widgets
         self.widget_borders = LVector4(1, 1, 1, 1)
+
+    def default_alignments(self) -> tuple[str, str]:
+        """Default alignment for children without explicit alignments.
+        Children are packed from the start of the layout direction and centered across it.
+        """
+        if self.direction == 'horizontal':
+            return ('min', 'center')
+        else:
+            return ('center', 'min')
 
     def create(self, dock: Dock, parent, skin) -> None:
         self.element.parent = parent.element

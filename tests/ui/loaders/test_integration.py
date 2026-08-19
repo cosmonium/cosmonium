@@ -154,11 +154,11 @@ class TestSkinLoader:
 
             button = skin.entries[0]
             assert button.background_color == LColor(0x33 / 255, 0x88 / 255, 0xFF / 255, 1.0)
-            assert button.padding[0](None, 12, None) == 8.0  # left, from the "var(spacing)" shorthand
+            assert button.padding[0](None, None) == 8.0  # left, from the "var(spacing)" shorthand
 
             label = skin.entries[1]
-            assert label.padding[0](None, 12, None) == 0.0  # left, from "var(spacing) 0px"
-            assert label.padding[3](None, 12, None) == 8.0  # top
+            assert label.padding[0](None, None) == 0.0  # left, from "var(spacing) 0px"
+            assert label.padding[3](None, None) == 8.0  # top
         finally:
             os.unlink(filepath)
 
@@ -198,7 +198,7 @@ class TestSkinLoader:
             # The root entry doesn't produce a skin entry either.
             assert len(skin.entries) == 1
             button = skin.entries[0]
-            assert button.font_size(None, True, skin) == 30.0  # 1.5 * 20px
+            assert button.font_size(None, skin) == 30.0  # 1.5 * 20px
         finally:
             os.unlink(filepath)
 
@@ -351,7 +351,7 @@ class TestWidgetLoaders:
         assert widget.is_icon is False
 
         # Test with icon button
-        data = {'type': 'button', 'code': 'f001', 'event': 'test-event', 'size': 32}
+        data = {'type': 'button', 'code': 'f001', 'event': 'test-event'}
         config = validator.validate_dict(data, ButtonWidgetConfig)
         widget = loader.decode(config, global_vars={})
         assert widget.is_icon is True

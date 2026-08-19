@@ -92,6 +92,33 @@ def report_error(message: str, context: Optional[str] = None) -> None:
 INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 'font_weight')
 
 
+def calc_size_px(size, element, skin):
+    """Resolve a length given in "px", scaled by the global UI scale factor."""
+    return size * settings.ui_scale
+
+
+def calc_size_rem(size, element, skin):
+    """Resolve a length given in "rem", relative to the skin's root font size."""
+    return skin.root_font_size * settings.ui_scale * size
+
+
+def calc_size_em(size, element, skin):
+    """Resolve a length given in "em", relative to the font size of the element it applies to."""
+    return skin.get(element).resolved_font_size(element, skin) * size
+
+
+def calc_font_size_em(size, element, skin):
+    """
+    Resolve a `font-size` property given in "em".
+
+    When specified in "em", the font size is relative to the parent element's font size, falling
+    back to the root font size for an element without a parent.
+    """
+    if element is None or element.parent is None:
+        return skin.root_font_size * settings.ui_scale * size
+    return skin.get(element.parent).resolved_font_size(element.parent, skin) * size
+
+
 @dataclass
 class UIElement:
     type_: str
@@ -177,17 +204,31 @@ class UISkinEntry:
         if value is not None:
             self._config[attr] = value
 
-    def calc_size_em(self, size, element, font_size, skin):
-        if font_size:
-            return skin.get(element.parent).font_size(element.parent, False, skin) * size
-        else:
-            return skin.get(element).font_size(element, False, skin) * size
+    def resolved_font_size(self, element, skin):
+        """The font size of the given element, in pixels, scaled by the global UI scale factor."""
+        if self.font_size is None:
+            # No font size sepecified at all,fall back to the skin's root font size.
+            return skin.root_font_size * settings.ui_scale
+        return self.font_size(element, skin)
 
-    def calc_size_px(self, size, element, font_size, skin):
-        return size * settings.ui_scale
+    def resolved_size(self, element, skin, default=None):
+        """
+        Return the `width` and `height` of the given element, in pixels, scaled by the global UI scale factor.
 
-    def calc_size_rem(self, size, element, font_size, skin):
-        return skin.root_font_size * settings.ui_scale * size
+        Args:
+            element: the element the style has been collected for
+            skin: the skin the style has been collected from
+            default: value used for a dimension the skin does not set. When None, the element's
+                font size is used.
+
+        Returns:
+            Tuple of (width, height)
+        """
+        if default is None:
+            default = self.resolved_font_size(element, skin)
+        width = self.width(element, skin) if self.width is not None else default
+        height = self.height(element, skin) if self.height is not None else default
+        return (width, height)
 
     def get_font_parameters(self, element, skin, prefix=None, skip_scale=False, scale3=False, ui_scale=None):
         font_family = self.font_family
@@ -200,7 +241,7 @@ class UISkinEntry:
             'font': fontsManager.load_font(font_family, font_style),
         }
         if not skip_scale:
-            font_size = self.font_size(element, True, skin)
+            font_size = self.resolved_font_size(element, skin)
             if ui_scale is None:
                 ui_scale = (1, 1)
             if scale3:
@@ -213,15 +254,7 @@ class UISkinEntry:
         return parameters
 
     def get_scale_from_width_height(self, element, skin, prefix=None, scale3=False):
-        font_size = self.font_size(element, False, skin)
-        if self.width is not None:
-            width = self.width(element, False, skin)
-        else:
-            width = font_size
-        if self.height is not None:
-            height = self.height(element, False, skin)
-        else:
-            height = font_size
+        width, height = self.resolved_size(element, skin)
         if scale3:
             scale = (width, 1, height)
         else:
@@ -237,7 +270,7 @@ class UISkinEntry:
         self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None
     ):
         dgui_type = dgui or element.type_
-        font_size = self.font_size(element, True, skin)
+        font_size = self.resolved_font_size(element, skin)
         if dgui_type == 'button':
             parameters = {
                 'frameColor': self.background_color,
@@ -316,7 +349,7 @@ class UISkinEntry:
         elif dgui_type == 'scrolled-frame':
             parameters = {
                 'frameColor': self.background_color,
-                'scrollBarWidth': self.width(element, False, skin) if self.width else font_size,
+                'scrollBarWidth': self.width(element, skin) if self.width is not None else font_size,
             }
             horizontal_scroll = UIElement(parent=element, type_='scroll-bar', class_='horizontal-scroll')
             parameters.update(skin.get_style(horizontal_scroll, prefix='horizontalScroll_'))
@@ -325,7 +358,7 @@ class UISkinEntry:
         elif dgui_type == 'sizer':
             if usage == 'cell':
                 if self.padding is not None:
-                    borders = [padding(element, False, skin) for padding in self.padding]
+                    borders = [padding(element, skin) for padding in self.padding]
                 else:
                     borders = None
                 parameters = {
@@ -333,7 +366,7 @@ class UISkinEntry:
                 }
             else:
                 if self.margin is not None:
-                    gaps = [margin(element, False, skin) for margin in (self.margin[0], self.margin[2])]
+                    gaps = [margin(element, skin) for margin in (self.margin[0], self.margin[2])]
                 else:
                     gaps = (0, 0)
                 parameters = {

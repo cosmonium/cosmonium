@@ -354,7 +354,7 @@ class TestMultiClassSelectors:
 
 
 def _fixed(value):
-    return lambda element, font_size, skin: value
+    return lambda element, skin: value
 
 
 class TestSkinGetStyle:
@@ -395,3 +395,61 @@ class TestSkinGetStyle:
         params = skin.get_style(element, prefix='inner_')
 
         assert params == {'inner_frameColor': 'bg'}
+
+
+class TestResolvedSizes:
+    """Tests for the resolution of the font size and of the `width`/`height` properties."""
+
+    def test_font_size_falls_back_to_the_root_font_size(self):
+        """An element no entry gives a font size to uses the skin root font size, as in CSS."""
+        skin = UISkin()
+        skin.root_font_size = 20
+
+        style = skin.get(UIElement(type_='button'))
+
+        assert style.resolved_font_size(UIElement(type_='button'), skin) == 20
+
+    def test_size_defaults_to_the_font_size(self):
+        """Unset `width` and `height` default to the element's font size, i.e. to "1em"."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('button', None, None, None), font_size=_fixed(12)))
+        element = UIElement(type_='button')
+
+        assert skin.get(element).resolved_size(element, skin) == (12, 12)
+
+    def test_size_uses_the_given_default_for_the_unset_dimensions(self):
+        """A container passing a default of 0 is sized by its content on the unset dimensions."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('frame', None, None, None), font_size=_fixed(12), height=_fixed(48)))
+        element = UIElement(type_='frame')
+
+        assert skin.get(element).resolved_size(element, skin, default=0) == (0, 48)
+
+    def test_size_is_taken_from_the_matching_entries(self):
+        skin = UISkin()
+        skin.add_entry(
+            make_entry(Selector('button', None, None, None), font_size=_fixed(12), width=_fixed(24), height=_fixed(32))
+        )
+        element = UIElement(type_='button')
+
+        assert skin.get(element).resolved_size(element, skin) == (24, 32)
+
+    def test_size_is_targeted_by_the_cascade_like_any_other_property(self):
+        """A descendant selector sizes every icon of a dock, however deeply nested."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('button', None, None, None), font_size=_fixed(12)))
+        skin.add_entry(
+            make_entry(
+                ParentSelector(Selector(None, None, 'dock', None), Selector('button', None, None, None)),
+                width=_fixed(24),
+                height=_fixed(24),
+            )
+        )
+        dock = UIElement(type_='frame', class_='dock')
+        nested = UIElement(type_='frame', class_='layout', parent=dock)
+        element = UIElement(type_='button', parent=nested)
+
+        assert skin.get(element).resolved_size(element, skin) == (24, 24)
+        # A button outside of any dock keeps the default size
+        outside = UIElement(type_='button')
+        assert skin.get(outside).resolved_size(outside, skin) == (12, 12)

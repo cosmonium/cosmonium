@@ -64,7 +64,6 @@ class ButtonWidgetConfig(StyleableConfig):
     menu: Optional[str] = Field(
         None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
     )
-    size: Optional[float] = Field(None, ge=1, description="Icon box size in pixels (icon button only)")
     rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
@@ -77,13 +76,6 @@ class ButtonWidgetConfig(StyleableConfig):
             raise ValueError("Button must have either 'text' or 'code' field")
         if self.text is not None and self.code is not None:
             raise ValueError("Button cannot have both 'text' and 'code' fields")
-        return self
-
-    @model_validator(mode='after')
-    def validate_text_no_size(self):
-        """Text button can not use size property."""
-        if self.text is not None and self.size is not None:
-            raise ValueError("Text button can not use size property")
         return self
 
     @model_validator(mode='after')
@@ -101,7 +93,6 @@ class OptionMenuWidgetConfig(StyleableConfig):
     items: List[str] = Field(min_length=1, description="Selectable option labels")
     event: str = Field(description="Event name to send, with the selected label as argument, on selection")
     selected: Optional[str] = Field(None, description="Python expression evaluating to the initially selected item")
-    size: Optional[float] = Field(None, ge=1, description="Widget size in pixels")
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
     tooltip: Optional[str] = Field(None, description="Tooltip text")
@@ -112,6 +103,7 @@ class TextWidgetConfig(StyleableConfig):
 
     type: Literal['text'] = Field(description="Widget type identifier")
     text: str = Field(description="Template text to display")
+    # TODO: align is the alignment of the text inside the label, not the label itself.
     align: Optional[TextAlignLiteral] = Field('left', description="Text alignment (left/center/right)")
     borders: Optional[Any] = Field(None, description="Border configuration")
 
@@ -122,7 +114,9 @@ class SpacerWidgetConfig(ConfigBase):
     model_config = ConfigDict(extra='forbid')
 
     type: Literal['spacer'] = Field(description="Widget type identifier")
-    size: List[float] = Field(default=[0, 0], min_length=2, max_length=2, description="[width, height] in pixels")
+    size: List[Union[float, str]] = Field(
+        default=[0, 0], min_length=2, max_length=2, description="[width, height], as CSS lengths"
+    )
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
 
 
@@ -135,7 +129,6 @@ class LayoutWidgetConfig(StyleableConfig):
     align: Optional[List[AlignmentLiteral]] = Field(None, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
     gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
-    size: float = Field(32, description="Default widget size")
 
 
 # Union type for all widget configs
@@ -157,7 +150,6 @@ class DockConfig(StyleableConfig):
     orientation: OrientationLiteral = Field('horizontal', description="Dock orientation")
     anchor: AnchorLiteral = Field('bottom', description="Screen location for the dock")
     widgets: List[WidgetConfig] = Field(default_factory=list, description="Widgets in the dock")
-    size: float = Field(32, description="Default widget size")
     gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
     borders: Optional[Any] = Field(None, description="Border configuration")
 

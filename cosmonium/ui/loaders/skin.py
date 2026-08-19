@@ -185,20 +185,22 @@ class SkinLoader(BaseComponentLoader):
         entry.background_color = self.parsers.color.parse(entry_config.background_color, entry_context)
         entry.text_color = self.parsers.color.parse(entry_config.text_color, entry_context)
         entry.border_color = self.parsers.color.parse(entry_config.border_color, entry_context)
-        entry.border_radius = self.parsers.length.parse(entry_config.border_radius, entry, entry_context)
-        entry.border_width = self.parsers.length.parse(entry_config.border_width, entry, entry_context)
+        entry.border_radius = self.parsers.length.parse(entry_config.border_radius, entry_context)
+        entry.border_width = self.parsers.length.parse(entry_config.border_width, entry_context)
 
         # Parse font properties
         entry.font_family = entry_config.font_family
-        entry.font_size = self.parsers.length.parse(entry_config.font_size, entry, entry_context)
+        # `font-size` is the one property whose "em" values are relative to the parent element's
+        # font size instead of the element's own, as in CSS.
+        entry.font_size = self.parsers.length.parse(entry_config.font_size, entry_context, relative_to_parent=True)
         entry.font_style = entry_config.font_style
         entry.font_weight = entry_config.font_weight
 
         # Parse layout properties
-        entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry, entry_context)
-        entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry, entry_context)
-        entry.width = self.parsers.length.parse(entry_config.width, entry, entry_context)
-        entry.height = self.parsers.length.parse(entry_config.height, entry, entry_context)
+        entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry_context)
+        entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry_context)
+        entry.width = self.parsers.length.parse(entry_config.width, entry_context)
+        entry.height = self.parsers.length.parse(entry_config.height, entry_context)
 
         return entry
 

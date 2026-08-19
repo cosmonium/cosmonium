@@ -26,11 +26,12 @@ values like colors, lengths, alignments, borders, and gaps. Each parser
 encapsulates the logic for parsing a specific type of value.
 """
 
+from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
 
 from panda3d.core import LColor, LVector4, TextNode
 
-from ..skin import report_error
+from ..skin import calc_font_size_em, calc_size_em, calc_size_px, calc_size_rem, report_error
 
 
 class ColorParser:
@@ -77,67 +78,61 @@ class ColorParser:
 
 class LengthParser:
     """
-    Parser for length values with unit support.
+    Parser for CSS-like length values.
 
     Supports:
-    - Pixel values: "16px" or numeric values
-    - Em values: "1.5em" (relative to the element's own font size)
-    - Rem values: "1.5rem" (relative to the skin's root font size)
+    - Pixel values: "16px", or a plain number, scaled by the global UI scale factor
+    - Em values: "1.5em", relative to the font size of the element the length applies to
+      (for `font-size` property, it's relative to the parent element's font size)
+    - Rem values: "1.5rem", relative to the skin's root font size
     """
 
     # Longest suffix first, so "rem" isn't misdetected as "em".
     _UNIT_SUFFIXES = ('rem', 'px', 'em')
 
     @staticmethod
-    def parse(data: Any, entry: Any, context: Optional[str] = None) -> Optional[Callable]:
+    def parse(data: Any, context: Optional[str] = None, relative_to_parent: bool = False) -> Optional[Callable]:
         """
         Parse a length value from configuration data.
 
         Args:
             data: Length specification (string or number)
-            entry: UI skin entry for calculating sizes
             context: Optional context (e.g. file/entry/selector) for error reporting
+            relative_to_parent: True when parsing the `font-size` property itself, for which "em" is
+                relative to the parent element's font size instead of the element's own font size
 
         Returns:
-            Callable that calculates the actual size, or None if parsing fails
+            Callable returning the length in pixels, or None if parsing fails.
+            The callable has the following signature: `length(element, skin)`
         """
-        if data is not None:
-            if isinstance(data, str):
-                unit = next((suffix for suffix in LengthParser._UNIT_SUFFIXES if data.endswith(suffix)), None)
-                if unit is not None:
-                    try:
-                        value = float(data[: -len(unit)])
-                    except ValueError:
-                        report_error(f"Invalid size {data}", context)
-                        return None
-                if unit == 'px':
-                    size = lambda element, font_size, skin: entry.calc_size_px(  # noqa: E731
-                        value, element, font_size, skin
-                    )
-                elif unit == 'em':
-                    size = lambda element, font_size, skin: entry.calc_size_em(  # noqa: E731
-                        value, element, font_size, skin
-                    )
-                elif unit == 'rem':
-                    size = lambda element, font_size, skin: entry.calc_size_rem(  # noqa: E731
-                        value, element, font_size, skin
-                    )
-                else:
-                    report_error(f"Invalid size {data}", context)
-                    size = None
-            elif isinstance(data, (int, float)):
-                size = lambda element, font_size, skin: entry.calc_size_px(data, element, font_size, skin)  # noqa: E731
-            else:
-                report_error(f"Invalid size {data}", context)
-                size = None
+        if data is None:
+            return None
+        if isinstance(data, (int, float)):
+            return partial(calc_size_px, float(data))
+        if not isinstance(data, str):
+            report_error(f"Invalid size {data}", context)
+            return None
+        unit = next((suffix for suffix in LengthParser._UNIT_SUFFIXES if data.endswith(suffix)), None)
+        if unit is None:
+            report_error(f"Invalid size {data}", context)
+            return None
+        try:
+            value = float(data[: -len(unit)])
+        except ValueError:
+            report_error(f"Invalid size {data}", context)
+            return None
+        if unit == 'px':
+            calc = calc_size_px
+        elif unit == 'rem':
+            calc = calc_size_rem
+        elif relative_to_parent:
+            calc = calc_font_size_em
         else:
-            size = None
-        return size
+            calc = calc_size_em
+        return partial(calc, value)
 
     @classmethod
-    def parse_edge_lengths(
-        cls, data: Any, entry: Any, context: Optional[str] = None
-    ) -> Optional[List[Optional[Callable]]]:
+    def parse_edge_lengths(cls, data: Any, context: Optional[str] = None) -> Optional[List[Optional[Callable]]]:
         """
         Parse edge lengths (margin, padding) from configuration data.
 
@@ -149,7 +144,6 @@ class LengthParser:
 
         Args:
             data: Length specification string or None
-            entry: UI skin entry for calculating sizes
             context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
@@ -159,7 +153,7 @@ class LengthParser:
             return None
         if isinstance(data, str):
             items = data.split(' ')
-        lengths = [cls.parse(item, entry, context) for item in items]
+        lengths = [cls.parse(item, context) for item in items]
         # DirectGUI order is: l, r, b, t
         if len(lengths) == 1:
             lengths = lengths * 4
@@ -180,17 +174,21 @@ class AlignmentParser:
     """
 
     @staticmethod
-    def parse(value: Any, default: Tuple[str, str] = ('min', 'min'), context: Optional[str] = None) -> Tuple[str, str]:
+    def parse(
+        value: Any, default: Optional[Tuple[str, str]] = None, context: Optional[str] = None
+    ) -> Optional[Tuple[str, str]]:
         """
         Parse alignment specification from configuration data.
 
         Args:
             value: Alignment specification [horizontal, vertical]
-            default: Default alignment if value is None
+            default: Default alignment if value is None..
             context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
-            Tuple of alignment strings ('min', 'max', 'center')
+            Tuple of alignment strings ('min', 'max', 'center'), or the default when unspecified
+
+        Note: Returning None means the container uses the alignment matching its direction.
         """
         if isinstance(value, list) and len(value) == 2:
             if value[0] == "left":

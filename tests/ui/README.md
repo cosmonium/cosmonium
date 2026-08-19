@@ -12,7 +12,14 @@ This directory contains unit tests covering functionalities related to the core 
 - **core/test_skin.py**: Unit tests for CSS-like skin/selector module.
 
 
-### 2. Loaders Tests (`loaders`)
+### 2. Dock Tests (`dock`)
+
+This directory contains unit tests covering functionalities related to the dock module.
+
+- **dock/test_layouts.py**: Unit tests for the dock layouts and their sizing.
+
+
+### 3. Loaders Tests (`loaders`)
 
 This directory contains unit tests covering functionalities related to the loaders module.
 
@@ -20,6 +27,6 @@ This directory contains unit tests covering functionalities related to the loade
 - **loaders/test_integration.py**:  Integration tests for UI configuration loaders.
 
 
-### 3. Markdown Tests (`markdown`)
+### 4. Markdown Tests (`markdown`)
 
 This directory contains unit tests covering functionalities related to the markdown rendering module.
