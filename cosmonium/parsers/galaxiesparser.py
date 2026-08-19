@@ -218,7 +218,7 @@ class GalaxyYamlParser(YamlModuleParser):
             orbit=orbit,
             rotation=rotation,
         )
-        self.translate_object_names(galaxy, galaxy.anchor.get_names())
+        self.translate_object_names(galaxy.anchor)
         ObjectYamlParser.decode_objects_list(data.children, parent=galaxy)
         parent.add_child_fast(galaxy)
         return galaxy

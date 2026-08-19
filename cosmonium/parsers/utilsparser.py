@@ -39,7 +39,7 @@ def check_parent(name, parent, parent_name):
     else:
         if parent_name is not None:
             explicit_parent = True
-            parent = objectsDB.get(parent_name)
+            parent = objectsDB.get_body(parent_name)
             if parent is not None:
                 parent = parent.get_or_create_system()
             else:

@@ -100,6 +100,15 @@ PUBLISHED:
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
+  // Object id, used for color picking and for the global objects database
+  int get_oid(void) const;
+  void set_oid(int oid);
+  MAKE_PROPERTY(oid, get_oid, set_oid);
+
+  LColor get_oid_color(void) const;
+  void set_oid_color(LColor oid_color);
+  MAKE_PROPERTY(oid_color, get_oid_color, set_oid_color);
+
   // Name management methods
   std::string get_name(void) const;
   ObjectNames *get_names(void);
@@ -220,6 +229,8 @@ PUBLISHED:
 
 protected:
   double bounding_radius;
+  int oid;
+  LColor oid_color;
   // Name management data
   ObjectNames object_names;
   std::string description;

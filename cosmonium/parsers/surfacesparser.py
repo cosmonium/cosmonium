@@ -293,7 +293,7 @@ class FlatSurfaceParser(YamlModuleParser):
 class StandaloneSurfaceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        parent = objectsDB.get(data.parent)
+        parent = objectsDB.get_body(data.parent)
         if parent is None:
             print(f"ERROR: Parent '{data.parent}' of surface '{data.name}' not found")
             return None

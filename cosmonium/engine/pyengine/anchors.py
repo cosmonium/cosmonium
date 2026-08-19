@@ -99,6 +99,8 @@ class AnchorBase(ABC):
             self.object_names.add_name(ObjectNames.parse_name(names, reflective))
 
         self.description = ''
+        self.oid = -1
+        self.oid_color = None
         # Scene anchor (set by StellarObject or SceneWorld)
         self.scene_anchor = None
         # Flags
@@ -1346,6 +1348,8 @@ class SystemAnchor(StellarAnchor):
         self.primary = primary
         if primary is not None:
             primary.set_system(self)
+            # The system is displayed with the settings of its primary body
+            self.point_color = primary.point_color
 
     def get_fullname(self, separator: str = '/') -> str:
         """Get the full hierarchical name of this system anchor.

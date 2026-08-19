@@ -168,7 +168,7 @@ def create_asterism(universe, name, text_segments):
     for text_segment in text_segments:
         segment = []
         for star_name in text_segment:
-            star = objectsDB.get(bayer.encode_name(star_name))
+            star = objectsDB.get_body(bayer.encode_name(star_name))
             if star is not None:
                 if not isinstance(star.anchor.orbit, FixedPosition):
                     star = star.parent

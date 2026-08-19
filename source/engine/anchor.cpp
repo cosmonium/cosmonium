@@ -74,6 +74,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
   bounding_radius(0.0),
+  oid(-1),
+  oid_color(0),
   _height_under(0.0),
   //Scene parameters
   rel_position(0.0),
@@ -125,6 +127,8 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
   bounding_radius(0.0),
+  oid(-1),
+  oid_color(0),
   _height_under(0.0),
   //Scene parameters
   rel_position(0.0),
@@ -204,6 +208,30 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+int
+AnchorBase::get_oid(void) const
+{
+  return oid;
+}
+
+void
+AnchorBase::set_oid(int oid)
+{
+  this->oid = oid;
+}
+
+LColor
+AnchorBase::get_oid_color(void) const
+{
+  return oid_color;
+}
+
+void
+AnchorBase::set_oid_color(LColor oid_color)
+{
+  this->oid_color = oid_color;
 }
 
 bool

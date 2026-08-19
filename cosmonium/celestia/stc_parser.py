@@ -85,7 +85,7 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
         parent_name = str(parent_name)
-        parent = objectsDB.get(bayer.canonize_name(parent_name))
+        parent = objectsDB.get_body(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:
             logger.warning("Could not find parent barycenter: %s", parent_name)
@@ -161,7 +161,7 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
         surface_factory = celestiaStarSurfaceFactory
     # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
     # If so, merge its names into the new star and replace it.
-    existing_star = objectsDB.get(names[0]) if names else None
+    existing_star = objectsDB.get_body(names[0]) if names else None
     if existing_star is not None:
         # Merge all names from the existing star, preserving new names first and deduplicating
         existing_names = existing_star.get_names().get_all_names() + existing_star.get_source_names()
@@ -185,7 +185,7 @@ def instanciate_star(universe, context, item_name, item_alias, item_data):
     )
     parent.add_child_fast(star)
     if existing_star is not None:
-        objectsDB.replace(existing_star, star)
+        objectsDB.replace(existing_star.anchor, star.anchor)
     return star
 
 
@@ -201,7 +201,7 @@ def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
     parent_name = item_data.get('OrbitBarycenter')
     if parent_name is not None:
         parent_name = str(parent_name)
-        parent = objectsDB.get(bayer.canonize_name(parent_name))
+        parent = objectsDB.get_body(bayer.canonize_name(parent_name))
         has_barycenter = True
         if parent is None:
             logger.warning("Could not find parent barycenter: %s", parent_name)
@@ -232,7 +232,7 @@ def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
             logger.warning("Key of Barycenter '%s' not supported", key)
     # Check if a star with the primary name already exists (e.g. loaded from the star catalog).
     # If so, merge its names into the new star and replace it.
-    existing_star = objectsDB.get(names[0]) if names else None
+    existing_star = objectsDB.get_body(names[0]) if names else None
     if existing_star is not None:
         # print("Replacing star", names, "with barycenter")
         # Merge all names from the existing star, preserving new names first and deduplicating
@@ -258,7 +258,7 @@ def instanciate_barycenter(universe, context, item_name, item_alias, item_data):
     barycenter = Barycenter(names, orbit=orbit, rotation=rotation)
     parent.add_child_fast(barycenter)
     if existing_star is not None:
-        objectsDB.replace(existing_star, barycenter)
+        objectsDB.replace(existing_star.anchor, barycenter.anchor)
     return barycenter
 
 

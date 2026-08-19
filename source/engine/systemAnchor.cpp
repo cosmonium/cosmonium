@@ -137,6 +137,8 @@ SystemAnchor::set_primary(StellarAnchor *primary)
   this->_primary = primary;
   if (primary != nullptr) {
     primary->set_system(this);
+    // The system is displayed with the settings of its primary body
+    set_point_color(primary->get_point_color());
   }
 }
 

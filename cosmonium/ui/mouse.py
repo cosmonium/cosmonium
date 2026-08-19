@@ -103,7 +103,7 @@ class Mouse(DirectObject):
                 texture_peeker.lookup(value, x, y)
                 oid = color_to_int(value)
                 if oid != 0:
-                    over = objectsDB.get_oid(oid)
+                    over = objectsDB.get_oid_body(oid)
                     if over is None:
                         print("Unknown oid", oid, value)
         return over

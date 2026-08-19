@@ -51,7 +51,7 @@ class Universe(OctreeSystem):
             return self.anchor.find_by_path(path, separator)
         else:
             parts = path.split(separator)
-            root = objectsDB.get(parts[0])
+            root = objectsDB.get_body(parts[0])
             if root is not None:
                 if len(parts) > 1:
                     return root.find_by_path(parts[1:], separator)

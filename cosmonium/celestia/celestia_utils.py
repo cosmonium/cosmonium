@@ -48,7 +48,7 @@ def body_path(parent):
 
 
 def find_body(path):
-    body = objectsDB.get(path[0])
+    body = objectsDB.get_body(path[0])
     if not body:
         logger.warning("Body '%s' not found", path[0])
         return None

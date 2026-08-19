@@ -162,11 +162,11 @@ class Gui(object):
         self.cosmonium.select_body(body)
 
     def get_object(self, name):
-        result = objectsDB.get(name)
+        result = objectsDB.get_body(name)
         return result
 
     def list_objects(self, prefix):
-        result = objectsDB.startswith(prefix)
+        result = [(name, anchor.body) for name, anchor in objectsDB.startswith(prefix)]
         result.sort(key=lambda x: x[0])
         return result
 

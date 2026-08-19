@@ -79,7 +79,6 @@ class StellarSystem(StellarObject):
             self.primary = primary
             self.anchor.set_primary(primary.anchor)
             self.body_class = primary.body_class
-            self.anchor.point_color = primary.anchor.point_color
 
     def find_child_by_name(self, name):
         return self.anchor.find_child_by_name(name)

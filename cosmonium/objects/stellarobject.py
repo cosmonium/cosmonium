@@ -77,8 +77,6 @@ class StellarObject:
             virtual_object=self.virtual_object,
             spread_object=self.spread_object,
         )
-        self.oid = None
-        self.oid_color = None
         # Flags
         self.selected = False
         self.focused = False
@@ -86,9 +84,9 @@ class StellarObject:
         self.light_color = (1.0, 1.0, 1.0, 1.0)
         # Components
         self.init_components = False
-        objectsDB.add(self)
+        objectsDB.add(self.anchor)
         # TODO: Should be done properly
-        self.anchor.scene_anchor.oid_color = self.oid_color
+        self.anchor.scene_anchor.oid_color = self.anchor.oid_color
 
         self.shown = True
         self.parent = None
@@ -96,6 +94,14 @@ class StellarObject:
 
         self.components = CompositeObject(self.get_ascii_name())
         self.components.set_scene_anchor(self.anchor.scene_anchor)
+
+    @property
+    def oid(self):
+        return self.anchor.oid
+
+    @property
+    def oid_color(self):
+        return self.anchor.oid_color
 
     def get_names(self):
         return self.anchor.get_names()

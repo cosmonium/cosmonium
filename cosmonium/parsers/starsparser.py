@@ -67,7 +67,7 @@ class StarYamlParser(YamlModuleParser):
             temperature=data.temperature,
             spectral_type=data.spectral_type,
         )
-        self.translate_object_names(star, star.anchor.get_names())
+        self.translate_object_names(star.anchor)
         surfaces = data.surfaces
         if surfaces is not None:
             surfaces = SurfaceYamlParser.decode(data.surfaces, star)

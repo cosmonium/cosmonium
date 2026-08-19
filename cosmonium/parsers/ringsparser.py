@@ -65,7 +65,7 @@ class StellarRingsYamlParser(YamlModuleParser):
             frame=None,
             point_color=point_color,
         )
-        self.translate_object_names(body, body.anchor.get_names())
+        self.translate_object_names(body.anchor)
         parent.add_child_fast(body)
         return body
 

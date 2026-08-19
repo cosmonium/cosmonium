@@ -493,7 +493,7 @@ def instanciate_reference_point(universe, context, names, is_planet, data, paren
 
 
 def find_parent_system(path):
-    body = objectsDB.get(path[0])
+    body = objectsDB.get_body(path[0])
     if not body:
         logger.warning("Body '%s' not found", path[0])
         return None

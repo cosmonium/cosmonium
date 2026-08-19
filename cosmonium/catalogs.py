@@ -16,11 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
 #
+
+from __future__ import annotations
+
 import bisect
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from .engine.objectname import CatalogRegistry, ObjectName
 from .utils import int_to_color
+
+if TYPE_CHECKING:
+    from .engine.pyengine.anchors import AnchorBase
+    from .objects.stellarobject import StellarObject
 
 
 class CatalogIndex:
@@ -29,28 +36,28 @@ class CatalogIndex:
     def __init__(self, catalog_prefix: str) -> None:
         self.catalog_prefix: str = catalog_prefix
         self._sorted_keys: list[str] = []  # Sorted list of upper-cased catalog IDs for prefix search
-        self._id_to_body: dict[str, Any] = {}  # Dict for exact lookup and replacement
+        self._id_to_anchor: dict[str, AnchorBase] = {}  # Dict for exact lookup and replacement
         self._dirty: bool = False
 
-    def add(self, catalog_id: str, body: Any) -> None:
+    def add(self, catalog_id: str, anchor: AnchorBase) -> None:
         """Add a catalog entry."""
         upper_id = catalog_id.upper()
         self._sorted_keys.append(upper_id)
-        self._id_to_body[upper_id] = body
+        self._id_to_anchor[upper_id] = anchor
         self._dirty = True
 
-    def replace(self, catalog_id: str, new_body: Any) -> None:
-        """Replace the body associated with a catalog ID.
+    def replace(self, catalog_id: str, new_anchor: AnchorBase) -> None:
+        """Replace the anchor associated with a catalog ID.
 
         The sorted keys list is not modified; only the lookup dict is updated.
 
         Args:
-            catalog_id: The catalog ID whose body should be replaced.
-            new_body: The new body to associate with the catalog ID.
+            catalog_id: The catalog ID whose anchor should be replaced.
+            new_anchor: The new anchor to associate with the catalog ID.
         """
         upper_id = catalog_id.upper()
-        if upper_id in self._id_to_body:
-            self._id_to_body[upper_id] = new_body
+        if upper_id in self._id_to_anchor:
+            self._id_to_anchor[upper_id] = new_anchor
 
     def _ensure_sorted(self) -> None:
         """Sort the keys list if needed."""
@@ -58,11 +65,11 @@ class CatalogIndex:
             self._sorted_keys.sort()
             self._dirty = False
 
-    def get(self, catalog_id: str) -> Optional[Any]:
-        """Get a body by exact catalog ID."""
-        return self._id_to_body.get(catalog_id.upper())
+    def get(self, catalog_id: str) -> Optional[AnchorBase]:
+        """Get an anchor by exact catalog ID."""
+        return self._id_to_anchor.get(catalog_id.upper())
 
-    def startswith(self, id_prefix: str, max_results: int = 50) -> list[tuple[str, Any]]:
+    def startswith(self, id_prefix: str, max_results: int = 50) -> list[tuple[str, AnchorBase]]:
         """
         Find catalog entries where the ID starts with the given prefix.
         Uses bisect for efficient binary search.
@@ -71,7 +78,9 @@ class CatalogIndex:
 
         if not id_prefix:
             # Return first N entries
-            return [(f"{self.catalog_prefix} {key}", self._id_to_body[key]) for key in self._sorted_keys[:max_results]]
+            return [
+                (f"{self.catalog_prefix} {key}", self._id_to_anchor[key]) for key in self._sorted_keys[:max_results]
+            ]
 
         upper_prefix = id_prefix.upper()
 
@@ -82,7 +91,7 @@ class CatalogIndex:
         while idx < len(self._sorted_keys) and len(result) < max_results:
             upper_str_id = self._sorted_keys[idx]
             if upper_str_id.startswith(upper_prefix):
-                result.append((f"{self.catalog_prefix} {upper_str_id}", self._id_to_body[upper_str_id]))
+                result.append((f"{self.catalog_prefix} {upper_str_id}", self._id_to_anchor[upper_str_id]))
                 idx += 1
             else:
                 break
@@ -102,16 +111,16 @@ class NameIndex:
 
     def __init__(self, unique: bool = False) -> None:
         self._sorted_keys: list[str] = []  # Sorted list of upper-cased names for prefix search
-        self._name_to_entry: dict[str, tuple[str, Any]] = {}  # upper_name -> (display_name, body)
+        self._name_to_entry: dict[str, tuple[str, AnchorBase]] = {}  # upper_name -> (display_name, anchor)
         self._dirty: bool = False
         self._unique: bool = unique
 
-    def add(self, name: str, body: Any, display_name: Optional[str] = None) -> None:
+    def add(self, name: str, anchor: AnchorBase, display_name: Optional[str] = None) -> None:
         """Add a name entry.
 
         Args:
             name: The lookup key (case-insensitive).
-            body: The body to associate with this name.
+            anchor: The anchor to associate with this name.
             display_name: The name returned by :meth:`startswith`.  When
                 omitted, *name* itself is used as the display name.  This is
                 useful when the search key differs from the canonical name you
@@ -130,16 +139,16 @@ class NameIndex:
         else:
             self._sorted_keys.append(upper_name)
             self._dirty = True
-        self._name_to_entry[upper_name] = (stored_name, body)
+        self._name_to_entry[upper_name] = (stored_name, anchor)
 
-    def replace(self, name: str, new_body: Any) -> bool:
-        """Replace the body associated with a name.
+    def replace(self, name: str, new_anchor: AnchorBase) -> bool:
+        """Replace the anchor associated with a name.
 
         The sorted keys list is not modified; only the lookup dict is updated.
 
         Args:
-            name: The name whose body should be replaced.
-            new_body: The new body to associate with the name.
+            name: The name whose anchor should be replaced.
+            new_anchor: The new anchor to associate with the name.
 
         Returns:
             True if the name was found and replaced, False otherwise.
@@ -147,7 +156,7 @@ class NameIndex:
         upper_name = name.upper()
         if upper_name in self._name_to_entry:
             original_name = self._name_to_entry[upper_name][0]
-            self._name_to_entry[upper_name] = (original_name, new_body)
+            self._name_to_entry[upper_name] = (original_name, new_anchor)
             return True
         return False
 
@@ -157,12 +166,12 @@ class NameIndex:
             self._sorted_keys.sort()
             self._dirty = False
 
-    def get(self, name: str) -> Optional[Any]:
-        """Get a body by exact name (case-insensitive)."""
+    def get(self, name: str) -> Optional[AnchorBase]:
+        """Get an anchor by exact name (case-insensitive)."""
         entry = self._name_to_entry.get(name.upper())
         return entry[1] if entry is not None else None
 
-    def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
+    def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, AnchorBase]]:
         """Find names starting with the given text using binary search."""
         self._ensure_sorted()
 
@@ -192,7 +201,7 @@ class NameIndex:
 
 class GlobalObjectsDB:
     def __init__(self) -> None:
-        self.oids: list[Optional[Any]] = []
+        self.oids: list[Optional[AnchorBase]] = []
 
         # Catalog indexes for known catalogs
         registry = CatalogRegistry.get_instance()
@@ -210,9 +219,9 @@ class GlobalObjectsDB:
         # Alias name index
         self.alias_name_index: NameIndex = NameIndex(unique=True)
 
-    def _sync_minor_planet_aliases(self, body: Any) -> None:
-        """Add or update word-part aliases for any NT_minor_planet names in body."""
-        object_names = body.get_names()
+    def _sync_minor_planet_aliases(self, anchor: AnchorBase) -> None:
+        """Add or update word-part aliases for any NT_minor_planet names in anchor."""
+        object_names = anchor.get_names()
         for i in range(object_names.get_num_names()):
             name_entry = object_names.get_name_entry(i)
             if name_entry.type == ObjectName.NT_minor_planet:
@@ -220,46 +229,46 @@ class GlobalObjectsDB:
                 space_pos = full_name.find(' ')
                 if space_pos > 0:
                     alias = full_name[space_pos + 1 :]
-                    if not self.alias_name_index.replace(alias, body):
-                        self.alias_name_index.add(alias, body, display_name=full_name)
+                    if not self.alias_name_index.replace(alias, anchor):
+                        self.alias_name_index.add(alias, anchor, display_name=full_name)
 
-    def add(self, body: Any) -> None:
-        body.oid = len(self.oids)
-        body.oid_color = int_to_color(body.oid)
-        self.oids.append(body)
+    def add(self, anchor: AnchorBase) -> None:
+        anchor.oid = len(self.oids)
+        anchor.oid_color = int_to_color(anchor.oid)
+        self.oids.append(anchor)
 
         # Route names to appropriate indexes
-        object_names = body.get_names()
+        object_names = anchor.get_names()
         for i in range(object_names.get_num_names()):
             name_entry = object_names.get_name_entry(i)
             if name_entry.type == ObjectName.NT_catalog:
                 catalog_index = self._catalog_indexes_by_id.get(name_entry.catalog_id)
                 if catalog_index is not None:
-                    catalog_index.add(name_entry.value, body)
+                    catalog_index.add(name_entry.value, anchor)
                     continue
-            self.name_index.add(name_entry.get_full_name(), body)
+            self.name_index.add(name_entry.get_full_name(), anchor)
 
         # Also index pre-translation originals so they remain searchable.
         # get_source_names() returns both non-translatable full names (already handled
         # above via ObjectName entries) and originals of translated names. Only the
         # latter differ from get_all_names(),
         current_names = set(object_names.get_all_names())
-        for source_name in body.get_source_names():
+        for source_name in anchor.get_source_names():
             if source_name not in current_names:
-                self.name_index.add(source_name, body)
+                self.name_index.add(source_name, anchor)
 
         # Add aliases for minor planet names
-        self._sync_minor_planet_aliases(body)
+        self._sync_minor_planet_aliases(anchor)
 
-    def add_name_for(self, body: Any, name: str, object_name: ObjectName) -> None:
+    def add_name_for(self, anchor: AnchorBase, name: str, object_name: ObjectName) -> None:
         # Route name to appropriate index
         if object_name.type == ObjectName.NT_catalog:
             catalog_index = self._catalog_indexes_by_id.get(object_name.catalog_id)
             if catalog_index is not None:
-                catalog_index.add(object_name.value, body)
+                catalog_index.add(object_name.value, anchor)
 
         # Always add to general name index (the translated form must be searchable).
-        self.name_index.add(name, body)
+        self.name_index.add(name, anchor)
 
         # If it's a minor planet name, also add or update the alias index so that
         # the translated word-part (e.g. "Cérès" from "1 Cérès") is searchable.
@@ -267,11 +276,11 @@ class GlobalObjectsDB:
             alias_space = name.find(' ')
             if alias_space > 0:
                 alias = name[alias_space + 1 :]
-                if not self.alias_name_index.replace(alias, body):
-                    self.alias_name_index.add(alias, body, display_name=name)
+                if not self.alias_name_index.replace(alias, anchor):
+                    self.alias_name_index.add(alias, anchor, display_name=name)
 
-    def get(self, name: str) -> Optional[Any]:
-        """Get body by exact name using indexes (O(log N) lookup)."""
+    def get(self, name: str) -> Optional[AnchorBase]:
+        """Get anchor by exact name using indexes (O(log N) lookup)."""
         if not name:
             return None
 
@@ -292,56 +301,71 @@ class GlobalObjectsDB:
         # This ensures aliases never hide objects with the same primary name
         return self.alias_name_index.get(name)
 
-    def get_oid(self, oid: int) -> Optional[Any]:
+    def get_body(self, name: str) -> Optional[StellarObject]:
+        """Get the StellarObject of the anchor registered under the given name.
+        Returns None if no anchor is found for the given name.
+        """
+        anchor = self.get(name)
+        return anchor.body if anchor is not None else None
+
+    def get_oid(self, oid: int) -> Optional[AnchorBase]:
+        """Get the anchor registered under the given oid."""
         if oid < len(self.oids):
             return self.oids[oid]
         else:
             return None
 
-    def remove(self, body: Any) -> None:
+    def get_oid_body(self, oid: int) -> Optional[StellarObject]:
+        """Get the StellarObject of the anchor registered under the given oid.
+        Returns None if no anchor is found for the given oid.
         """
-        Remove a body from the database.
-        Note: This marks the body as removed but doesn't actually delete from indexes
+        anchor = self.get_oid(oid)
+        return anchor.body if anchor is not None else None
+
+    def remove(self, anchor: AnchorBase) -> None:
+        """
+        Remove an anchor from the database.
+        Note: This marks the anchor as removed but doesn't actually delete from indexes
         to avoid complexity of index maintenance. The OID slot is set to None.
         """
-        self.oids[body.oid] = None
+        self.oids[anchor.oid] = None
 
-    def replace(self, old_body: Any, new_body: Any) -> None:
+    def replace(self, old_anchor: AnchorBase, new_anchor: AnchorBase) -> None:
         """
-        Replace old_body with new_body in all indexes.
-        All names that pointed to old_body will now point to new_body.
-        new_body must already have all the desired names set before calling this.
+        Replace old_anchor with new_anchor in all indexes.
+        All names that pointed to old_anchor will now point to new_anchor.
+        new_anchor must already have all the desired names set before calling this.
         """
-        self.oids[old_body.oid] = None  # Clear old body reference
+        self.oids[old_anchor.oid] = None  # Clear old anchor reference
 
         # Update indexes
-        object_names = new_body.get_names()
+        object_names = new_anchor.get_names()
         for i in range(object_names.get_num_names()):
             name_entry = object_names.get_name_entry(i)
             if name_entry.type == ObjectName.NT_catalog:
                 catalog_index = self._catalog_indexes_by_id.get(name_entry.catalog_id)
                 if catalog_index is not None:
                     upper_id = name_entry.value.upper()
-                    if upper_id in catalog_index._id_to_body:
-                        catalog_index.replace(name_entry.value, new_body)
+                    if upper_id in catalog_index._id_to_anchor:
+                        catalog_index.replace(name_entry.value, new_anchor)
                     else:
-                        catalog_index.add(name_entry.value, new_body)
+                        catalog_index.add(name_entry.value, new_anchor)
                     continue
             full_name = name_entry.get_full_name()
-            if not self.name_index.replace(full_name, new_body):
-                self.name_index.add(full_name, new_body)
+            if not self.name_index.replace(full_name, new_anchor):
+                self.name_index.add(full_name, new_anchor)
 
         # Update pre-translation originals (same filter logic as add()).
         current_names = set(object_names.get_all_names())
-        for source_name in new_body.get_source_names():
+        for source_name in new_anchor.get_source_names():
             if source_name not in current_names:
-                if not self.name_index.replace(source_name, new_body):
-                    self.name_index.add(source_name, new_body)
+                if not self.name_index.replace(source_name, new_anchor):
+                    self.name_index.add(source_name, new_anchor)
 
         # Update alias index for minor planet names
-        self._sync_minor_planet_aliases(new_body)
+        self._sync_minor_planet_aliases(new_anchor)
 
-    def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, Any]]:
+    def startswith(self, text: str, max_results: int = 50) -> list[tuple[str, AnchorBase]]:
         """
         Find objects whose names start with the given text.
         Uses catalog-aware search for better performance.
@@ -388,14 +412,14 @@ class GlobalObjectsDB:
         alias_results = self.alias_name_index.startswith(text, max_results - len(result))
         result.extend(alias_results)
 
-        # Sort and deduplicate by body identity, then limit results
-        seen_bodies: set[int] = set()
+        # Sort and deduplicate by anchor identity, then limit results
+        seen_anchors: set[int] = set()
         deduped = []
-        for name, body in result:
-            body_id = id(body)
-            if body_id not in seen_bodies:
-                seen_bodies.add(body_id)
-                deduped.append((name, body))
+        for name, anchor in result:
+            anchor_id = id(anchor)
+            if anchor_id not in seen_anchors:
+                seen_anchors.add(anchor_id)
+                deduped.append((name, anchor))
         deduped.sort(key=lambda x: x[0].upper())
         return deduped[:max_results]
 

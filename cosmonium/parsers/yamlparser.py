@@ -63,7 +63,7 @@ class YamlModuleParser:
             return cls.translation.gettext(name)
 
     @classmethod
-    def translate_object_names(cls, body, object_names, context=None):
+    def translate_object_names(cls, anchor, context=None):
         """Apply translation to an existing ObjectNames instance.
 
         Translation is performed as a second step after the ObjectNames instance has
@@ -71,21 +71,21 @@ class YamlModuleParser:
         directly without re-parsing the name strings.
 
         Args:
-            body: The domain object associated with the names (used for registration).
-            object_names: An ObjectNames instance whose names should be translated.
+            anchor: The anchor owning the names (used for registration).
             context: Optional gettext context for disambiguation (pgettext).
         """
         if context is not None:
             translate_fn = functools.partial(cls.translation.pgettext, context)
         else:
             translate_fn = cls.translation.gettext
+        object_names = anchor.get_names()
         for i in range(object_names.get_num_names()):
             name_entry = object_names.get_name_entry(i)
             if name_entry.translatable:
                 translated = translate_fn(name_entry.value)
                 if translated != name_entry.value:
                     object_names.set_translated(i, translated)
-                    objectsDB.add_name_for(body, translated, name_entry)
+                    objectsDB.add_name_for(anchor, translated, name_entry)
 
     def load_and_parse(self, filename, parent=None, context=None):
         """

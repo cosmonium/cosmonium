@@ -48,7 +48,7 @@ class NebulaYamlParser(YamlModuleParser):
             orbit=orbit,
             rotation=rotation,
         )
-        self.translate_object_names(nebula, nebula.anchor.get_names())
+        self.translate_object_names(nebula.anchor)
         nebula.has_resolved_halo = False
         if data.surfaces is None:
             # Create inline surface from shape/appearance if available

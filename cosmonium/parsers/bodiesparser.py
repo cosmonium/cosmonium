@@ -75,7 +75,7 @@ class ReflectiveYamlParser(YamlModuleParser):
             point_color=point_color,
             albedo=albedo,
         )
-        self.translate_object_names(body, body.anchor.get_names())
+        self.translate_object_names(body.anchor)
         if data.surfaces is None:
             surfaces = []
             surface_data = {

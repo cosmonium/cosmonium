@@ -90,7 +90,7 @@ ControllerYamlParser.register_parser('flat-surface', FlatSurfaceControllerYamlPa
 class StandaloneControllerYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data):
-        body = objectsDB.get(data.body)
+        body = objectsDB.get_body(data.body)
         if body is None:
             print(f"ERROR: Parent '{data.body}' of controller '{data.name or '(unnamed)'}' not found")
             return None
