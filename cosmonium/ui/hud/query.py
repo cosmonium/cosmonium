@@ -20,12 +20,15 @@
 
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGui import DirectEntry
+from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenText import OnscreenText
+from directguilayout.gui import Sizer
+from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import KeyboardButton, TextNode
 
+from ...fonts import Font, fontsManager
 from ..core.search import NameSearchController
 from ..core.ui_element import OverlayUIElement
-from ..markdown import create_markdown_renderer
 from ..skin import UIElement
 
 
@@ -36,7 +39,11 @@ class Query(OverlayUIElement):
         self.background = None
         self.prefix = None
         self.query = None
-        self.suggestions = None
+        self.suggestions_root = None
+        self.suggestion_labels = []
+        self.suggestion_style = None
+        self.suggestion_font_bold = None
+        self.suggestion_gaps = (0, 0)
         self.search = None
         self.max_columns = 4
         self.max_lines = 3
@@ -56,13 +63,19 @@ class Query(OverlayUIElement):
         self.prefix = None
         self.query.destroy()
         self.query = None
-        self.suggestions.destroy()
-        self.suggestions = None
+        self.clear_suggestion_labels()
+        self.suggestions_root.remove_node()
+        self.suggestions_root = None
         self.search.reset()
         self.search = None
 
     def escape(self, event):
         self.close()
+
+    def clear_suggestion_labels(self):
+        for label in self.suggestion_labels:
+            label.destroy()
+        self.suggestion_labels = []
 
     def update_suggestions(self):
         current_list = self.search.current_list
@@ -73,16 +86,31 @@ class Query(OverlayUIElement):
             page = 0
         start = page * self.max_elems
         end = min(start + self.max_elems - 1, len(current_list) - 1)
-        suggestions = ""
+
+        self.clear_suggestion_labels()
+        if end < start:
+            return
+
+        unselected_style = self.suggestion_style
+        selected_style = dict(self.suggestion_style)
+        selected_style['text_font'] = self.suggestion_font_bold
+
+        sizer = Sizer("horizontal", prim_limit=self.max_columns, gaps=self.suggestion_gaps)
         for i in range(start, end + 1):
-            if i != start and ((i - start) % self.max_columns) == 0:
-                suggestions += '\n'
             if i == current_selection:
-                suggestions += "\1md_bold\1%s\2" % current_list[i][0]
+                style = selected_style
             else:
-                suggestions += current_list[i][0]
-            suggestions += '\t'
-        self.suggestions.setText(suggestions)
+                style = unselected_style
+            label = DirectLabel(
+                text=current_list[i][0],
+                text_align=TextNode.ALeft,
+                parent=self.suggestions_root,
+                **style,
+            )
+            self.suggestion_labels.append(label)
+            sizer.add(SizerWidget(label), alignments=("min", "min"))
+        min_size = sizer.update_min_size()
+        sizer.update(min_size)
 
     def completion(self, event):
         self.search.update_query(self.query.get())
@@ -97,9 +125,6 @@ class Query(OverlayUIElement):
 
     def create(self):
         element = UIElement(None, id_=self.id_)
-        # TODO: Common text properties are initialized in DirectMarkdownRenderer,
-        # should be done in a more central place
-        create_markdown_renderer(self.skin.get(element).font_family)
         self.search = NameSearchController(self.parent, self.query_delay, self.update_suggestions)
 
         background_element = UIElement('frame', parent=element)
@@ -107,10 +132,16 @@ class Query(OverlayUIElement):
         query_element = UIElement('entry', parent=element, class_='query-entry')
         query_style = self.skin.get_style(query_element)
         query_height = query_style['text_scale'][1]
-        suggestion_element = UIElement('onscreen-text', parent=element, id_='query-suggestion')
-        suggestion_style = self.skin.get_style(suggestion_element)
-        suggestion_height = suggestion_style['scale'][1] * (self.max_lines + 1) * 1.5
-        suggestion_offset = suggestion_style['scale'][1] * self.max_lines * 1.5
+        suggestion_element = UIElement('label', parent=element, id_='query-suggestion')
+        # TODO: Selected style should be a separate element or state in the skin,.
+        self.suggestion_style = self.skin.get_style(suggestion_element)
+        suggestion_font_family = self.skin.get(suggestion_element).font_family
+        self.suggestion_font_bold = fontsManager.load_font(
+            suggestion_font_family, Font.STYLE_BOLD
+        ) or self.suggestion_style.get('text_font')
+        line_height = self.suggestion_style['text_scale'][1]
+        self.suggestion_gaps = (line_height, line_height * 0.4)
+        suggestion_height = line_height * (self.max_lines) * 1.5
         self.background = DirectFrame(
             frameSize=(0, self.parent.width, query_height + suggestion_height, 0.0),
             parent=self.anchor,
@@ -141,15 +172,8 @@ class Query(OverlayUIElement):
         self.query.bind("press-tab-", self.select)
         self.query.accept(self.query.guiItem.getTypeEvent(), self.completion)
         self.query.accept(self.query.guiItem.getEraseEvent(), self.completion)
-        bounds = self.query.getBounds()
-        self.suggestions = OnscreenText(
-            text="",
-            align=TextNode.ALeft,
-            mayChange=True,
-            parent=self.anchor,
-            pos=(0, suggestion_offset),
-            **suggestion_style,
-        )
+        self.suggestions_root = self.anchor.attach_new_node('query-suggestions')
+        self.suggestions_root.set_pos(0, 0, suggestion_height - line_height * 0.5)
 
     def update_instance(self):
         # Nothing to update
