@@ -21,9 +21,9 @@
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGui import DirectEntry
 from direct.gui.OnscreenText import OnscreenText
-from direct.task.TaskManagerGlobal import taskMgr
 from panda3d.core import KeyboardButton, TextNode
 
+from ..core.search import NameSearchController
 from ..core.ui_element import OverlayUIElement
 from ..markdown import create_markdown_renderer
 from ..skin import UIElement
@@ -37,9 +37,7 @@ class Query(OverlayUIElement):
         self.prefix = None
         self.query = None
         self.suggestions = None
-        self.current_selection = None
-        self.current_list = []
-        self.completion_task = None
+        self.search = None
         self.max_columns = 4
         self.max_lines = 3
         self.max_elems = self.max_columns * self.max_lines
@@ -47,13 +45,7 @@ class Query(OverlayUIElement):
         self.offset = offset
 
     def do_query(self, text):
-        body = None
-        if self.current_selection is not None:
-            if self.current_selection < len(self.current_list):
-                body = self.current_list[self.current_selection][1]
-        else:
-            text = self.query.get()
-            body = self.parent.get_object(text)
+        body = self.search.resolve(self.query.get())
         self.parent.select_object(body)
         self.close()
 
@@ -66,68 +58,49 @@ class Query(OverlayUIElement):
         self.query = None
         self.suggestions.destroy()
         self.suggestions = None
-        self.current_selection = None
-        self.current_list = []
-        if self.completion_task is not None:
-            taskMgr.remove(self.completion_task)
-            self.completion_task = None
+        self.search.reset()
+        self.search = None
 
     def escape(self, event):
         self.close()
 
     def update_suggestions(self):
-        if self.current_selection is not None:
-            page = self.current_selection // self.max_elems
+        current_list = self.search.current_list
+        current_selection = self.search.current_selection
+        if current_selection is not None:
+            page = current_selection // self.max_elems
         else:
             page = 0
         start = page * self.max_elems
-        end = min(start + self.max_elems - 1, len(self.current_list) - 1)
+        end = min(start + self.max_elems - 1, len(current_list) - 1)
         suggestions = ""
         for i in range(start, end + 1):
             if i != start and ((i - start) % self.max_columns) == 0:
                 suggestions += '\n'
-            if i == self.current_selection:
-                suggestions += "\1md_bold\1%s\2" % self.current_list[i][0]
+            if i == current_selection:
+                suggestions += "\1md_bold\1%s\2" % current_list[i][0]
             else:
-                suggestions += self.current_list[i][0]
+                suggestions += current_list[i][0]
             suggestions += '\t'
         self.suggestions.setText(suggestions)
 
     def completion(self, event):
-        text = self.query.get()
-        if text != '':
-            self.current_list = self.parent.list_objects(text)
-        else:
-            self.current_list = []
-        self.current_selection = None
-        if self.completion_task is not None:
-            taskMgr.remove(self.completion_task)
-        self.completion_task = taskMgr.doMethodLater(
-            self.query_delay, self.update_suggestions, 'completion task', extraArgs=[]
-        )
+        self.search.update_query(self.query.get())
 
     def select(self, event):
         modifiers = event.getModifierButtons()
         if modifiers.isDown(KeyboardButton.shift()):
-            incr = -1
+            increment = -1
         else:
-            incr = 1
-        if self.current_selection is not None:
-            new_selection = self.current_selection + incr
-        else:
-            new_selection = 0
-        if new_selection < 0:
-            new_selection = len(self.current_list) - 1
-        if new_selection >= len(self.current_list):
-            new_selection = 0
-        self.current_selection = new_selection
-        self.update_suggestions()
+            increment = 1
+        self.search.move_selection(increment)
 
     def create(self):
         element = UIElement(None, id_=self.id_)
         # TODO: Common text properties are initialized in DirectMarkdownRenderer,
         # should be done in a more central place
         create_markdown_renderer(self.skin.get(element).font_family)
+        self.search = NameSearchController(self.parent, self.query_delay, self.update_suggestions)
 
         background_element = UIElement('frame', parent=element)
         text_element = UIElement('onscreen-text', parent=element, class_='query-entry')
