@@ -158,6 +158,10 @@ class CosmoniumBase(ShowBase):
         self.print_info()
         self.panda_config()
         ShowBase.__init__(self, windowType='none')
+        # Menus are still using aspect2d, however aspect2d is drawn before pixel2d,
+        # so the menus are hidden under the rest of the pixel2d-based UI.
+        # Re-parenting aspect2d to render2d moves it to the end of the render list.
+        self.aspect2d.reparent_to(self.render2d)
         if not self.app_config.test_start:
             # TODO: Scene window should be opened after the splash window
             if settings.use_pbr or settings.use_inverse_z:
