@@ -15,7 +15,7 @@
   background-color: [0.3, 0.3, 0.3, 1]
 
 - element: menu
-  state: clicked
+  state: active
   text-color: [0, 0, 0, 1]
   background-color: [0.3, 0.3, 0.3, 0.1]
 

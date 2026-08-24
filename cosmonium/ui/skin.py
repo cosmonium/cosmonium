@@ -307,17 +307,17 @@ class UISkinEntry:
             }
         elif dgui_type == 'menu':
             hover = skin.get(element, 'hover')
-            clicked = skin.get(element, 'clicked')
+            active = skin.get(element, 'active')
             disabled = skin.get(element, 'disabled')
             parameters = {
                 'BGColor': self.background_color,
                 # 'BGBorderColor': (0.3, 0.3, 0.3, 1),
                 # 'separatorColor': (0, 0, 0, 1),
                 'frameColorHover': hover.background_color,
-                'frameColorPress': clicked.background_color,
+                'frameColorPress': active.background_color,
                 'textColorReady': self.text_color,
                 'textColorHover': hover.text_color,
-                'textColorPress': clicked.text_color,
+                'textColorPress': active.text_color,
                 'textColorDisabled': disabled.text_color,
                 **(self.get_font_parameters(element, skin, scale3=True, ui_scale=ui_scale) if not skip_font else {}),
             }

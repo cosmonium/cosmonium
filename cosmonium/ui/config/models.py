@@ -214,13 +214,16 @@ class MenuEntryConfig(ConfigBase):
     entries: Optional[List[Union['MenuEntryConfig', None]]] = Field(
         None, description="Inline submenu entries (None for separator)"
     )
-    state: Optional[str] = Field(None, description="Python expression for entry state")
+    checked: Optional[str] = Field(
+        None,
+        description="Optional python expression;" "if set, an entry is checked when the expression evaluates to true",
+    )
     enabled: Optional[str] = Field(None, description="Python expression for enabled condition")
     visible: Optional[str] = Field(None, description="Python expression for visibility condition")
 
     @model_validator(mode='after')
     def validate_text_or_entries(self):
-        """Entry with entries must have a title and no event nor state."""
+        """Entry with entries must have a title and no event nor checked."""
         if self.menu is not None and self.entries is not None:
             raise ValueError("Menu entry cannot have both 'menu' and 'entries' fields")
         if self.entries is not None or self.menu is not None:
@@ -228,8 +231,8 @@ class MenuEntryConfig(ConfigBase):
                 raise ValueError("Menu entry with sub entries must have a 'title' field")
             if self.event is not None:
                 raise ValueError("Menu entry with sub entries can not have an 'event' field")
-            if self.state is not None:
-                raise ValueError("Menu entry with sub entries can not have an 'state' field")
+            if self.checked is not None:
+                raise ValueError("Menu entry with sub entries can not have a 'checked' field")
         return self
 
 

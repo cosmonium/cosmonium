@@ -44,7 +44,7 @@ class MenuSeparator(NamedTuple):
 
 class EventMenuEntry(NamedTuple):
     text: str
-    state: str
+    checked: str
     visible: str
     enabled: str
     event: str
@@ -108,7 +108,7 @@ class MenuBuilder:
             print(f"Text {text} not found")
         return text
 
-    def menu_event(self, text, state, event, condition, args=[]):
+    def menu_event(self, text, checked, event, condition, args=[]):
         if text[0] == '@':
             text = self.get_auto_text(text[1:])
         shortcuts = self.shortcuts.get_shortcuts_for(event)
@@ -119,7 +119,7 @@ class MenuBuilder:
         action = self.messenger.send
         if event == 0 or not condition:
             action = 0
-        return (full_text, state, action, event, args)
+        return (full_text, checked, action, event, args)
 
     def menu_submenu(self, text, submenu, condition):
         if condition:
@@ -142,8 +142,8 @@ class MenuBuilder:
         visible = entry.visible()
         if visible:
             if isinstance(entry, EventMenuEntry):
-                state = entry.state()
-                return self.menu_event(self.translation.gettext(entry.text), state, entry.event, condition=enabled)
+                checked = entry.checked()
+                return self.menu_event(self.translation.gettext(entry.text), checked, entry.event, condition=enabled)
             else:
                 return self.menu_submenu(self.translation.gettext(entry.text), entry.entries, condition=enabled)
         else:

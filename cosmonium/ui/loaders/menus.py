@@ -44,7 +44,7 @@ class MenuLoader(BaseComponentLoader):
     Loader for menu and menubar configurations.
 
     Handles loading of menu structures including menu entries, submenus,
-    separators, and menu bars with dynamic state expressions.
+    separators, and menu bars with dynamic checked/enabled/visible expressions.
     """
 
     def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
@@ -86,12 +86,12 @@ class MenuLoader(BaseComponentLoader):
 
         if entry_config.event is not None:
             # Event menu entry
-            if entry_config.state is not None:
-                state = self.expression_parser.compile_expression(entry_config.state, self.gui.global_vars.globals)
+            if entry_config.checked is not None:
+                checked = self.expression_parser.compile_expression(entry_config.checked, self.gui.global_vars.globals)
             else:
-                state = zero_expression
+                checked = zero_expression
             menu = EventMenuEntry(
-                text=entry_config.title, state=state, event=entry_config.event, enabled=enabled, visible=visible
+                text=entry_config.title, checked=checked, event=entry_config.event, enabled=enabled, visible=visible
             )
         elif entry_config.menu is not None:
             # Named submenu reference
