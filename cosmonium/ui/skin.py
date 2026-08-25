@@ -269,6 +269,29 @@ class UISkinEntry:
             parameters = {(prefix + key): value for (key, value) in parameters.items()}
         return parameters
 
+    def resolve_button_color(self, element, skin, prop, extra_state=None):
+        """
+        Resolve skin entry `prop` for the four visual states of DirectButton,
+        returning a [ready, press, rollover, disabled] list.
+
+        Args:
+            element: the element the style has been collected for
+            skin: the global skin configuration
+            prop: name of the UISkinEntry property to resolve (e.g., 'background_color')
+            extra_state: extra state to combine with the DirectButton visual states.
+        """
+        base_states = normalize_classes(extra_state) or frozenset()
+        ready = getattr(self, prop)
+        press = getattr(skin.get(element, base_states | {'active'}), prop)
+        rollover = getattr(skin.get(element, base_states | {'hover'}), prop)
+        disabled = getattr(skin.get(element, base_states | {'disabled'}), prop)
+        return [
+            ready,
+            press if press is not None else ready,
+            rollover if rollover is not None else ready,
+            disabled if disabled is not None else ready,
+        ]
+
     def get_dgui_parameters_for(
         self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None, state=None
     ):
@@ -276,7 +299,7 @@ class UISkinEntry:
         font_size = self.resolved_font_size(element, skin)
         if dgui_type == 'button':
             parameters = {
-                'frameColor': self.background_color,
+                'frameColor': self.resolve_button_color(element, skin, 'background_color', extra_state=state),
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
             }
@@ -287,7 +310,7 @@ class UISkinEntry:
             }
         elif dgui_type == 'check-button':
             parameters = {
-                'frameColor': self.background_color,
+                'frameColor': self.resolve_button_color(element, skin, 'background_color', extra_state=state),
             }
             button = UIElement(parent=element, type_='button', class_='indicator')
             parameters.update(skin.get_style(button, prefix='indicator_'))
@@ -329,7 +352,7 @@ class UISkinEntry:
         elif dgui_type == 'option-menu':
             hover = skin.get(element, 'hover')
             parameters = {
-                'frameColor': self.background_color,
+                'frameColor': self.resolve_button_color(element, skin, 'background_color', extra_state=state),
                 'text_fg': self.text_color,
                 # Item entries in the popup list share the closed menu's base colors; 'highlightColor' is
                 # DirectOptionMenu's own hover tint for whichever item is under the mouse.

@@ -398,7 +398,9 @@ class TestSkinGetStyle:
 
         params = skin.get_style(element)
 
-        assert params['frameColor'] == 'bg'
+        # No hover/active/disabled override is declared, so all 4 native visual states
+        # are set to the base color.
+        assert params['frameColor'] == ['bg', 'bg', 'bg', 'bg']
         assert params['text_fg'] == 'fg'
 
     def test_get_style_for_frame_only_maps_background_color(self):
@@ -418,6 +420,20 @@ class TestSkinGetStyle:
         params = skin.get_style(element, prefix='inner_')
 
         assert params == {'inner_frameColor': 'bg'}
+
+    def test_get_style_for_button_resolves_native_states_independently(self):
+        """The frameColor of a DirectButton is a list of color [ready, press, rollover, disabled] list,
+        one per native visual state, each independently overridable from the skin."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('button', None, None, None), background_color='up', font_size=_fixed(12)))
+        skin.add_entry(make_entry(Selector('button', 'hover', None, None), background_color='hovered'))
+        skin.add_entry(make_entry(Selector('button', 'disabled', None, None), background_color='off'))
+        element = UIElement(type_='button')
+
+        params = skin.get_style(element)
+
+        # press/rollover/disabled fall back to the base color unless overridden.
+        assert params['frameColor'] == ['up', 'up', 'hovered', 'off']
 
 
 class TestResolvedSizes:
