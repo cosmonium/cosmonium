@@ -81,7 +81,7 @@
   background-color: "#CCCCCC"
 
 - element: tabbed-frame
-  state: clicked
+  state: active
   background-color: "#CCCCCC"
 
 - element: slider

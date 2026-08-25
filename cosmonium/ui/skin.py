@@ -417,19 +417,21 @@ class UISkinEntry:
             thumb = UIElement(parent=element, type_='button', class_='thumb')
             parameters.update(skin.get_style(thumb, prefix='thumb_'))
         elif dgui_type == 'tabbed-frame':
+            # A tab style with no state is its "unselected" look, overridden by
+            # `selected` for the current tab and `disabled` for the inactive tab,
+            # mirroring plain button  style.
             hover = skin.get(element, 'hover')
-            clicked = skin.get(element, 'clicked')
-            inactive = skin.get(element, 'inactive')
+            active = skin.get(element, 'active')
+            disabled = skin.get(element, 'disabled')
             selected = skin.get(element, 'selected')
-            unselected = skin.get(element, 'unselected')
             parameters = {
                 'frameColor': self.background_color,
                 #'scroll_frameColor': self.background_color,
                 'tabSelectedColor': selected.background_color,
-                'tabUnselectedColor': unselected.background_color,
-                'tabInactiveColor': inactive.background_color,
-                'tabRolloverOffsetColor': LColor(hover.background_color.xyz - unselected.background_color.xyz, 0.0),
-                'tabClickOffsetColor': LColor(clicked.background_color.xyz - unselected.background_color.xyz, 0.0),
+                'tabUnselectedColor': self.background_color,
+                'tabInactiveColor': disabled.background_color,
+                'tabRolloverOffsetColor': LColor(hover.background_color.xyz - self.background_color.xyz, 0.0),
+                'tabClickOffsetColor': LColor(active.background_color.xyz - self.background_color.xyz, 0.0),
                 'tab_scale': (font_size, 1, font_size),
                 'tab_text_fg': self.text_color,
             }
