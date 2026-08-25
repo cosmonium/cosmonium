@@ -56,7 +56,23 @@ class TestSelector:
 
         assert selector.applicable(element, state='hover') is True
         assert selector.applicable(element, state=None) is False
-        assert selector.applicable(element, state='clicked') is False
+        assert selector.applicable(element, state='active') is False
+
+    def test_selector_requires_all_listed_states(self):
+        """A compound pseudo-class selector, like a compound class selector, matches only when
+        every listed state is currently active - e.g. ':checked:hover'."""
+        selector = Selector(type_='button', state=['checked', 'hover'], class_=None, id_=None)
+        element = UIElement(type_='button')
+
+        assert selector.applicable(element, state=['checked', 'hover']) is True
+        assert selector.applicable(element, state='checked') is False
+        assert selector.applicable(element, state='hover') is False
+
+    def test_element_may_be_in_extra_states_not_required_by_selector(self):
+        selector = Selector(type_='button', state='hover', class_=None, id_=None)
+        element = UIElement(type_='button')
+
+        assert selector.applicable(element, state=['hover', 'checked']) is True
 
 
 class TestParentSelector:
@@ -119,6 +135,13 @@ class TestSelectorSpecificity:
     def test_state_only(self):
         selector = Selector(None, 'hover', None, None)
         assert selector.specificity() == (0, 1, 0)
+
+    def test_compound_state_specificity_counts_each_state(self):
+        single = Selector(None, 'hover', None, None)
+        compound = Selector(None, ['hover', 'checked'], None, None)
+
+        assert compound.specificity() > single.specificity()
+        assert compound.specificity() == (0, 2, 0)
 
     def test_id_only(self):
         selector = Selector(None, None, None, 'ok')

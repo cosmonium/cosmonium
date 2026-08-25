@@ -158,7 +158,8 @@ class SkinLoader(BaseComponentLoader):
         if selector_config.id:
             parts.append(f'#{selector_config.id}')
         if selector_config.state:
-            parts.append(f':{selector_config.state}')
+            states = selector_config.state if isinstance(selector_config.state, list) else [selector_config.state]
+            parts.append(''.join(f':{state_name}' for state_name in states))
         description = ''.join(parts)
         if selector_config.parent is not None:
             description = f'{SkinLoader.describe_selector(selector_config.parent)} {description}'

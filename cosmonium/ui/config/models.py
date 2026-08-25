@@ -273,7 +273,13 @@ class SkinSelectorConfig(ConfigBase):
     model_config = ConfigDict(extra='forbid')
 
     element: Optional[str] = Field(None, description="Element type (e.g., 'button', 'label')")
-    state: Optional[str] = Field(None, description="Element state (e.g., 'hover', 'active')")
+    state: Optional[Union[str, List[str]]] = Field(
+        None,
+        description=(
+            "Element state (e.g., 'hover', 'active') as a CSS-like pseudo-class, or as a list of pseudo-classes "
+            "all required to be active at once."
+        ),
+    )
     class_: Optional[Union[str, List[str]]] = Field(
         None, alias='class', description="CSS-like class name, or list of class names all required to match"
     )
@@ -290,7 +296,13 @@ class SkinEntryConfig(ConfigBase):
     model_config = ConfigDict(extra='forbid')
 
     element: Optional[str] = Field(None, description="Element type")
-    state: Optional[str] = Field(None, description="Element state")
+    state: Optional[Union[str, List[str]]] = Field(
+        None,
+        description=(
+            "Element state (e.g., 'hover', 'active') as a CSS-like pseudo-class, or as a list of pseudo-classes "
+            "all required to be active at once."
+        ),
+    )
     class_: Optional[Union[str, List[str]]] = Field(
         None, alias='class', description="CSS class, or list of class names all required to match"
     )

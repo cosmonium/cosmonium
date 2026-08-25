@@ -2,7 +2,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -133,14 +133,16 @@ class UIElement:
 class Selector:
     def __init__(self, type_, state, class_, id_):
         self.type_ = type_
-        self.state = state
+        # Internally, states are managed as classes
+        self.state = normalize_classes(state)
         self.class_ = normalize_classes(class_)
         self.id_ = id_
 
     def applicable(self, element, state):
+        active_states = normalize_classes(state) or frozenset()
         return (
             (self.type_ is None or self.type_ == element.type_)
-            and (self.state is None or self.state == state)
+            and (self.state is None or self.state.issubset(active_states))
             and (self.class_ is None or self.class_.issubset(element.class_ or frozenset()))
             and (self.id_ is None or self.id_ == element.id_)
         )
@@ -151,13 +153,14 @@ class Selector:
 
         Mirrors CSS (id, class/attribute/pseudo-class, type) ordering: an id
         match outweighs any number of class/state matches, which in turn
-        outweigh a type match. A compound class selector (multiple required
-        classes) contributes one point per class.
+        outweigh a type match. A compound class or pseudo-class selector (multiple
+        required classes or states) contributes one point per class or state.
         """
         class_count = len(self.class_) if self.class_ else 0
+        state_count = len(self.state) if self.state else 0
         return (
             1 if self.id_ is not None else 0,
-            class_count + (1 if self.state is not None else 0),
+            class_count + state_count,
             1 if self.type_ is not None else 0,
         )
 
@@ -267,7 +270,7 @@ class UISkinEntry:
         return parameters
 
     def get_dgui_parameters_for(
-        self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None
+        self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None, state=None
     ):
         dgui_type = dgui or element.type_
         font_size = self.resolved_font_size(element, skin)
@@ -434,19 +437,44 @@ class UISkin:
         self.entries = []
         self.root_font_size = self.DEFAULT_ROOT_FONT_SIZE
 
-    def add_entry(self, entry):
+    def add_entry(self, entry: UISkinEntry) -> None:
         self.entries.append(entry)
 
-    def get(self, element, state=None):
+    def get(self, element: UIElement, state: Optional[Union[str, list[str]]] = None) -> UISkinEntry:
+        """
+        Resolve the style for `element`, restricted to entries whose state selector matches the given `state`.
+
+        Args:
+            element: the UIElement to resolve the style for
+            state: a pseudo-class or iterable of pseudo-classes, or None for no state.
+        Returns:
+            A UISkinEntry with the resolved style for the element in the given state.
+        """
         return self.collect_entries_for(element, state)
 
-    def get_style(self, element, state=None, prefix=None, skip_font=False, usage=None, dgui=None, ui_scale=None):
+    def get_style(
+        self,
+        element: UIElement,
+        state: Optional[Union[str, list[str]]] = None,
+        prefix: Optional[str] = None,
+        skip_font: bool = False,
+        usage=None,
+        dgui=None,
+        ui_scale=None,
+    ):
         style = self.collect_entries_for(element, state)
         return style.get_dgui_parameters_for(
-            element, skin=self, prefix=prefix, skip_font=skip_font, usage=usage, dgui=dgui, ui_scale=ui_scale
+            element,
+            skin=self,
+            prefix=prefix,
+            skip_font=skip_font,
+            usage=usage,
+            dgui=dgui,
+            ui_scale=ui_scale,
+            state=state,
         )
 
-    def collect_entries_for(self, element, state):
+    def collect_entries_for(self, element: UIElement, state: Optional[Union[str, list[str]]] = None) -> UISkinEntry:
         result = UISkinEntry(None, {})
         matching = [entry for entry in self.entries if entry.applicable(element, state)]
         # Stable sort: entries with equal specificity keep their declaration order, so the
@@ -457,7 +485,7 @@ class UISkin:
         self._apply_inheritance(result, element)
         return result
 
-    def _apply_inheritance(self, result, element):
+    def _apply_inheritance(self, result: UISkinEntry, element: UIElement) -> None:
         """
         Fill in unset inheritable properties from the nearest ancestor that sets them.
         """
