@@ -59,6 +59,12 @@ class ButtonWidgetLoader(YamlModuleParser):
     Handles loading of button dock widgets with text or icon codes.
     """
 
+    def __init__(self):
+        """
+        Initialize the button widget loader with an expression parser for 'checked'.
+        """
+        self.expression_parser = PythonExpressionParser()
+
     def decode(self, data: ButtonWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> ButtonDockWidget:
         """
         Load a button widget from configuration data.
@@ -87,12 +93,24 @@ class ButtonWidgetLoader(YamlModuleParser):
             text = None
             is_icon = False
 
+        if data.code_checked:
+            text_checked = chr(int(data.code_checked, 16))
+        else:
+            text_checked = data.text_checked
+
+        if data.checked is not None:
+            checked = self.expression_parser.compile_expression(data.checked, global_vars)
+        else:
+            checked = None
+
         return ButtonDockWidget(
             text,
             data.event,
             menu=data.menu,
             is_icon=is_icon,
             rescale=rescale,
+            text_checked=text_checked,
+            checked=checked,
             alignments=alignments,
             borders=borders,
             class_=data.class_,

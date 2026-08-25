@@ -435,6 +435,21 @@ class TestSkinGetStyle:
         # press/rollover/disabled fall back to the base color unless overridden.
         assert params['frameColor'] == ['up', 'up', 'hovered', 'off']
 
+    def test_get_style_for_button_combines_custom_state_with_native_states(self):
+        """A custom pseudo-class (e.g. 'checked') combines with the native hover/press/disabled
+        states, like CSS compound pseudo-classes (':checked:hover')."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('button', None, None, None), background_color='up'))
+        skin.add_entry(make_entry(Selector('button', 'checked', None, None), background_color='checked-up'))
+        skin.add_entry(
+            make_entry(Selector('button', ['checked', 'hover'], None, None), background_color='checked-hover')
+        )
+        element = UIElement(type_='button')
+
+        params = skin.get_style(element, state='checked')
+
+        assert params['frameColor'] == ['checked-up', 'checked-up', 'checked-hover', 'checked-up']
+
 
 class TestResolvedSizes:
     """Tests for the resolution of the font size and of the `width`/`height` properties."""

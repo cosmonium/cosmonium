@@ -14,6 +14,8 @@ dock:
             event: toggle-label-moon
           - type: button
             code: F09BA
+            code_checked: F0F65
+            checked: 'not time.is_running'
       - type: layout
         orientation: vertical
         gaps: [2, 2]
@@ -26,7 +28,9 @@ dock:
             align: [min, min]
             widgets:
                - type: button
-                 code: F040E
+                 code: F03E4
+                 code_checked: F040A
+                 checked: 'not time.is_running'
                  tooltip: Toggle freeze time
                  event: toggle-freeze-time
                - type: button

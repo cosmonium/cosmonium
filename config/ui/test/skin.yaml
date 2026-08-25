@@ -8,7 +8,7 @@
   parent:
     class: dock
   font-family: Material Design Icons
-  font-size: 12px
+  font-size: 16px
 - element: frame
   class: dock
   height: 96px

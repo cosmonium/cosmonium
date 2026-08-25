@@ -60,6 +60,12 @@ class ButtonWidgetConfig(StyleableConfig):
     type: Literal['button'] = Field(description="Widget type identifier")
     text: Optional[str] = Field(None, description="Button label text")
     code: Optional[str] = Field(None, pattern=r'^[0-9a-fA-F]+$', description="Unicode hex code for icon")
+    code_checked: Optional[str] = Field(
+        None,
+        pattern=r'^[0-9a-fA-F]+$',
+        description="Unicode hex code for icon when the button is in 'checked' state",
+    )
+    text_checked: Optional[str] = Field(None, description="Label shown when the button is in 'checked' state")
     event: Optional[str] = Field(None, description="Event name to send when clicked")
     menu: Optional[str] = Field(
         None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
@@ -68,6 +74,12 @@ class ButtonWidgetConfig(StyleableConfig):
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
     tooltip: Optional[str] = Field(None, description="Tooltip text")
+    checked: Optional[str] = Field(
+        None,
+        description=(
+            "Python expression evaluated every frame to determine if the button is in the 'checked' state or not"
+        ),
+    )
 
     @model_validator(mode='after')
     def validate_text_or_code(self):
@@ -83,6 +95,22 @@ class ButtonWidgetConfig(StyleableConfig):
         """A button cannot both send an event and open a menu."""
         if self.event is not None and self.menu is not None:
             raise ValueError("Button cannot have both 'event' and 'menu' fields")
+        return self
+
+    @model_validator(mode='after')
+    def validate_checked_variants(self):
+        """'code_checked' and 'text_checked' require 'checked' condition, and must match
+        the field ('code' or 'text') the button actually uses."""
+        if self.checked is None:
+            if self.code_checked is not None:
+                raise ValueError("Button 'code_checked' require 'checked' to also be set")
+            if self.text_checked is not None:
+                raise ValueError("Button 'text_checked' require 'checked' to also be set")
+            return self
+        if self.code_checked is not None and self.code is None:
+            raise ValueError("Button 'code_checked' requires 'code' to also be set")
+        if self.text_checked is not None and self.text is None:
+            raise ValueError("Button 'text_checked' requires 'text' to also be set")
         return self
 
 

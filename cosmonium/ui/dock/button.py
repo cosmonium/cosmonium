@@ -43,6 +43,8 @@ class ButtonDockWidget(DGuiDockWidget):
         menu: str = None,
         is_icon: bool = False,
         rescale: bool = False,
+        text_checked: str = None,
+        checked=None,
         proportions=None,
         alignments=None,
         borders=None,
@@ -58,18 +60,27 @@ class ButtonDockWidget(DGuiDockWidget):
         self.rescale = rescale
         self.class_ = class_
         self.id_ = id_
+        # Optional toggle-button behaviour activated when checked_condition is not None.
+        # When it evaluates to true, the button displays the text_checked label instead of text and applies
+        # the skin's `checked` pseudo-class.
+        self.checked_condition = checked
+        self.text_checked = text_checked
+        self.button_element = None
+        self.skin = None
+        self.is_checked = False
 
     def _open_menu(self):
         builtins.base.gui.open_named_menu(self.menu)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
-        style = skin.get(button_element)
-        font_size = style.resolved_font_size(button_element, skin)
+        self.skin = skin
+        self.button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
+        style = skin.get(self.button_element)
+        font_size = style.resolved_font_size(self.button_element, skin)
         if self.is_icon:
             # Icon buttons: width and height define the box the glyph must fill, which may differ from the skin's
             # font-size. Scaling the whole node by width / font_size stretches the glyph to exactly fill that box.
-            width, height = style.resolved_size(button_element, skin)
+            width, height = style.resolved_size(self.button_element, skin)
             scale = LVector3(width / font_size, 1, height / font_size)
         else:
             scale = LVector3(1, 1, 1)
@@ -79,9 +90,8 @@ class ButtonDockWidget(DGuiDockWidget):
         else:
             command = messenger.send
             extra_args = [self.event]
-        style = skin.get_style(button_element)
         button_kwargs = dict(
-            **style,
+            **skin.get_style(self.button_element),
             relief=None,
             pressEffect=1,
             text=self.text,
@@ -140,3 +150,24 @@ class ButtonDockWidget(DGuiDockWidget):
             component = button.component(component_name)
             pos = NodePath.getPos(component, reference)
             NodePath.setPos(component, reference, pos[0] + delta_x, pos[1], pos[2] + delta_z)
+
+    def update(self, global_vars):
+        if self.checked_condition is None:
+            return False
+        checked = bool(self.checked_condition.execute(global_vars))
+        if checked == self.is_checked:
+            return False
+        # Checked state has changed, update the button's style and text accordingly.
+        self.is_checked = checked
+        new_state = 'checked' if checked else None
+        style = self.skin.get_style(self.button_element, state=new_state)
+        button = self.widget.dgui_obj
+        for key, value in style.items():
+            button[key] = value
+        if self.text_checked is not None:
+            button['text'] = self.text_checked if checked else self.text
+            if self.is_icon:
+                style = self.skin.get(self.button_element, state=new_state)
+                font_size = style.resolved_font_size(self.button_element, self.skin)
+                self._center_icon(button, font_size)
+        return False
