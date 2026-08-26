@@ -78,6 +78,7 @@ class OptionMenuDockWidget(DGuiDockWidget):
         items: list[str],
         event: str,
         selected=None,
+        enabled=None,
         proportions=None,
         alignments=None,
         borders=None,
@@ -85,7 +86,7 @@ class OptionMenuDockWidget(DGuiDockWidget):
         class_=None,
         id_=None,
     ):
-        DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
+        DGuiDockWidget.__init__(self, proportions, alignments, borders, index, enabled=enabled)
         self.items = items
         self.event = event
         # Note: selected is a callable that returns the currently selected item.

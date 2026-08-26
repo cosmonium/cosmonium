@@ -103,6 +103,11 @@ class ButtonWidgetLoader(YamlModuleParser):
         else:
             checked = None
 
+        if data.enabled is not None:
+            enabled = self.expression_parser.compile_expression(data.enabled, global_vars)
+        else:
+            enabled = None
+
         return ButtonDockWidget(
             text,
             data.event,
@@ -111,6 +116,7 @@ class ButtonWidgetLoader(YamlModuleParser):
             rescale=rescale,
             text_checked=text_checked,
             checked=checked,
+            enabled=enabled,
             alignments=alignments,
             borders=borders,
             class_=data.class_,
@@ -150,10 +156,15 @@ class OptionMenuWidgetLoader(YamlModuleParser):
         if data.selected is not None:
             selected = self.expression_parser.compile_expression(data.selected, global_vars)
 
+        enabled = None
+        if data.enabled is not None:
+            enabled = self.expression_parser.compile_expression(data.enabled, global_vars)
+
         return OptionMenuDockWidget(
             data.items,
             data.event,
             selected=selected,
+            enabled=enabled,
             alignments=alignments,
             borders=borders,
             class_=data.class_,

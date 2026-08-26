@@ -80,6 +80,10 @@ class ButtonWidgetConfig(StyleableConfig):
             "Python expression evaluated every frame to determine if the button is in the 'checked' state or not"
         ),
     )
+    enabled: Optional[str] = Field(
+        None,
+        description="Python expression evaluated every frame to determine if the button is enabled or disabled",
+    )
 
     @model_validator(mode='after')
     def validate_text_or_code(self):
@@ -121,6 +125,10 @@ class OptionMenuWidgetConfig(StyleableConfig):
     items: List[str] = Field(min_length=1, description="Selectable option labels")
     event: str = Field(description="Event name to send, with the selected label as argument, on selection")
     selected: Optional[str] = Field(None, description="Python expression evaluating to the initially selected item")
+    enabled: Optional[str] = Field(
+        None,
+        description="Python expression evaluated every frame to determine if the option menu is enabled or disabled",
+    )
     align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
     tooltip: Optional[str] = Field(None, description="Tooltip text")

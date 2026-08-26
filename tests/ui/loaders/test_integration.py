@@ -363,6 +363,19 @@ class TestWidgetLoaders:
         assert widget.class_ == 'primary'
         assert widget.id_ == 'my-button'
 
+        # Test with an enabled expression
+        class Settings:
+            can_click = True
+
+        global_vars = {'settings': Settings()}
+        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event', 'enabled': 'settings.can_click'}
+        config = validator.validate_dict(data, ButtonWidgetConfig)
+        widget = loader.decode(config, global_vars=global_vars)
+        assert widget.enabled_condition.execute(global_vars) is True
+        # Check that enabled condition does read the variable
+        Settings.can_click = False
+        assert widget.enabled_condition.execute(global_vars) is False
+
     def test_option_menu_widget_loader(self, validator):
         """Test OptionMenuWidgetLoader."""
 
@@ -398,6 +411,22 @@ class TestWidgetLoaders:
         # The expression is re-evaluated on each call, reflecting the live value at read time
         Settings.quality = 'High'
         assert widget.selected() == 'High'
+
+        # Test with an enabled expression
+        Settings.can_click = True
+        global_vars['settings'] = Settings()
+        data = {
+            'type': 'option-menu',
+            'items': ['Low', 'Medium', 'High'],
+            'event': 'set-quality',
+            'enabled': 'settings.can_click',
+        }
+        config = validator.validate_dict(data, OptionMenuWidgetConfig)
+        widget = loader.decode(config, global_vars=global_vars)
+        assert widget.enabled_condition.execute(global_vars) is True
+        # Check that enabled condition does read the variable
+        Settings.can_click = False
+        assert widget.enabled_condition.execute(global_vars) is False
 
     def test_spacer_widget_loader(self, validator):
         """Test SpacerWidgetLoader."""

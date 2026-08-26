@@ -45,6 +45,7 @@ class ButtonDockWidget(DGuiDockWidget):
         rescale: bool = False,
         text_checked: str = None,
         checked=None,
+        enabled=None,
         proportions=None,
         alignments=None,
         borders=None,
@@ -52,7 +53,7 @@ class ButtonDockWidget(DGuiDockWidget):
         class_=None,
         id_=None,
     ):
-        DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
+        DGuiDockWidget.__init__(self, proportions, alignments, borders, index, enabled=enabled)
         self.text = text
         self.event = event
         self.menu = menu
@@ -152,11 +153,12 @@ class ButtonDockWidget(DGuiDockWidget):
             NodePath.setPos(component, reference, pos[0] + delta_x, pos[1], pos[2] + delta_z)
 
     def update(self, global_vars):
+        has_changed = DGuiDockWidget.update(self, global_vars)
         if self.checked_condition is None:
-            return False
+            return has_changed
         checked = bool(self.checked_condition.execute(global_vars))
         if checked == self.is_checked:
-            return False
+            return has_changed
         # Checked state has changed, update the button's style and text accordingly.
         self.is_checked = checked
         new_state = 'checked' if checked else None
@@ -170,4 +172,4 @@ class ButtonDockWidget(DGuiDockWidget):
                 style = self.skin.get(self.button_element, state=new_state)
                 font_size = style.resolved_font_size(self.button_element, self.skin)
                 self._center_icon(button, font_size)
-        return False
+        return has_changed

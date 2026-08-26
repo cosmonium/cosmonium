@@ -22,6 +22,7 @@ from __future__ import annotations
 import builtins
 from typing import TYPE_CHECKING
 
+from direct.gui import DirectGuiGlobals as DGG
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import PNMImage, Texture
@@ -59,6 +60,11 @@ class DockWidgetBase:
 
 class DGuiDockWidget(DockWidgetBase):
 
+    def __init__(self, proportions=None, alignments=None, borders=None, index=None, enabled=None):
+        DockWidgetBase.__init__(self, proportions, alignments, borders, index)
+        self.enabled_condition = enabled
+        self.is_enabled = True
+
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         raise NotImplementedError()
 
@@ -67,6 +73,16 @@ class DGuiDockWidget(DockWidgetBase):
         instance.reparent_to(dock.instance)
         self.widget = SizerWidget(instance)
         DockWidgetBase.add_to(self, dock, parent, borders, skin)
+
+    def update(self, global_vars):
+        if self.enabled_condition is None:
+            return False
+        enabled = bool(self.enabled_condition.execute(global_vars))
+        if enabled == self.is_enabled:
+            return False
+        self.is_enabled = enabled
+        self.widget.dgui_obj['state'] = DGG.NORMAL if enabled else DGG.DISABLED
+        return False
 
 
 class FrameColorTexture:
