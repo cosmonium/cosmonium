@@ -196,6 +196,7 @@ class SkinLoader(BaseComponentLoader):
         entry.font_size = self.parsers.length.parse(entry_config.font_size, entry_context, relative_to_parent=True)
         entry.font_style = entry_config.font_style
         entry.font_weight = entry_config.font_weight
+        entry.text_align = self.parsers.text_alignment.parse(entry_config.text_align, context=entry_context)
 
         # Parse layout properties
         entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry_context)

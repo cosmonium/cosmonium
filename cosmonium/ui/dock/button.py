@@ -91,13 +91,15 @@ class ButtonDockWidget(DGuiDockWidget):
         else:
             command = messenger.send
             extra_args = [self.event]
+        button_style = skin.get_style(self.button_element)
+        # The glyph or label is centered in the button unless the skin says otherwise
+        button_style.setdefault('text_align', TextNode.A_boxed_center)
         button_kwargs = dict(
-            **skin.get_style(self.button_element),
+            **button_style,
             relief=None,
             pressEffect=1,
             text=self.text,
             textMayChange=True,
-            text_align=TextNode.A_boxed_center,
             scale=scale,
             command=command,
             extraArgs=extra_args,

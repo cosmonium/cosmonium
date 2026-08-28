@@ -199,11 +199,12 @@ class TextWidgetLoader(YamlModuleParser):
         parsers = ParsersCollection.get_instance()
         borders = parsers.border.parse(data.borders)
         template = self.fstring_template_parser.create_template(data.text)
-        align = parsers.text_alignment.parse(data.align)
+        alignments = parsers.alignment.parse(data.align)
 
         return TextDockWidget(
             template,
-            align=align,
+            text_align=parsers.text_alignment.parse(data.text_align),
+            alignments=alignments,
             borders=borders,
             class_=data.class_,
             id_=data.id,

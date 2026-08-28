@@ -275,30 +275,32 @@ class TextAlignmentParser:
     Converts text alignment names to TextNode constants.
     """
 
-    @staticmethod
-    def parse(value: Any, default: int = TextNode.A_boxed_left, context: Optional[str] = None) -> int:
+    _ALIGNMENTS = {
+        'left': TextNode.A_boxed_left,
+        'center': TextNode.A_boxed_center,
+        'right': TextNode.A_boxed_right,
+    }
+
+    @classmethod
+    def parse(cls, value: Any, default: Optional[int] = None, context: Optional[str] = None) -> Optional[int]:
         """
-        Parse text alignment specification from configuration data.
+        Parse a text alignment specification from configuration data.
 
         Args:
-            value: Alignment name ("left", "center", "right")
-            default: Default alignment if value is None
+            value: Alignment name ("left", "center" or "right"), or None
+            default: Value to return when the alignment is unset or invalid
             context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
             TextNode alignment constant
         """
-        if value == "left":
-            return TextNode.A_boxed_left
-        elif value == "center":
-            return TextNode.A_boxed_center
-        elif value == "right":
-            return TextNode.A_boxed_right
-        elif value is None:
+        if value is None:
             return default
-        else:
+        alignment = cls._ALIGNMENTS.get(value)
+        if alignment is None:
             report_error(f"Invalid text align {value}", context)
             return default
+        return alignment
 
 
 class ParsersCollection:

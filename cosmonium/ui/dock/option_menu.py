@@ -102,15 +102,17 @@ class OptionMenuDockWidget(DGuiDockWidget):
             value = self.selected()
             if value in self.items:
                 initial_item = value
+        style = skin.get_style(element)
+        # The selected option and the entries of the list read from the left unless the skin says otherwise
+        style.setdefault('text_align', TextNode.A_left)
+        style.setdefault('item_text_align', TextNode.A_left)
         option_menu = _DockOptionMenu(
             dock,
-            **skin.get_style(element),
+            **style,
             relief=None,
             items=self.items,
             initialitem=initial_item,
             textMayChange=True,
-            text_align=TextNode.A_left,
-            item_text_align=TextNode.A_left,
             command=lambda selection: messenger.send(self.event, [selection]),
         )
         return option_menu

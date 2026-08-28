@@ -507,3 +507,30 @@ class TestResolvedSizes:
         # A button outside of any dock keeps the default size
         outside = UIElement(type_='button')
         assert skin.get(outside).resolved_size(outside, skin) == (12, 12)
+
+
+class TestTextAlign:
+    """Tests for the `text-align` property."""
+
+    def test_text_align_is_added_to_the_style_of_a_label(self):
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('label', None, None, None), text_align='center', font_size=_fixed(12)))
+        element = UIElement(type_='label')
+
+        assert skin.get_style(element)['text_align'] == 'center'
+
+    def test_text_align_is_left_out_when_unset(self):
+        """The widget keeps its own default when the skin says nothing."""
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('label', None, None, None), font_size=_fixed(12)))
+        element = UIElement(type_='label')
+
+        assert 'text_align' not in skin.get_style(element)
+
+    def test_text_align_inherits_from_an_ancestor(self):
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector(None, None, 'dock', None), text_align='right'))
+        parent = UIElement(type_='frame', class_='dock')
+        element = UIElement(type_='label', parent=parent)
+
+        assert skin.get(element).text_align == 'right'

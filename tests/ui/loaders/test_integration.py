@@ -29,7 +29,7 @@ import os
 import tempfile
 
 import pytest
-from panda3d.core import LColor
+from panda3d.core import LColor, TextNode
 from pydantic import BaseModel, Field
 
 from cosmonium.parsers.validator import ConfigValidator
@@ -443,10 +443,11 @@ class TestWidgetLoaders:
 
         loader = TextWidgetLoader()
 
-        data = {'type': 'text', 'text': 'Hello World', 'align': 'left'}
+        data = {'type': 'text', 'text': 'Hello World', 'text-align': 'center'}
         config = validator.validate_dict(data, TextWidgetConfig)
         widget = loader.decode(config, global_vars={})
         assert widget is not None
+        assert widget.text_align == TextNode.A_boxed_center
 
     def test_widget_yaml_parser(self, validator, init_registry):
         """Test WidgetYamlParser dispatch."""

@@ -317,36 +317,20 @@ class TestGapParser:
 class TestTextAlignmentParser:
     """Tests for TextAlignmentParser."""
 
-    def test_parse_left(self):
-        """Test parsing left alignment."""
-        parser = TextAlignmentParser()
-        result = parser.parse("left")
-        assert result == TextNode.A_boxed_left
-
-    def test_parse_center(self):
-        """Test parsing center alignment."""
-        parser = TextAlignmentParser()
-        result = parser.parse("center")
-        assert result == TextNode.A_boxed_center
-
-    def test_parse_right(self):
-        """Test parsing right alignment."""
-        parser = TextAlignmentParser()
-        result = parser.parse("right")
-        assert result == TextNode.A_boxed_right
+    def test_parse_alignments(self):
+        assert TextAlignmentParser.parse("left") == TextNode.A_boxed_left
+        assert TextAlignmentParser.parse("center") == TextNode.A_boxed_center
+        assert TextAlignmentParser.parse("right") == TextNode.A_boxed_right
 
     def test_parse_none_uses_default(self):
-        """Test parsing None returns default."""
-        parser = TextAlignmentParser()
-        result = parser.parse(None, default=TextNode.A_boxed_center)
-        assert result == TextNode.A_boxed_center
+        """An unset text alignment is left to the caller, which falls back on the skin."""
+        assert TextAlignmentParser.parse(None) is None
+        assert TextAlignmentParser.parse(None, default=TextNode.A_boxed_center) == TextNode.A_boxed_center
 
     def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
-        parser = TextAlignmentParser()
-        result = parser.parse("invalid")
-        assert result == TextNode.A_boxed_left  # Should return default
-        assert "Invalid text align" in caplog.text
+        assert TextAlignmentParser.parse("invalid") is None
+        assert "Invalid text align invalid" in caplog.text
 
 
 class TestParsersCollection:

@@ -89,7 +89,7 @@ def report_error(message: str, context: Optional[str] = None) -> None:
 
 # Properties that inherit from an ancestor element's resolved style when an element (and none of its matching entries)
 # sets them
-INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 'font_weight')
+INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 'font_weight', 'text_align')
 
 
 def calc_size_px(size, element, skin):
@@ -233,6 +233,20 @@ class UISkinEntry:
         height = self.height(element, skin) if self.height is not None else default
         return (width, height)
 
+    def add_text_align(self, parameters: dict, key: str = 'text_align') -> None:
+        """
+        Add the `text-align` property, when the skin sets one, to a DirectGUI parameters dict.
+
+        The property is left out when unset so that the widget's own default, or an explicit value
+        passed by its creator, is used instead.
+
+        Args:
+            parameters: The DirectGUI parameters being built
+            key: Name of the DirectGUI parameter to fill in
+        """
+        if self.text_align is not None:
+            parameters[key] = self.text_align
+
     def get_font_parameters(self, element, skin, prefix=None, skip_scale=False, scale3=False, ui_scale=None):
         font_family = self.font_family
         font_style = Font.STYLE_NORMAL
@@ -303,6 +317,7 @@ class UISkinEntry:
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
             }
+            self.add_text_align(parameters)
         elif dgui_type == 'borders':
             parameters = {
                 'background_color': self.background_color,
@@ -320,6 +335,7 @@ class UISkinEntry:
                 'frameColor': self.background_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
             }
+            self.add_text_align(parameters)
         elif dgui_type == 'frame':
             parameters = {'frameColor': self.background_color}
         elif dgui_type == 'label':
@@ -328,6 +344,7 @@ class UISkinEntry:
                 'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
             }
+            self.add_text_align(parameters)
         elif dgui_type == 'menu':
             hover = skin.get(element, 'hover')
             active = skin.get(element, 'active')
@@ -364,6 +381,8 @@ class UISkinEntry:
                 **(self.get_font_parameters(element, skin, 'text_', skip_scale=True) if not skip_font else {}),
                 **(self.get_font_parameters(element, skin, 'item_text_', skip_scale=True) if not skip_font else {}),
             }
+            self.add_text_align(parameters)
+            self.add_text_align(parameters, 'item_text_align')
         elif dgui_type == 'scroll-bar':
             parameters = {'frameColor': self.background_color}
             thumb = UIElement(parent=element, type_='button', class_='thumb')

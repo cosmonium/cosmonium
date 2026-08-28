@@ -139,8 +139,10 @@ class TextWidgetConfig(StyleableConfig):
 
     type: Literal['text'] = Field(description="Widget type identifier")
     text: str = Field(description="Template text to display")
-    # TODO: align is the alignment of the text inside the label, not the label itself.
-    align: Optional[TextAlignLiteral] = Field('left', description="Text alignment (left/center/right)")
+    text_align: Optional[TextAlignLiteral] = Field(
+        None, description="Alignment of the text inside the widget (left/center/right)"
+    )
+    align: Optional[List[AlignmentLiteral]] = Field(None, description="Widget alignment")
     borders: Optional[Any] = Field(None, description="Border configuration")
 
 
@@ -360,6 +362,7 @@ class SkinEntryConfig(ConfigBase):
     font_size: Optional[Union[float, str]] = Field(None, description="Font size (numeric or CSS string)")
     font_style: Optional[str] = Field(None, description="Font style (e.g., 'italic')")
     font_weight: Optional[str] = Field(None, description="Font weight (e.g., 'bold')")
+    text_align: Optional[TextAlignLiteral] = Field(None, description="Alignment of the text inside the element")
     margin: Optional[Union[str, List[str]]] = Field(None, description="Margin around the element")
     padding: Optional[Union[str, List[str]]] = Field(None, description="Padding inside the element")
     width: Optional[str] = Field(None, description="Element width (CSS value)")
