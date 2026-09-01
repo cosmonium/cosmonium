@@ -18,46 +18,24 @@
 #
 
 from ...extrainfo import extra_info
+from ...objects.queries import get_ancestors, get_orbiting_bodies
 from ...objects.stellarbody import StellarBody
-from ...objects.systems import StellarSystem
-from ...objects.universe import Universe
 
 
 def create_orbiting_bodies_menu(engine, body):
     subitems = []
-    if isinstance(body, StellarSystem):
-        system = body
-    elif body is not None and body.anchor.has_system():
-        system = body.anchor.get_system().body
-    else:
-        system = None
-    if system is not None:
-        children = []
-        for child in system.children:
-            if child != body:
-                children.append(child)
-        if len(children) > 0:
-            children.sort(key=lambda x: x.anchor.orbit.get_bounding_radius() if x.anchor.has_orbit() else 0)
-            subitems = []
-            for child in children:
-                if isinstance(child, StellarSystem) and child.primary is not None:
-                    subitems.append([child.primary.get_name(), 0, engine.select_body, child.primary])
-                else:
-                    subitems.append([child.get_name(), 0, engine.select_body, child])
+    for child in get_orbiting_bodies(body):
+        subitems.append([child.get_name(), 0, engine.select_body, child])
     return subitems
 
 
 def create_orbits_menu(engine, body):
     subitems = []
     if body is not None:
-        parent = body.parent
-        while parent is not None and not isinstance(parent, Universe):
-            if isinstance(parent, StellarSystem) and parent.primary is not None:
-                if parent.primary != body:
-                    subitems.append([parent.primary.get_name(), 0, engine.select_body, parent.primary])
-            else:
-                subitems.append([parent.get_name(), 0, engine.select_body, parent])
-            parent = parent.parent
+        # get_ancestors() is root-first; this menu lists nearest ancestor
+        # first ("go up one level" at the top), hence the reverse.
+        for ancestor in reversed(get_ancestors(body)):
+            subitems.append([ancestor.get_name(), 0, engine.select_body, ancestor])
     return subitems
 
 
