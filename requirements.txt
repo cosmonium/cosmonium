@@ -15,7 +15,7 @@ numpy==2.2.6
 
 platformdirs == 4.11.0
 
-pydantic == 2.13.4
+pydantic == 2.13.5
 
 pywin32 == 312 ; sys_platform == 'win32' or sys_platform == 'win_amd64'
 
