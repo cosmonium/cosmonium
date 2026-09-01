@@ -509,6 +509,53 @@ class TestResolvedSizes:
         assert skin.get(outside).resolved_size(outside, skin) == (12, 12)
 
 
+class TestBoxProperties:
+    """Tests for the resolution of the CSS-like box properties of a style."""
+
+    def test_margin_and_padding_resolve_to_the_four_edges(self):
+        skin = UISkin()
+        skin.add_entry(
+            make_entry(
+                Selector('frame', None, None, None),
+                margin=[_fixed(1), _fixed(2), _fixed(3), _fixed(4)],
+                padding=[_fixed(5), _fixed(6), _fixed(7), _fixed(8)],
+            )
+        )
+        element = UIElement(type_='frame')
+        style = skin.get(element)
+
+        assert style.get_edge_lengths('margin', element, skin) == (1, 2, 3, 4)
+        assert style.get_edge_lengths('padding', element, skin) == (5, 6, 7, 8)
+
+    def test_unset_edges_resolve_to_zero(self):
+        skin = UISkin()
+        element = UIElement(type_='frame')
+        style = skin.get(element)
+
+        assert style.get_edge_lengths('margin', element, skin) == (0, 0, 0, 0)
+
+    def test_gap_resolves_to_the_column_and_row_spacing(self):
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('frame', None, None, None), gap=(_fixed(8), _fixed(4))))
+        element = UIElement(type_='frame')
+
+        assert skin.get(element).get_gap(element, skin) == (8, 4)
+
+    def test_unset_gap_resolves_to_zero(self):
+        skin = UISkin()
+        element = UIElement(type_='frame')
+
+        assert skin.get(element).get_gap(element, skin) == (0, 0)
+
+    def test_get_length_falls_back_on_the_default(self):
+        skin = UISkin()
+        element = UIElement(type_='frame')
+        style = skin.get(element)
+
+        assert style.get_length('border_width', element, skin) == 0
+        assert style.get_length('border_width', element, skin, default=3) == 3
+
+
 class TestTextAlign:
     """Tests for the `text-align` property."""
 
@@ -534,3 +581,23 @@ class TestTextAlign:
         element = UIElement(type_='label', parent=parent)
 
         assert skin.get(element).text_align == 'right'
+
+
+class TestSizerStyle:
+    """Tests for the layout parameters a sizer and its cells take from the skin."""
+
+    def test_the_gap_of_a_sizer_comes_from_its_gap_property(self):
+        skin = UISkin()
+        skin.add_entry(make_entry(Selector('sizer', None, None, None), gap=(_fixed(8), _fixed(4))))
+        element = UIElement(type_='sizer')
+
+        assert skin.get_style(element) == {'gaps': (8, 4)}
+
+    def test_the_borders_of_a_cell_come_from_the_margin_property(self):
+        skin = UISkin()
+        skin.add_entry(
+            make_entry(Selector('sizer', None, None, None), margin=[_fixed(1), _fixed(2), _fixed(3), _fixed(4)])
+        )
+        element = UIElement(type_='sizer')
+
+        assert skin.get_style(element, usage='cell') == {'borders': (1, 2, 3, 4)}

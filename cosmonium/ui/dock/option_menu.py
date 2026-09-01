@@ -25,7 +25,7 @@ from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectOptionMenu import DirectOptionMenu
 from panda3d.core import TextNode
 
-from ..skin import UIElement
+from ..skin import UISkin
 from .base import DGuiDockWidget
 
 if TYPE_CHECKING:
@@ -72,37 +72,32 @@ class _DockOptionMenu(DirectOptionMenu):
 
 
 class OptionMenuDockWidget(DGuiDockWidget):
+    """A dock widget showing a drop-down list of options."""
 
-    def __init__(
-        self,
-        items: list[str],
-        event: str,
-        selected=None,
-        enabled=None,
-        proportions=None,
-        alignments=None,
-        borders=None,
-        index=None,
-        class_=None,
-        id_=None,
-    ):
-        DGuiDockWidget.__init__(self, proportions, alignments, borders, index, enabled=enabled)
+    element_type = 'option-menu'
+
+    def __init__(self, items: list[str], event: str, selected=None, **kwargs):
+        """
+        Args:
+            items: The selectable options
+            event: The event sent, with the selected option, when the selection changes
+            selected: Callable returning the initially selected option, or None
+            kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
+        """
+        DGuiDockWidget.__init__(self, **kwargs)
         self.items = items
         self.event = event
         # Note: selected is a callable that returns the currently selected item.
         # But currenlt it is only called at creation time, so it won't update the selection if the value changes later.
         self.selected = selected
-        self.class_ = class_
-        self.id_ = id_
 
-    def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        element = UIElement('option-menu', class_=self.class_, id_=self.id_, parent=parent.element)
+    def create(self, dock: Dock, parent, messenger, skin: UISkin) -> DirectGuiWidget:
         initial_item = self.items[0]
         if self.selected is not None:
             value = self.selected()
             if value in self.items:
                 initial_item = value
-        style = skin.get_style(element)
+        style = skin.get_style(self.element)
         # The selected option and the entries of the list read from the left unless the skin says otherwise
         style.setdefault('text_align', TextNode.A_left)
         style.setdefault('item_text_align', TextNode.A_left)

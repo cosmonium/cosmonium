@@ -21,17 +21,19 @@
 """
 Parser utilities for UI configuration loading.
 
-This module provides dedicated parser classes for common UI configuration
-values like colors, lengths, alignments, borders, and gaps. Each parser
-encapsulates the logic for parsing a specific type of value.
+This module provides dedicated parser classes for the values shared by the skin and the widget
+configurations: colors, CSS-like lengths, widget alignments and text alignments.
+Each parser encapsulates the logic for parsing a specific type of value.
 """
+
+from __future__ import annotations
 
 from functools import partial
 from typing import Any, Callable, List, Optional, Tuple
 
-from panda3d.core import LColor, LVector4, TextNode
+from panda3d.core import LColor, TextNode
 
-from ..skin import calc_font_size_em, calc_size_em, calc_size_px, calc_size_rem, report_error
+from ..skin import ALIGNMENT_VALUES, calc_font_size_em, calc_size_em, calc_size_px, calc_size_rem, report_error
 
 
 class ColorParser:
@@ -85,6 +87,9 @@ class LengthParser:
     - Em values: "1.5em", relative to the font size of the element the length applies to
       (for `font-size` property, it's relative to the parent element's font size)
     - Rem values: "1.5rem", relative to the skin's root font size
+
+    Note: A length can only be turned into a pixel value once the element it applies to and the skin
+    resolving its style are known, so parsing returns a callable evaluated at widget creation time.
     """
 
     # Longest suffix first, so "rem" isn't misdetected as "em".
@@ -106,6 +111,10 @@ class LengthParser:
             The callable has the following signature: `length(element, skin)`
         """
         if data is None:
+            return None
+        if isinstance(data, bool):
+            # If not tested explicitly, a boolean is accepted as a number.
+            report_error(f"Invalid size {data}", context)
             return None
         if isinstance(data, (int, float)):
             return partial(calc_size_px, float(data))
@@ -132,147 +141,118 @@ class LengthParser:
         return partial(calc, value)
 
     @classmethod
+    def parse_values(cls, data: Any, count: int, context: Optional[str] = None) -> Optional[List[Optional[Callable]]]:
+        """
+        Parse a CSS-like shorthand made of one to `count` lengths.
+
+        Args:
+            data: A single length, or several of them separated by spaces, or a list of lengths
+            count: Maximum number of lengths accepted
+            context: Optional context (e.g. file/entry/selector) for error reporting
+
+        Returns:
+            The list of parsed lengths, or None if unset or invalid
+        """
+        if data is None:
+            return None
+        if isinstance(data, str):
+            items = data.split()
+        elif isinstance(data, (list, tuple)):
+            items = list(data)
+        else:
+            items = [data]
+        if not items or len(items) > count:
+            report_error(f"Invalid value {data}, expected 1 to {count} lengths", context)
+            return None
+        return [cls.parse(item, context) for item in items]
+
+    @classmethod
     def parse_edge_lengths(cls, data: Any, context: Optional[str] = None) -> Optional[List[Optional[Callable]]]:
         """
-        Parse edge lengths (margin, padding) from configuration data.
+        Parse the edge lengths of a box from configuration data.
 
-        Supports CSS-style shorthand:
+        Supports the CSS shorthand:
         - "10px" -> all edges
         - "10px 20px" -> vertical horizontal
         - "10px 20px 30px" -> top horizontal bottom
         - "10px 20px 30px 40px" -> top right bottom left
 
         Args:
-            data: Length specification string or None
+            data: Length specification, or None
             context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
-            List of 4 callables [left, right, bottom, top] in DirectGUI order, or None
+            List of 4 lengths [left, right, bottom, top] in DirectGUI order, or None
         """
-        if data is None:
+        lengths = cls.parse_values(data, 4, context)
+        if lengths is None:
             return None
-        if isinstance(data, str):
-            items = data.split(' ')
-        lengths = [cls.parse(item, context) for item in items]
         # DirectGUI order is: l, r, b, t
         if len(lengths) == 1:
-            lengths = lengths * 4
-        elif len(lengths) == 2:
-            lengths = [lengths[1], lengths[1], lengths[0], lengths[0]]
-        elif len(lengths) == 3:
-            lengths = [lengths[1], lengths[1], lengths[2], lengths[0]]
-        else:
-            lengths = [lengths[3], lengths[1], lengths[2], lengths[0]]
-        return lengths
+            return lengths * 4
+        if len(lengths) == 2:
+            return [lengths[1], lengths[1], lengths[0], lengths[0]]
+        if len(lengths) == 3:
+            return [lengths[1], lengths[1], lengths[2], lengths[0]]
+        return [lengths[3], lengths[1], lengths[2], lengths[0]]
+
+    @classmethod
+    def parse_gap(cls, data: Any, context: Optional[str] = None) -> Optional[Tuple[Optional[Callable], ...]]:
+        """
+        Parse a `gap`, the spacing between the children of a container.
+
+        Follows the CSS shorthand, "<row-gap> <column-gap>", a single value setting both.
+
+        Args:
+            data: Gap specification, or None
+            context: Optional context (e.g. file/entry/selector) for error reporting
+
+        Returns:
+            The (column, row) gaps, in the order expected by the sizer, or None
+        """
+        lengths = cls.parse_values(data, 2, context)
+        if lengths is None:
+            return None
+        if len(lengths) == 1:
+            return (lengths[0], lengths[0])
+        return (lengths[1], lengths[0])
 
 
 class AlignmentParser:
     """
-    Parser for widget alignment values.
+    Parser for the alignment of a widget inside the cell it occupies in its parent's layout.
 
-    Converts alignment names to DirectGUI alignment values.
+    Follows the CSS `align-self` / `justify-self` keywords: `start`, `end`, `center` and `stretch`,
+    plus the directional aliases `left`/`right` (horizontal) and `top`/`bottom` (vertical).
     """
 
     @staticmethod
-    def parse(
-        value: Any, default: Optional[Tuple[str, str]] = None, context: Optional[str] = None
-    ) -> Optional[Tuple[str, str]]:
+    def parse(value: Any, default: Optional[str] = None, context: Optional[str] = None) -> Optional[str]:
         """
-        Parse alignment specification from configuration data.
+        Parse an alignment keyword from configuration data.
 
         Args:
-            value: Alignment specification [horizontal, vertical]
-            default: Default alignment if value is None..
+            value: Alignment keyword, or None
+            default: Value to return when the alignment is unset or invalid
             context: Optional context (e.g. file/entry/selector) for error reporting
 
         Returns:
-            Tuple of alignment strings ('min', 'max', 'center'), or the default when unspecified
+            The alignment value expected by the sizer ('min', 'max', 'center' or 'expand')
 
-        Note: Returning None means the container uses the alignment matching its direction.
+        Note: Returning None means the widget uses the default alignment of the layout holding it.
         """
-        if isinstance(value, list) and len(value) == 2:
-            if value[0] == "left":
-                value[0] = "min"
-            elif value[0] == "right":
-                value[0] = "max"
-            if value[1] == "top":
-                value[1] = "min"
-            elif value[1] == "bottom":
-                value[1] = "max"
-            return value
-        elif value is None:
+        if value is None:
             return default
-        else:
-            report_error(f"Invalid alignments {value}", context)
+        alignment = ALIGNMENT_VALUES.get(value)
+        if alignment is None:
+            report_error(f"Invalid alignment {value}", context)
             return default
-
-
-class BorderParser:
-    """
-    Parser for border values.
-
-    Converts border specifications to LVector4 values.
-    """
-
-    @staticmethod
-    def parse(value: Any, context: Optional[str] = None) -> Optional[LVector4]:
-        """
-        Parse border specification from configuration data.
-
-        Args:
-            value: Border specification (list of 4 values or single value)
-            context: Optional context (e.g. file/entry/selector) for error reporting
-
-        Returns:
-            LVector4 instance or None
-        """
-        if isinstance(value, list) and len(value) == 4:
-            return LVector4(*value)
-        elif isinstance(value, int):
-            return LVector4(value)
-        elif value is None:
-            return None
-        else:
-            report_error(f"Invalid borders {value}", context)
-            return None
-
-
-class GapParser:
-    """
-    Parser for gap/spacing values.
-
-    Converts gap specifications to tuples.
-    """
-
-    @staticmethod
-    def parse(value: Any, default: Tuple[int, int] = (0, 0), context: Optional[str] = None) -> Tuple[int, int]:
-        """
-        Parse gap specification from configuration data.
-
-        Args:
-            value: Gap specification (list of 2 values or single value)
-            default: Default gap if value is None
-            context: Optional context (e.g. file/entry/selector) for error reporting
-
-        Returns:
-            Tuple of (horizontal_gap, vertical_gap)
-        """
-        if isinstance(value, list) and len(value) == 2:
-            return tuple(value)
-        elif isinstance(value, int):
-            return (value, value)
-        elif value is None:
-            return default
-        else:
-            report_error(f"Invalid gaps {value}", context)
-            return default
+        return alignment
 
 
 class TextAlignmentParser:
     """
-    Parser for text alignment values.
-
-    Converts text alignment names to TextNode constants.
+    Parser for the alignment of the text inside a widget.
     """
 
     _ALIGNMENTS = {
@@ -318,12 +298,10 @@ class ParsersCollection:
         self.color = ColorParser()
         self.length = LengthParser()
         self.alignment = AlignmentParser()
-        self.border = BorderParser()
-        self.gap = GapParser()
         self.text_alignment = TextAlignmentParser()
 
     @classmethod
-    def get_instance(cls) -> 'ParsersCollection':
+    def get_instance(cls) -> ParsersCollection:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

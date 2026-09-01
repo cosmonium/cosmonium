@@ -26,13 +26,11 @@ used in UI configuration loading.
 """
 
 import pytest
-from panda3d.core import LVector4, TextNode
+from panda3d.core import TextNode
 
 from cosmonium.ui.loaders.parsers import (
     AlignmentParser,
-    BorderParser,
     ColorParser,
-    GapParser,
     LengthParser,
     ParsersCollection,
     TextAlignmentParser,
@@ -104,214 +102,163 @@ class TestColorParser:
         assert "Invalid color" in caplog.text
 
 
+def make_skin(root_font_size=16, **entry_config):
+    """Build a skin whose single entry, matching any element, holds the given properties."""
+    skin = UISkin()
+    skin.root_font_size = root_font_size
+    entry = UISkinEntry(Selector(None, None, None, None), {})
+    for key, value in entry_config.items():
+        setattr(entry, key, value)
+    skin.add_entry(entry)
+    return skin
+
+
 class TestLengthParser:
     """Tests for LengthParser."""
 
-    @staticmethod
-    def make_skin(root_font_size=16, **entry_config):
-        """Build a skin whose single entry, matching any element, holds the given properties."""
-        skin = UISkin()
-        skin.root_font_size = root_font_size
-        entry = UISkinEntry(Selector(None, None, None, None), {})
-        for key, value in entry_config.items():
-            setattr(entry, key, value)
-        skin.add_entry(entry)
-        return skin
-
     def test_parse_pixels(self):
-        """Test parsing pixel values."""
-        parser = LengthParser()
+        """A length in pixels does not depend on any context."""
+        length = LengthParser.parse("16px")
 
-        size_fn = parser.parse("16px")
-        assert size_fn(None, None) == 16
+        assert length(None, None) == 16
 
     def test_parse_em(self):
-        """Test parsing em values, relative to the font size of the element."""
-        parser = LengthParser()
-        skin = self.make_skin(font_size=parser.parse("12px"))
+        """A length in em is relative to the font size of the element it applies to."""
+        skin = make_skin(font_size=LengthParser.parse("12px"))
         element = UIElement('button')
 
-        size_fn = parser.parse("1.5em")
-        assert size_fn(element, skin) == 18
+        length = LengthParser.parse("1.5em")
+
+        assert length(element, skin) == 18
 
     def test_parse_em_of_font_size_is_relative_to_the_parent(self):
         """For font-size property, em is relative to the parent's font size."""
-        parser = LengthParser()
-        skin = self.make_skin(font_size=parser.parse("12px"))
+        skin = make_skin(font_size=LengthParser.parse("12px"))
         element = UIElement('button', parent=UIElement('frame'))
 
-        size_fn = parser.parse("1.5em", relative_to_parent=True)
-        assert size_fn(element, skin) == 18
+        length = LengthParser.parse("1.5em", relative_to_parent=True)
+
+        assert length(element, skin) == 18
 
     def test_parse_em_falls_back_to_the_root_font_size(self):
         """An em length applied to an element who has no defined font size, uses the root font size."""
-        parser = LengthParser()
-        skin = self.make_skin(root_font_size=20)
+        skin = make_skin(root_font_size=20)
 
-        size_fn = parser.parse("1.5em")
-        assert size_fn(UIElement('button'), skin) == 30
+        length = LengthParser.parse("1.5em")
+
+        assert length(UIElement('button'), skin) == 30
 
     def test_parse_rem(self):
         """Test parsing rem values, relative to the skin's root font size."""
-        parser = LengthParser()
-        skin = self.make_skin(root_font_size=20)
+        skin = make_skin(root_font_size=20)
 
-        size_fn = parser.parse("1.5rem")
-        assert size_fn(None, skin) == 30
+        length = LengthParser.parse("1.5rem")
+
+        assert length(None, skin) == 30
 
     def test_parse_invalid_string_does_not_crash(self, caplog):
         """A string containing an invalid unit should be reported."""
-        parser = LengthParser()
-
-        size_fn = parser.parse("1x")
-        assert size_fn is None
+        assert LengthParser.parse("1x") is None
         assert "Invalid size 1x" in caplog.text
 
+    def test_parse_invalid_number_does_not_crash(self, caplog):
+        """A string with a valid unit but an invalid number should be reported."""
+        assert LengthParser.parse("abcpx") is None
+        assert "Invalid size abcpx" in caplog.text
+
     def test_parse_numeric(self):
-        """Test parsing numeric values."""
-        parser = LengthParser()
-
-        size_fn = parser.parse(20)
-        assert size_fn(None, None) == 20
-
-        size_fn = parser.parse(15.5)
-        assert size_fn(None, None) == 15.5
+        """A plain number is a number of pixels."""
+        assert LengthParser.parse(20)(None, None) == 20
+        assert LengthParser.parse(15.5)(None, None) == 15.5
 
     def test_parse_none(self):
         """Test parsing None returns None."""
-        parser = LengthParser()
-        assert parser.parse(None) is None
+        assert LengthParser.parse(None) is None
 
-    def test_parse_edge_lengths_single(self):
-        """Test parsing single edge length (all edges same)."""
-        parser = LengthParser()
 
-        lengths = parser.parse_edge_lengths("10px")
-        assert len(lengths) == 4
-        for length in lengths:
-            assert length(None, None) == 10
+class TestEdgeLengthsParser:
+    """Tests for the parsing of the `margin` and `padding` shorthands."""
 
-    def test_parse_edge_lengths_two(self):
-        """Test parsing two edge lengths (vertical horizontal)."""
-        parser = LengthParser()
+    @staticmethod
+    def resolve(data):
+        lengths = LengthParser.parse_edge_lengths(data)
+        return [length(None, None) for length in lengths]
 
-        lengths = parser.parse_edge_lengths("10px 20px")
-        assert len(lengths) == 4
+    def test_a_single_length_applies_to_the_four_edges(self):
+        assert self.resolve("10px") == [10, 10, 10, 10]
+
+    def test_two_lengths_are_vertical_then_horizontal(self):
         # DirectGUI order: left, right, bottom, top
-        assert lengths[0](None, None) == 20  # left
-        assert lengths[1](None, None) == 20  # right
-        assert lengths[2](None, None) == 10  # bottom
-        assert lengths[3](None, None) == 10  # top
+        assert self.resolve("10px 20px") == [20, 20, 10, 10]
 
-    def test_parse_edge_lengths_none(self):
+    def test_three_lengths_are_top_horizontal_bottom(self):
+        assert self.resolve("10px 20px 30px") == [20, 20, 30, 10]
+
+    def test_four_lengths_are_top_right_bottom_left(self):
+        assert self.resolve("10px 20px 30px 40px") == [40, 20, 30, 10]
+
+    def test_a_plain_number_is_accepted(self):
+        assert self.resolve(4) == [4, 4, 4, 4]
+
+    def test_parse_none(self):
         """Test parsing None returns None."""
-        parser = LengthParser()
-        assert parser.parse_edge_lengths(None) is None
+        assert LengthParser.parse_edge_lengths(None) is None
+
+    def test_too_many_lengths_are_reported(self, caplog):
+        assert LengthParser.parse_edge_lengths("1px 2px 3px 4px 5px") is None
+        assert "expected 1 to 4 lengths" in caplog.text
+
+
+class TestGapParser:
+    """Tests for the parsing of the `gap` shorthand."""
+
+    @staticmethod
+    def resolve(data):
+        gap = LengthParser.parse_gap(data)
+        return [length(None, None) for length in gap]
+
+    def test_a_single_length_applies_to_both_directions(self):
+        assert self.resolve("8px") == [8, 8]
+
+    def test_two_lengths_are_row_then_column(self):
+        # The sizer expects them the other way around: (column, row)
+        assert self.resolve("4px 8px") == [8, 4]
+
+    def test_parse_none(self):
+        """Test parsing None returns None."""
+        assert LengthParser.parse_gap(None) is None
+
+    def test_too_many_lengths_are_reported(self, caplog):
+        assert LengthParser.parse_gap("1px 2px 3px") is None
+        assert "expected 1 to 2 lengths" in caplog.text
 
 
 class TestAlignmentParser:
     """Tests for AlignmentParser."""
 
-    def test_parse_left_top(self):
-        """Test parsing left/top alignments."""
-        parser = AlignmentParser()
-        result = parser.parse(['left', 'top'])
-        assert result == ['min', 'min']
+    def test_parse_css_keywords(self):
+        """The CSS `align-self` keywords map to the alignment values of the sizer."""
+        assert AlignmentParser.parse('start') == 'min'
+        assert AlignmentParser.parse('end') == 'max'
+        assert AlignmentParser.parse('center') == 'center'
+        assert AlignmentParser.parse('stretch') == 'expand'
 
-    def test_parse_right_bottom(self):
-        """Test parsing right/bottom alignments."""
-        parser = AlignmentParser()
-        result = parser.parse(['right', 'bottom'])
-        assert result == ['max', 'max']
-
-    def test_parse_center(self):
-        """Test parsing center alignments."""
-        parser = AlignmentParser()
-        result = parser.parse(['center', 'center'])
-        assert result == ['center', 'center']
+    def test_parse_directional_aliases(self):
+        """The directional aliases are just more readable spellings of start and end."""
+        assert AlignmentParser.parse('left') == 'min'
+        assert AlignmentParser.parse('top') == 'min'
+        assert AlignmentParser.parse('right') == 'max'
+        assert AlignmentParser.parse('bottom') == 'max'
 
     def test_parse_none_uses_default(self):
-        """Test parsing None returns default."""
-        parser = AlignmentParser()
-        result = parser.parse(None, default=('max', 'min'))
-        assert result == ('max', 'min')
-
-    def test_parse_none_without_default_is_unspecified(self):
-        """With no default, an unspecified alignment stays unspecified."""
-        parser = AlignmentParser()
-        assert parser.parse(None) is None
+        """An unset alignment is left to the caller, which falls back on the skin and on the layout."""
+        assert AlignmentParser.parse(None) is None
+        assert AlignmentParser.parse(None, default='center') == 'center'
 
     def test_parse_invalid(self, caplog):
         """Test parsing invalid value."""
-        parser = AlignmentParser()
-        result = parser.parse("invalid", default=('min', 'min'))
-        assert result == ('min', 'min')  # Should return default
-        assert "Invalid alignments" in caplog.text
-
-
-class TestBorderParser:
-    """Tests for BorderParser."""
-
-    def test_parse_list(self):
-        """Test parsing border list."""
-        parser = BorderParser()
-        border = parser.parse([1, 2, 3, 4])
-        assert isinstance(border, LVector4)
-        assert border.x == 1
-        assert border.y == 2
-        assert border.z == 3
-        assert border.w == 4
-
-    def test_parse_single_value(self):
-        """Test parsing single border value (all sides same)."""
-        parser = BorderParser()
-        border = parser.parse(5)
-        assert isinstance(border, LVector4)
-        assert border.x == 5
-        assert border.y == 5
-        assert border.z == 5
-        assert border.w == 5
-
-    def test_parse_none(self):
-        """Test parsing None returns None."""
-        parser = BorderParser()
-        assert parser.parse(None) is None
-
-    def test_parse_invalid(self, caplog):
-        """Test parsing invalid value."""
-        parser = BorderParser()
-        border = parser.parse([1, 2])  # Too few values
-        assert border is None
-        assert "Invalid borders" in caplog.text
-
-
-class TestGapParser:
-    """Tests for GapParser."""
-
-    def test_parse_list(self):
-        """Test parsing gap list."""
-        parser = GapParser()
-        gap = parser.parse([5, 10])
-        assert gap == (5, 10)
-
-    def test_parse_single_value(self):
-        """Test parsing single gap value (both directions same)."""
-        parser = GapParser()
-        gap = parser.parse(8)
-        assert gap == (8, 8)
-
-    def test_parse_none_uses_default(self):
-        """Test parsing None returns default."""
-        parser = GapParser()
-        gap = parser.parse(None, default=(3, 7))
-        assert gap == (3, 7)
-
-    def test_parse_invalid(self, caplog):
-        """Test parsing invalid value."""
-        parser = GapParser()
-        gap = parser.parse("invalid")
-        assert gap == (0, 0)  # Should return default
-        assert "Invalid gaps" in caplog.text
+        assert AlignmentParser.parse("invalid") is None
+        assert "Invalid alignment invalid" in caplog.text
 
 
 class TestTextAlignmentParser:
@@ -343,6 +290,4 @@ class TestParsersCollection:
         assert isinstance(parsers.color, ColorParser)
         assert isinstance(parsers.length, LengthParser)
         assert isinstance(parsers.alignment, AlignmentParser)
-        assert isinstance(parsers.border, BorderParser)
-        assert isinstance(parsers.gap, GapParser)
         assert isinstance(parsers.text_alignment, TextAlignmentParser)

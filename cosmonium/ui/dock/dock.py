@@ -39,7 +39,8 @@ class Dock(DockedUIElement):
     def create(self):
         self.element = UIElement('frame', class_=combine_classes('dock', self.layout.element.class_), id_=self.id_)
         self.instance = DirectFrame(parent=self.anchor, **self.skin.get_style(self.element))
-        self.layout.create(self, self, self.skin)
+        # The dock is the root of the layout tree: its layout is built, but not placed in a parent.
+        self.layout.build(self, self, self.skin)
         # Call update_size() to update the dock size and position it correctly relative to its configured location.
         self.update_size()
 

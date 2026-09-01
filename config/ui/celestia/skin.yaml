@@ -92,24 +92,24 @@
 
 - element: label
   class: editor-section-label
-  padding: .5em 0em .25em .5em
+  margin: .5em 0em .25em .5em
 
 - element: sizer
   class: editor-entry-sizer
-  padding: 0.25em 0em 0.25em 1em
-  margin: 0em 0.75em
+  margin: 0.25em 0em 0.25em 1em
+  gap: 0em 0.75em
 
 - element: sizer
   class: editor-entry-vector
-  padding: 0.25em 0em 0.25em 0em
-  margin: 0em 0.25em
+  margin: 0.25em 0em 0.25em 0em
+  gap: 0em 0.25em
 
 - element: sizer
   class: entry-sizer
   parent:
     class: info
-  margin: 0.5em
-  padding: 0.25em
+  gap: 0.5em
+  margin: 0.25em
 
 - element: label
   class: info-section-label

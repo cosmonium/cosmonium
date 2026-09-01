@@ -26,7 +26,6 @@ from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from panda3d.core import LVector3, NodePath, TextNode
 
-from ..skin import UIElement
 from .base import DGuiDockWidget
 
 if TYPE_CHECKING:
@@ -34,7 +33,9 @@ if TYPE_CHECKING:
 
 
 class ButtonDockWidget(DGuiDockWidget):
-    """A dock button, showing either a text label or a single icon glyph."""
+    """A dock widget showing a clickable button, labelled with a text or with a single icon glyph."""
+
+    element_type = 'button'
 
     def __init__(
         self,
@@ -45,22 +46,23 @@ class ButtonDockWidget(DGuiDockWidget):
         rescale: bool = False,
         text_checked: str = None,
         checked=None,
-        enabled=None,
-        proportions=None,
-        alignments=None,
-        borders=None,
-        index=None,
-        class_=None,
-        id_=None,
+        **kwargs,
     ):
-        DGuiDockWidget.__init__(self, proportions, alignments, borders, index, enabled=enabled)
+        """
+        Args:
+            text: The label of the button, or the icon glyph for an icon button
+            event: The event sent when the button is clicked
+            menu: The name of the popup menu opened when the button is clicked, instead of an event
+            is_icon: True when the label is a single icon glyph
+            rescale: True to resize the button to fit its content
+            kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
+        """
+        DGuiDockWidget.__init__(self, **kwargs)
         self.text = text
         self.event = event
         self.menu = menu
         self.is_icon = is_icon
         self.rescale = rescale
-        self.class_ = class_
-        self.id_ = id_
         # Optional toggle-button behaviour activated when checked_condition is not None.
         # When it evaluates to true, the button displays the text_checked label instead of text and applies
         # the skin's `checked` pseudo-class.
@@ -75,13 +77,12 @@ class ButtonDockWidget(DGuiDockWidget):
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
         self.skin = skin
-        self.button_element = UIElement('button', class_=self.class_, id_=self.id_, parent=parent.element)
-        style = skin.get(self.button_element)
-        font_size = style.resolved_font_size(self.button_element, skin)
+        style = skin.get(self.element)
+        font_size = style.resolved_font_size(self.element, skin)
         if self.is_icon:
             # Icon buttons: width and height define the box the glyph must fill, which may differ from the skin's
             # font-size. Scaling the whole node by width / font_size stretches the glyph to exactly fill that box.
-            width, height = style.resolved_size(self.button_element, skin)
+            width, height = style.resolved_size(self.element, skin)
             scale = LVector3(width / font_size, 1, height / font_size)
         else:
             scale = LVector3(1, 1, 1)
@@ -91,7 +92,7 @@ class ButtonDockWidget(DGuiDockWidget):
         else:
             command = messenger.send
             extra_args = [self.event]
-        button_style = skin.get_style(self.button_element)
+        button_style = skin.get_style(self.element)
         # The glyph or label is centered in the button unless the skin says otherwise
         button_style.setdefault('text_align', TextNode.A_boxed_center)
         button_kwargs = dict(
@@ -164,14 +165,14 @@ class ButtonDockWidget(DGuiDockWidget):
         # Checked state has changed, update the button's style and text accordingly.
         self.is_checked = checked
         new_state = 'checked' if checked else None
-        style = self.skin.get_style(self.button_element, state=new_state)
+        style = self.skin.get_style(self.element, state=new_state)
         button = self.widget.dgui_obj
         for key, value in style.items():
             button[key] = value
         if self.text_checked is not None:
             button['text'] = self.text_checked if checked else self.text
             if self.is_icon:
-                style = self.skin.get(self.button_element, state=new_state)
-                font_size = style.resolved_font_size(self.button_element, self.skin)
+                style = self.skin.get(self.element, state=new_state)
+                font_size = style.resolved_font_size(self.element, self.skin)
                 self._center_icon(button, font_size)
         return has_changed

@@ -107,7 +107,7 @@ class SkinLoader(BaseComponentLoader):
     Loader for UI skin configuration.
 
     Handles loading of UI skin entries that define visual styling for
-    UI elements including colors, fonts, margins, padding, and sizes.
+    UI elements including colors, fonts, alignments, margins, padding, gaps and sizes.
     """
 
     def __init__(self, gui: Gui, validator: ConfigValidator) -> None:
@@ -199,8 +199,11 @@ class SkinLoader(BaseComponentLoader):
         entry.text_align = self.parsers.text_alignment.parse(entry_config.text_align, context=entry_context)
 
         # Parse layout properties
+        entry.align = self.parsers.alignment.parse(entry_config.align, context=entry_context)
+        entry.justify = self.parsers.alignment.parse(entry_config.justify, context=entry_context)
         entry.margin = self.parsers.length.parse_edge_lengths(entry_config.margin, entry_context)
         entry.padding = self.parsers.length.parse_edge_lengths(entry_config.padding, entry_context)
+        entry.gap = self.parsers.length.parse_gap(entry_config.gap, entry_context)
         entry.width = self.parsers.length.parse(entry_config.width, entry_context)
         entry.height = self.parsers.length.parse(entry_config.height, entry_context)
 

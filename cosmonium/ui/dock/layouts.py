@@ -21,9 +21,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from panda3d.core import LVector4
+from directguilayout.gui import Sizer
 
-from ..skin import UIElement, combine_classes
+from ..skin import UIElement, UISkin, combine_classes, resolve_length
 from .base import DockWidgetBase
 from .decorated_sizer import DecoratedSizer
 
@@ -32,49 +32,84 @@ if TYPE_CHECKING:
 
 
 class SpaceDockWidget(DockWidgetBase):
-    """An empty widget of a fixed size, used to separate adjacent widgets."""
+    """Empty space reserved in a layout.
 
-    def __init__(self, width, height, proportions=None, alignments=None, borders=None, index=None):
-        DockWidgetBase.__init__(self, proportions, alignments, borders, index)
+    A spacer has no visual of its own; it only takes room.
+    """
+
+    element_type = 'spacer'
+
+    def __init__(self, width=None, height=None, **kwargs):
+        """
+        Args:
+            width: Width of the space to reserve, overriding the skin, or None
+            height: Height of the space to reserve, overriding the skin, or None
+            kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
+        """
+        DockWidgetBase.__init__(self, **kwargs)
         self.width = width
         self.height = height
 
-    def add_to(self, dock: Dock, parent, borders, skin) -> None:
-        element = parent.element
-        width = self.width(element, skin) if self.width is not None else 0
-        height = self.height(element, skin) if self.height is not None else 0
+    def build(self, dock: Dock, parent, skin: UISkin) -> None:
+        self.create_element(parent)
+        style = skin.get(self.element)
+        # A spacer has no content to be sized by, an unset dimension simply reserves nothing.
+        width, height = style.resolved_size(self.element, skin, default=0)
+        if self.width is not None:
+            width = resolve_length(self.width, self.element, skin)
+        if self.height is not None:
+            height = resolve_length(self.height, self.element, skin)
         # A sizer takes a plain tuple as an empty cell of the given size.
         self.widget = (width, height)
-        DockWidgetBase.add_to(self, dock, parent, borders, skin)
 
 
 class LayoutDockWidget(DockWidgetBase):
-    """A layout of dock widgets, with an optionally decorated frame."""
+    """A container laying out its children in a row or in a column.
+
+    The container is drawn as a frame, styled by the skin, and its children are laid out inside the
+    content area of that frame.
+    """
+
+    element_type = 'frame'
 
     def __init__(
         self,
         direction: str,
         widgets: list[DockWidgetBase],
-        proportions=None,
-        alignments=None,
-        borders=None,
-        index=None,
-        gaps=(0, 0),
-        element_class='layout',
-        class_=None,
-        id_=None,
+        gap=None,
+        padding=None,
+        element_class: str = 'layout',
+        **kwargs,
     ):
-        DockWidgetBase.__init__(self, proportions, alignments, borders, index)
+        """
+        Args:
+            direction: Direction in which the children are laid out, horizontal or vertical
+            widgets: The children of this layout
+            gap: Space between the children, overriding the skin, or None
+            padding: Edge lengths of the padding, overriding the skin, or None
+            element_class: Structural class of the skin element of this layout
+            kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
+        """
+        DockWidgetBase.__init__(self, **kwargs)
         self.direction = direction
-        self.element = UIElement('frame', class_=combine_classes(element_class, class_), id_=id_)
-        self.widget = DecoratedSizer(self.element, direction, gaps=gaps)
-        self.sizer = self.widget
-        self.frame = None
+        self.element = UIElement(self.element_type, class_=combine_classes(element_class, self.class_), id_=self.id_)
+        self.widget = DecoratedSizer(self.element, direction, gap=gap, padding=padding)
         self.widgets = widgets
-        self.widget_borders = LVector4(1, 1, 1, 1)
+        self.instance = None
+
+    @property
+    def sizer(self) -> DecoratedSizer:
+        """The sizer holding the whole layout, border box included."""
+        return self.widget
+
+    @property
+    def content_sizer(self) -> Sizer:
+        """The sizer the children of this layout are added to."""
+        return self.widget.content
 
     def default_alignments(self) -> tuple[str, str]:
-        """Default alignment for children without explicit alignments.
+        """Default alignment of the children that do not request one.
+
         Children are packed from the start of the layout direction and centered across it.
         """
         if self.direction == 'horizontal':
@@ -82,45 +117,12 @@ class LayoutDockWidget(DockWidgetBase):
         else:
             return ('center', 'min')
 
-    def create(self, dock: Dock, parent, skin) -> None:
-        self.element.parent = parent.element
+    def build(self, dock: Dock, parent, skin: UISkin) -> None:
+        self.create_element(parent)
         self.widget.create(dock, parent, skin)
         self.instance = parent.instance
-        border_x, border_y = self.widget.border
-        corner_radius = self.widget.corner_radius
-        if corner_radius:
-            border_width = max(border_x, border_y)
-            # Margin to not overlap the rounded corners
-            margin = corner_radius - (corner_radius - border_width) * 0.70710678118654752
-            self.widget_borders = LVector4(margin)
-        else:
-            self.widget_borders = LVector4(border_x, border_x, border_y, border_y)
-        for i, widget in enumerate(self.widgets):
-            borders = LVector4(0)
-            if self.direction == 'horizontal':
-                if len(self.widgets) == 1:
-                    borders = self.widget_borders
-                elif i == 0:
-                    borders = LVector4(self.widget_borders[0], 0, self.widget_borders[2], self.widget_borders[3])
-                elif i == len(self.widgets) - 1:
-                    borders = LVector4(0, self.widget_borders[1], self.widget_borders[2], self.widget_borders[3])
-                else:
-                    borders = LVector4(0, 0, self.widget_borders[2], self.widget_borders[3])
-            else:
-                if len(self.widgets) == 1:
-                    borders = self.widget_borders
-                elif i == 0:
-                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], 0, self.widget_borders[3])
-                elif i == len(self.widgets) - 1:
-                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], self.widget_borders[2], 0)
-                else:
-                    borders = LVector4(self.widget_borders[0], self.widget_borders[1], 0, 0)
-            widget.add_to(dock, self, borders, skin)
-
-    def add_to(self, dock: Dock, parent, borders, skin) -> None:
-        DockWidgetBase.add_to(self, dock, parent, borders, skin)
-        self.create(dock, parent, skin)
-        self.update_layout()
+        for widget in self.widgets:
+            widget.add_to(dock, self, skin)
 
     def update_layout(self):
         min_size = self.sizer.update_min_size()

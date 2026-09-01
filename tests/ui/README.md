@@ -16,7 +16,7 @@ This directory contains unit tests covering functionalities related to the core 
 
 This directory contains unit tests covering functionalities related to the dock module.
 
-- **dock/test_layouts.py**: Unit tests for the dock layouts and their sizing.
+- **dock/test_layouts.py**: Unit tests for the dock layouts, their sizing and their box model.
 
 
 ### 3. Loaders Tests (`loaders`)

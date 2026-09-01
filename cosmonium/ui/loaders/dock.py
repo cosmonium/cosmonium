@@ -33,8 +33,7 @@ from ..config.models import DockConfig
 from ..dock.dock import Dock
 from ..dock.layouts import LayoutDockWidget
 from .base import BaseComponentLoader
-from .parsers import ParsersCollection
-from .widgets import WidgetYamlParser
+from .widgets import WidgetYamlParser, container_layout_kwargs
 
 if TYPE_CHECKING:
     from ...parsers.validator import ConfigValidator
@@ -73,12 +72,6 @@ class DockLoader(BaseComponentLoader):
         # Validate dock configuration
         validated = self.validator.validate_dict(data, DockConfig)
 
-        parsers = ParsersCollection.get_instance()
-
-        # Parse borders, and gaps values
-        borders = parsers.border.parse(validated.borders)
-        gaps = parsers.gap.parse(validated.gaps)
-
         # Recursively load child widgets
         widgets = []
         for child_widget_config in validated.widgets:
@@ -89,10 +82,9 @@ class DockLoader(BaseComponentLoader):
         layout = LayoutDockWidget(
             direction=validated.orientation,
             widgets=widgets,
-            gaps=gaps,
-            borders=borders,
             element_class='dock',
             class_=validated.class_,
+            **container_layout_kwargs(validated),
         )
         dock = Dock(validated.id, validated.orientation, validated.anchor, layout)
 

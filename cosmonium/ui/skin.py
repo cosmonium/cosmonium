@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import FrozenSet, Iterable, Optional, Union
+from typing import Callable, FrozenSet, Iterable, Optional, Tuple, Union
 
 from panda3d.core import LColor
 
@@ -91,6 +91,24 @@ def report_error(message: str, context: Optional[str] = None) -> None:
 # sets them
 INHERITED_PROPERTIES = ('text_color', 'font_family', 'font_size', 'font_style', 'font_weight', 'text_align')
 
+# CSS-like alignment keywords, mapped to the alignment values understood by the DirectGuiLayout sizer.
+#
+# `stretch` resizes the element to fill its cell, the three other values keep the element at its
+# natural size and place it at the start, the end or the center of the cell.
+ALIGNMENT_VALUES = {
+    'start': 'min',
+    'end': 'max',
+    'center': 'center',
+    'stretch': 'expand',
+    # Directional aliases, more readable than start/end: `left` and `right` for the horizontal
+    # alignment (`justify`), `top` and `bottom` for the vertical one (`align`).
+    # They are scoped by the loader
+    'left': 'min',
+    'right': 'max',
+    'top': 'min',
+    'bottom': 'max',
+}
+
 
 def calc_size_px(size, element, skin):
     """Resolve a length given in "px", scaled by the global UI scale factor."""
@@ -117,6 +135,64 @@ def calc_font_size_em(size, element, skin):
     if element is None or element.parent is None:
         return skin.root_font_size * settings.ui_scale * size
     return skin.get(element.parent).resolved_font_size(element.parent, skin) * size
+
+
+def resolve_length(length: Optional[Callable], element: UIElement, skin: UISkin, default: float = 0.0) -> float:
+    """
+    Trivial method to resolve a single length property into pixels.
+
+    Args:
+        length: A length callable, as returned by the length parser, or None when unset
+        element: The element the length belongs to
+        skin: The skin resolving the element's style
+        default: Value to return when the length is unset
+
+    Returns:
+        The length in pixels
+    """
+    if length is None:
+        return default
+    return length(element, skin)
+
+
+def resolve_gap(
+    gap: Optional[Tuple[Optional[Callable], Optional[Callable]]], element: UIElement, skin: UISkin
+) -> Tuple[float, float]:
+    """
+    Resolve a `gap`, the spacing between the children of a container, into pixels.
+
+    Args:
+        gap: The (column, row) gaps, in the order expected by the sizer, or None
+        element: The element the gap belongs to
+        skin: The skin resolving the element's style
+
+    Returns:
+        The (column, row) gaps in pixels
+    """
+    if gap is None:
+        return (0.0, 0.0)
+    column, row = gap
+    return (resolve_length(column, element, skin), resolve_length(row, element, skin))
+
+
+def resolve_edge_lengths(
+    lengths: Optional[Iterable[Optional[Callable]]], element: UIElement, skin: UISkin, default: float = 0.0
+) -> Tuple[float, float, float, float]:
+    """
+    Resolve the four edge lengths of a box into pixels.
+
+    Args:
+        lengths: The four edge lengths, in DirectGUI order (left, right, bottom, top), or None
+        element: The element the lengths belong to
+        skin: The skin resolving the element's style
+        default: Value to use for the edges that are unset
+
+    Returns:
+        The four edge lengths in pixels, in DirectGUI order (left, right, bottom, top)
+    """
+    if lengths is None:
+        return (default,) * 4
+    return tuple(resolve_length(length, element, skin, default) for length in lengths)
 
 
 @dataclass
@@ -232,6 +308,48 @@ class UISkinEntry:
         width = self.width(element, skin) if self.width is not None else default
         height = self.height(element, skin) if self.height is not None else default
         return (width, height)
+
+    def get_length(self, name: str, element: UIElement, skin: UISkin, default: float = 0.0) -> float:
+        """
+        Resolve a length property of this style into pixels.
+
+        Args:
+            name: Name of the property, e.g. 'border_width'
+            element: The element this style was resolved for
+            skin: The skin this style comes from
+            default: Value to return when the property is unset
+
+        Returns:
+            The length in pixels
+        """
+        return resolve_length(getattr(self, name), element, skin, default)
+
+    def get_edge_lengths(self, name: str, element: UIElement, skin: UISkin) -> Tuple[float, float, float, float]:
+        """
+        Resolve an edge-lengths property of this style into pixels.
+
+        Args:
+            name: Name of the property, e.g. 'margin'
+            element: The element this style was resolved for
+            skin: The skin this style comes from
+
+        Returns:
+            The four edge lengths in pixels, in DirectGUI order (left, right, bottom, top)
+        """
+        return resolve_edge_lengths(getattr(self, name), element, skin)
+
+    def get_gap(self, element: UIElement, skin: UISkin) -> Tuple[float, float]:
+        """
+        Resolve the `gap` property of this style into pixels.
+
+        Args:
+            element: The element this style was resolved for
+            skin: The skin this style comes from
+
+        Returns:
+            The (column, row) gaps in pixels, in the order expected by the sizer
+        """
+        return resolve_gap(self.gap, element, skin)
 
     def add_text_align(self, parameters: dict, key: str = 'text_align') -> None:
         """
@@ -362,6 +480,8 @@ class UISkinEntry:
                 **(self.get_font_parameters(element, skin, scale3=True, ui_scale=ui_scale) if not skip_font else {}),
             }
         elif dgui_type == 'onscreen-text':
+            # `text-align` is deliberately not applied here: the alignment of an on-screen text is
+            # dictated by the screen corner it is anchored to, not by the skin.
             parameters = {
                 'fg': self.text_color,
                 **(self.get_font_parameters(element, skin) if not skip_font else {}),
@@ -401,21 +521,16 @@ class UISkinEntry:
             vertical_scroll = UIElement(parent=element, type_='scroll-bar', class_='vertical-scroll')
             parameters.update(skin.get_style(vertical_scroll, prefix='verticalScroll_'))
         elif dgui_type == 'sizer':
+            # A sizer has two sets of layout parameters: the ones of the sizer itself, and the ones
+            # of the cell holding an object added to it. `usage` selects which of the two is built.
             if usage == 'cell':
-                if self.padding is not None:
-                    borders = [padding(element, skin) for padding in self.padding]
-                else:
-                    borders = None
+                # The cell borders are the margin reserved around the object placed in that cell.
                 parameters = {
-                    'borders': borders,
+                    'borders': self.get_edge_lengths('margin', element, skin),
                 }
             else:
-                if self.margin is not None:
-                    gaps = [margin(element, skin) for margin in (self.margin[0], self.margin[2])]
-                else:
-                    gaps = (0, 0)
                 parameters = {
-                    'gaps': gaps,
+                    'gaps': self.get_gap(element, skin),
                 }
         elif dgui_type == 'spin-box':
             parameters = {

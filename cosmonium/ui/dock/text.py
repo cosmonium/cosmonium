@@ -19,13 +19,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
 from panda3d.core import TextNode
 
-from ..skin import UIElement
+from ..skin import UISkin
 from .base import DGuiDockWidget
 
 if TYPE_CHECKING:
@@ -33,28 +33,25 @@ if TYPE_CHECKING:
 
 
 class TextDockWidget(DGuiDockWidget):
+    """A dock widget displaying a line of text, rendered from a template."""
 
-    def __init__(
-        self,
-        template: str,
-        text_align: Optional[int],
-        proportions=None,
-        alignments=None,
-        borders=None,
-        index=None,
-        class_=None,
-        id_=None,
-    ):
-        DGuiDockWidget.__init__(self, proportions, alignments, borders, index)
+    element_type = 'label'
+
+    def __init__(self, template: str, text_align: int = None, **kwargs):
+        """
+        Args:
+            template: The template rendered into the displayed text
+            text_align: Alignment of the text inside the widget, overriding the skin, or None
+            kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
+        """
+        DGuiDockWidget.__init__(self, **kwargs)
+        self.text_align = text_align
         self.template = template
         self.text_align = text_align
         self.text = None
-        self.class_ = class_
-        self.id_ = id_
 
-    def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        label_element = UIElement('label', class_=self.class_, id_=self.id_, parent=parent.element)
-        style = skin.get_style(label_element)
+    def create(self, dock: Dock, parent, messenger, skin: UISkin) -> DirectGuiWidget:
+        style = skin.get_style(self.element)
         if self.text_align is not None:
             style['text_align'] = self.text_align
         # Text align to the left unless the skin or the widget configuration says otherwise

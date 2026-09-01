@@ -28,11 +28,28 @@ from pydantic import ConfigDict, Field, model_validator
 
 from ...parsers.schemas.base import ConfigBase
 
-AlignmentLiteral = Literal['left', 'right', 'center', 'min', 'max']
+# ============================================================================
+# Type Aliases
+# ============================================================================
+
+# Global position of a dock or HUD widget on the screen, relative to the screen edges
 AnchorLiteral = Literal['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
 CornerLiteral = Literal['top-left', 'top-right', 'bottom-left', 'bottom-right']
+
+# Orientation of a layout or dock widget
 OrientationLiteral = Literal['horizontal', 'vertical']
+
+# Text alignment inside a widget
 TextAlignLiteral = Literal['left', 'center', 'right']
+
+# Alignment of a widget inside the cell it occupies in the layout
+# 'stretch' means the widget will be stretched to fill the cell in that direction
+# The other values place the widget without stretching.
+AlignLiteral = Literal['start', 'end', 'center', 'stretch', 'top', 'bottom']
+JustifyLiteral = Literal['start', 'end', 'center', 'stretch', 'left', 'right']
+
+# Length: a number of pixels, or a string with a unit ("12px", "0.5em", "1.5rem")
+LengthValue = Union[float, str]
 
 
 # ============================================================================
@@ -54,7 +71,35 @@ class StyleableConfig(ConfigBase):
     id: Optional[str] = Field(None, description="Element ID for skin targeting")
 
 
-class ButtonWidgetConfig(StyleableConfig):
+class WidgetLayoutConfig(StyleableConfig):
+    """Base class for the configuration of a widget placed in a layout.
+
+    Adds the CSS-like properties describing how the widget is placed in the cell it occupies in
+    the layout These properties are used to override skin configuration.
+    """
+
+    align: Optional[AlignLiteral] = Field(None, description="Vertical alignment of the widget in its cell")
+    justify: Optional[JustifyLiteral] = Field(None, description="Horizontal alignment of the widget in its cell")
+    margin: Optional[LengthValue] = Field(None, description="Space reserved around the widget")
+    grow: Optional[float] = Field(
+        None, ge=0, description="Share of the leftover space of the layout claimed by this widget"
+    )
+
+
+class ContainerLayoutConfig(StyleableConfig):
+    """Base class for the configuration of a layout widget.
+
+    Adds the CSS-like properties describing the inside of the container.
+    These properties are used to override skin configuration.
+    """
+
+    padding: Optional[LengthValue] = Field(
+        None, description="Space between the border of the container and its content"
+    )
+    gap: Optional[LengthValue] = Field(None, description="Space between the children of the container")
+
+
+class ButtonWidgetConfig(WidgetLayoutConfig):
     """Configuration for button dock widgets."""
 
     type: Literal['button'] = Field(description="Widget type identifier")
@@ -71,8 +116,6 @@ class ButtonWidgetConfig(StyleableConfig):
         None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
     )
     rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
-    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
-    borders: Optional[Any] = Field(None, description="Border configuration")
     tooltip: Optional[str] = Field(None, description="Tooltip text")
     checked: Optional[str] = Field(
         None,
@@ -118,7 +161,7 @@ class ButtonWidgetConfig(StyleableConfig):
         return self
 
 
-class OptionMenuWidgetConfig(StyleableConfig):
+class OptionMenuWidgetConfig(WidgetLayoutConfig):
     """Configuration for option-menu dock widgets."""
 
     type: Literal['option-menu'] = Field(description="Widget type identifier")
@@ -129,12 +172,10 @@ class OptionMenuWidgetConfig(StyleableConfig):
         None,
         description="Python expression evaluated every frame to determine if the option menu is enabled or disabled",
     )
-    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
-    borders: Optional[Any] = Field(None, description="Border configuration")
     tooltip: Optional[str] = Field(None, description="Tooltip text")
 
 
-class TextWidgetConfig(StyleableConfig):
+class TextWidgetConfig(WidgetLayoutConfig):
     """Configuration for text dock widgets."""
 
     type: Literal['text'] = Field(description="Widget type identifier")
@@ -142,31 +183,23 @@ class TextWidgetConfig(StyleableConfig):
     text_align: Optional[TextAlignLiteral] = Field(
         None, description="Alignment of the text inside the widget (left/center/right)"
     )
-    align: Optional[List[AlignmentLiteral]] = Field(None, description="Widget alignment")
-    borders: Optional[Any] = Field(None, description="Border configuration")
 
 
-class SpacerWidgetConfig(ConfigBase):
+class SpacerWidgetConfig(WidgetLayoutConfig):
     """Configuration for spacer dock widgets."""
 
-    model_config = ConfigDict(extra='forbid')
-
     type: Literal['spacer'] = Field(description="Widget type identifier")
-    size: List[Union[float, str]] = Field(
-        default=[0, 0], min_length=2, max_length=2, description="[width, height], as CSS lengths"
+    size: Optional[List[LengthValue]] = Field(
+        None, min_length=2, max_length=2, description="[width, height], as CSS lengths, overriding the skin"
     )
-    align: Optional[List[AlignmentLiteral]] = Field(None, min_length=2, max_length=2, description="Widget alignment")
 
 
-class LayoutWidgetConfig(StyleableConfig):
+class LayoutWidgetConfig(WidgetLayoutConfig, ContainerLayoutConfig):
     """Configuration for layout dock widgets."""
 
     type: Literal['layout'] = Field(description="Widget type identifier")
     orientation: OrientationLiteral = Field('horizontal', description="Layout orientation")
     widgets: List['WidgetConfig'] = Field(default_factory=list, description="Child widgets")
-    align: Optional[List[AlignmentLiteral]] = Field(None, description="Widget alignment")
-    borders: Optional[Any] = Field(None, description="Border configuration")
-    gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
 
 
 # Union type for all widget configs
@@ -182,14 +215,12 @@ LayoutWidgetConfig.model_rebuild()  # Rebuild to resolve forward reference
 # ============================================================================
 
 
-class DockConfig(StyleableConfig):
+class DockConfig(ContainerLayoutConfig):
     """Configuration for dock widgets."""
 
     orientation: OrientationLiteral = Field('horizontal', description="Dock orientation")
     anchor: AnchorLiteral = Field('bottom', description="Screen location for the dock")
     widgets: List[WidgetConfig] = Field(default_factory=list, description="Widgets in the dock")
-    gaps: Optional[List[float]] = Field(None, description="Spacing between widgets")
-    borders: Optional[Any] = Field(None, description="Border configuration")
 
 
 class HUDEntryConfig(ConfigBase):
@@ -363,10 +394,19 @@ class SkinEntryConfig(ConfigBase):
     font_style: Optional[str] = Field(None, description="Font style (e.g., 'italic')")
     font_weight: Optional[str] = Field(None, description="Font weight (e.g., 'bold')")
     text_align: Optional[TextAlignLiteral] = Field(None, description="Alignment of the text inside the element")
-    margin: Optional[Union[str, List[str]]] = Field(None, description="Margin around the element")
-    padding: Optional[Union[str, List[str]]] = Field(None, description="Padding inside the element")
-    width: Optional[str] = Field(None, description="Element width (CSS value)")
-    height: Optional[str] = Field(None, description="Element height (CSS value)")
+    align: Optional[AlignLiteral] = Field(None, description="Vertical alignment of the element in its cell")
+    justify: Optional[JustifyLiteral] = Field(None, description="Horizontal alignment of the element in its cell")
+    margin: Optional[Union[LengthValue, List[LengthValue]]] = Field(
+        None, description="Space reserved around the element"
+    )
+    padding: Optional[Union[LengthValue, List[LengthValue]]] = Field(
+        None, description="Space between the border of the element and its content, only applicable to layout elements"
+    )
+    gap: Optional[Union[LengthValue, List[LengthValue]]] = Field(
+        None, description="Space between the children of the element, only applicable to layout elements"
+    )
+    width: Optional[LengthValue] = Field(None, description="Element width (CSS value)")
+    height: Optional[LengthValue] = Field(None, description="Element height (CSS value)")
 
 
 class SkinRootConfig(ConfigBase):

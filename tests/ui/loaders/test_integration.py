@@ -443,11 +443,12 @@ class TestWidgetLoaders:
 
         loader = TextWidgetLoader()
 
-        data = {'type': 'text', 'text': 'Hello World', 'text-align': 'center'}
+        data = {'type': 'text', 'text': 'Hello World', 'text-align': 'center', 'align': 'center'}
         config = validator.validate_dict(data, TextWidgetConfig)
         widget = loader.decode(config, global_vars={})
         assert widget is not None
         assert widget.text_align == TextNode.A_boxed_center
+        assert widget.align == 'center'
 
     def test_widget_yaml_parser(self, validator, init_registry):
         """Test WidgetYamlParser dispatch."""

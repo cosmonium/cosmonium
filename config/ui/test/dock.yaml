@@ -1,7 +1,8 @@
 dock:
  - anchor: bottom
    orientation: horizontal
-   gaps: [2, 2]
+   gap: 2px
+   padding: 2px
    widgets:
       - type: text
         text: "A"
@@ -18,18 +19,18 @@ dock:
             checked: 'not time.is_running'
       - type: layout
         orientation: vertical
-        gaps: [2, 2]
+        gap: 2px
         widgets:
           - type: text
             text: '{time.date}'
-            borders: 2
+            margin: 2px
           - type: layout
             orientation: horizontal
-            align: [min, min]
             widgets:
                - type: button
                  code: F03E4
                  code_checked: F040A
+                 justify: left
                  checked: 'not time.is_running'
                  tooltip: Toggle freeze time
                  event: toggle-freeze-time
@@ -45,6 +46,9 @@ dock:
                  code: F04C5
                  tooltip: Accelerate time
                  event: accelerate-time-2
+               - type: spacer
+                 size: [1em, 1em]
+                 grow: 10
                - type: button
                  code: F0150
                  tooltip: Current time

@@ -34,10 +34,12 @@ from typing import Any, Dict, Optional
 from ...parsers.yamlparser import TypedYamlParser, YamlModuleParser
 from ..config.models import (
     ButtonWidgetConfig,
+    ContainerLayoutConfig,
     LayoutWidgetConfig,
     OptionMenuWidgetConfig,
     SpacerWidgetConfig,
     TextWidgetConfig,
+    WidgetLayoutConfig,
 )
 from ..dock.button import ButtonDockWidget
 from ..dock.layouts import LayoutDockWidget, SpaceDockWidget
@@ -46,6 +48,44 @@ from ..dock.text import TextDockWidget
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
 from .parsers import ParsersCollection
+
+
+def widget_layout_kwargs(data: WidgetLayoutConfig) -> Dict[str, Any]:
+    """
+    Extract the layout parameters shared by every dock widget from its configuration.
+
+    Args:
+        data: The configuration of the widget, a `WidgetLayoutConfig` model
+
+    Returns:
+        The keyword arguments to pass to the widget constructor
+    """
+    parsers = ParsersCollection.get_instance()
+    return {
+        'align': parsers.alignment.parse(data.align),
+        'justify': parsers.alignment.parse(data.justify),
+        'margin': parsers.length.parse_edge_lengths(data.margin),
+        'grow': data.grow,
+        'class_': data.class_,
+        'id_': data.id,
+    }
+
+
+def container_layout_kwargs(data: ContainerLayoutConfig) -> Dict[str, Any]:
+    """
+    Extract the layout parameters of a widget laying out children from its configuration.
+
+    Args:
+        data: The configuration of the container, a `ContainerLayoutConfig` model
+
+    Returns:
+        The keyword arguments to pass to the container constructor
+    """
+    parsers = ParsersCollection.get_instance()
+    return {
+        'padding': parsers.length.parse_edge_lengths(data.padding),
+        'gap': parsers.length.parse_gap(data.gap),
+    }
 
 
 class WidgetYamlParser(TypedYamlParser):
@@ -76,10 +116,6 @@ class ButtonWidgetLoader(YamlModuleParser):
         Returns:
             ButtonDockWidget instance
         """
-        parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align)
-        borders = parsers.border.parse(data.borders)
-
         if data.text:
             text = data.text
             is_icon = False
@@ -117,10 +153,7 @@ class ButtonWidgetLoader(YamlModuleParser):
             text_checked=text_checked,
             checked=checked,
             enabled=enabled,
-            alignments=alignments,
-            borders=borders,
-            class_=data.class_,
-            id_=data.id,
+            **widget_layout_kwargs(data),
         )
 
 
@@ -148,10 +181,6 @@ class OptionMenuWidgetLoader(YamlModuleParser):
         Returns:
             OptionMenuDockWidget instance
         """
-        parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align)
-        borders = parsers.border.parse(data.borders)
-
         selected = None
         if data.selected is not None:
             selected = self.expression_parser.compile_expression(data.selected, global_vars)
@@ -165,10 +194,7 @@ class OptionMenuWidgetLoader(YamlModuleParser):
             data.event,
             selected=selected,
             enabled=enabled,
-            alignments=alignments,
-            borders=borders,
-            class_=data.class_,
-            id_=data.id,
+            **widget_layout_kwargs(data),
         )
 
 
@@ -197,17 +223,12 @@ class TextWidgetLoader(YamlModuleParser):
             TextDockWidget instance
         """
         parsers = ParsersCollection.get_instance()
-        borders = parsers.border.parse(data.borders)
         template = self.fstring_template_parser.create_template(data.text)
-        alignments = parsers.alignment.parse(data.align)
 
         return TextDockWidget(
             template,
             text_align=parsers.text_alignment.parse(data.text_align),
-            alignments=alignments,
-            borders=borders,
-            class_=data.class_,
-            id_=data.id,
+            **widget_layout_kwargs(data),
         )
 
 
@@ -230,12 +251,13 @@ class SpacerWidgetLoader(YamlModuleParser):
             SpaceDockWidget instance
         """
         parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align)
-        # A spacer has no skin entry of its own (yet), the lengths are resolved using the layout contaoining it.
-        width = parsers.length.parse(data.size[0])
-        height = parsers.length.parse(data.size[1])
+        width, height = (None, None) if data.size is None else data.size
 
-        return SpaceDockWidget(width, height, alignments=alignments, borders=None)
+        return SpaceDockWidget(
+            width=parsers.length.parse(width),
+            height=parsers.length.parse(height),
+            **widget_layout_kwargs(data),
+        )
 
 
 class LayoutWidgetLoader(YamlModuleParser):
@@ -257,11 +279,6 @@ class LayoutWidgetLoader(YamlModuleParser):
         Returns:
             LayoutDockWidget instance
         """
-        parsers = ParsersCollection.get_instance()
-        alignments = parsers.alignment.parse(data.align)
-        borders = parsers.border.parse(data.borders)
-        gaps = parsers.gap.parse(data.gaps)
-
         # Recursively load child widgets
         widgets = []
         for child_widget_config in data.widgets:
@@ -272,9 +289,6 @@ class LayoutWidgetLoader(YamlModuleParser):
         return LayoutDockWidget(
             data.orientation,
             widgets,
-            alignments=alignments,
-            borders=borders,
-            gaps=gaps,
-            class_=data.class_,
-            id_=data.id,
+            **container_layout_kwargs(data),
+            **widget_layout_kwargs(data),
         )

@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import builtins
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from direct.gui import DirectGuiGlobals as DGG
@@ -27,29 +28,111 @@ from direct.gui.DirectGuiBase import DirectGuiWidget
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import PNMImage, Texture
 
+from ..skin import UIElement, UISkin, combine_classes, resolve_edge_lengths
+
 if TYPE_CHECKING:
     from .dock import Dock
+    from .layouts import LayoutDockWidget
 
 
-class DockWidgetBase:
+class DockWidgetBase(ABC):
+    """Base class of every widget that can be placed in a dock layout."""
 
-    def __init__(self, proportions=None, alignments=None, borders=None, index=None):
+    # Type of the skin element of this widget
+    element_type: str = None
+    # Optional class of the skin element
+    element_class: str = None
+
+    def __init__(self, align=None, justify=None, margin=None, grow=None, class_=None, id_=None):
+        """
+        Args:
+            align: Vertical alignment in the cell, overriding the skin, or None
+            justify: Horizontal alignment in the cell, overriding the skin, or None
+            margin: Edge lengths of the margin, overriding the skin, or None
+            grow: Share of the leftover space of the parent layout claimed by this widget, or None
+            class_: Extra skin class(es) attached to this widget
+            id_: Skin id of this widget
+        """
+        # Sizer wrapper around the DirectGui widget, or a tuple representing a sizer
         self.widget: SizerWidget | tuple = None
-        self.proportions = proportions
-        self.alignments = alignments
-        self.borders = borders
-        self.index = index
+        self.element: UIElement = None
+        self.align = align
+        self.justify = justify
+        self.margin = margin
+        self.grow = grow
+        self.class_ = class_
+        self.id_ = id_
 
-    def add_to(self, dock: Dock, parent, borders, skin) -> None:
-        # A widget that does not have an alignment use the default one from the layout.
-        alignments = self.alignments if self.alignments is not None else parent.default_alignments()
-        parent.sizer.add(
-            self.widget,
-            self.proportions,
-            alignments,
-            (self.borders + borders) if self.borders else borders,
-            self.index,
-        )
+    def create_element(self, parent: LayoutDockWidget | Dock) -> UIElement:
+        """
+        Create the skin element of this widget and attach it to the element of its parent.
+
+        Args:
+            parent: The parent element this widget is placed in
+
+        Returns:
+            The skin element of this widget
+        """
+        if self.element is None:
+            self.element = UIElement(
+                self.element_type, class_=combine_classes(self.element_class, self.class_), id_=self.id_
+            )
+        self.element.parent = parent.element
+        return self.element
+
+    def get_cell_parameters(self, parent: LayoutDockWidget | Dock, skin: UISkin) -> dict:
+        """
+        Resolve the layout parameters of the cell this widget occupies in its parent layout.
+
+        Each parameter set in the configuration of the widget overrides the one the skin gives it.
+
+        Args:
+            parent: The layout this widget is placed in
+            skin: The skin of the ui
+
+        Returns:
+            The keyword arguments describing the cell.
+        """
+        style = skin.get(self.element)
+        margin = self.margin if self.margin is not None else style.margin
+        # A widget that requests no alignment, neither in the skin nor in its configuration, is
+        # placed using the default alignment of the layout holding it.
+        default_justify, default_align = parent.default_alignments()
+        justify = self.justify or style.justify or default_justify
+        align = self.align or style.align or default_align
+        # `grow` is the share of the leftover space claimed along the direction of the parent
+        # layout; the widget never grows in the other direction.
+        grow = self.grow if self.grow is not None else 0.0
+        proportions = (grow, 0.0) if parent.direction == 'horizontal' else (0.0, grow)
+        return {
+            'proportions': proportions,
+            'alignments': (justify, align),
+            'borders': resolve_edge_lengths(margin, self.element, skin),
+        }
+
+    @abstractmethod
+    def build(self, dock: Dock, parent: LayoutDockWidget | Dock, skin: UISkin) -> None:
+        """
+        Create the skin element and the layout object of this widget.
+
+        Args:
+            dock: The dock this widget belongs to
+            parent: The layout, or the dock, this widget is placed in
+            skin: The skin of the ui
+        """
+
+    def add_to(self, dock: Dock, parent: LayoutDockWidget, skin: UISkin) -> None:
+        """
+        Create this widget and place it in the parent layout.
+
+        Args:
+            dock: The dock this widget belongs to
+            parent: The layout this widget is placed in
+            skin: The skin of the ui
+        """
+        self.build(dock, parent, skin)
+        # TODO: Should not use the internal content_sizer
+        parent.content_sizer.add(self.widget, **self.get_cell_parameters(parent, skin))
 
     def compile(self):
         pass
@@ -59,20 +142,33 @@ class DockWidgetBase:
 
 
 class DGuiDockWidget(DockWidgetBase):
+    """Base class of the dock widgets using a DirectGui widget."""
 
-    def __init__(self, proportions=None, alignments=None, borders=None, index=None, enabled=None):
-        DockWidgetBase.__init__(self, proportions, alignments, borders, index)
+    def __init__(self, enabled=None, **kwargs):
+        DockWidgetBase.__init__(self, **kwargs)
         self.enabled_condition = enabled
         self.is_enabled = True
 
-    def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
-        raise NotImplementedError()
+    @abstractmethod
+    def create(self, dock: Dock, parent, messenger, skin: UISkin) -> DirectGuiWidget:
+        """
+        Create the DirectGui widget itself, styled with the skin element of this widget.
 
-    def add_to(self, dock: Dock, parent, borders, skin) -> None:
+        Args:
+            dock: The dock this widget belongs to
+            parent: The layout this widget is placed in
+            messenger: The messenger the widget sends its events to
+            skin: The skin of the ui
+
+        Returns:
+            The created DirectGui widget
+        """
+
+    def build(self, dock: Dock, parent, skin: UISkin) -> None:
+        self.create_element(parent)
         instance = self.create(dock, parent, builtins.base.messenger, skin)
         instance.reparent_to(dock.instance)
         self.widget = SizerWidget(instance)
-        DockWidgetBase.add_to(self, dock, parent, borders, skin)
 
     def update(self, global_vars):
         if self.enabled_condition is None:

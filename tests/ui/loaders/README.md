@@ -10,9 +10,9 @@ This module contains comprehensive tests for all parser utilities used in UI con
 
 - **TestColorParser**: Tests for ColorParser.
 - **TestLengthParser**: Tests for LengthParser.
+- **TestEdgeLengthsParser**: Tests for the `margin` and `padding` shorthands.
+- **TestGapParser**: Tests for the `gap` shorthand.
 - **TestAlignmentParser**: Tests for AlignmentParser.
-- **TestBorderParser**: Tests for BorderParser.
-- **TestGapParser**: Tests for GapParser.
 - **TestTextAlignmentParser**: Tests for TextAlignmentParser.
 - **TestParsersCollection**: Tests for ParsersCollection.
 
