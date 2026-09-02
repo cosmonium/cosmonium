@@ -25,6 +25,8 @@ from direct.showbase.ShowBaseGlobal import globalClock
 
 from ... import settings, utils
 from ...astro import units
+from ...astro.orbits import EllipticalOrbit
+from ...astro.rotations import UniformRotation
 from ...bodyclass import bodyClasses
 from ...objects.star import Star
 
@@ -112,6 +114,22 @@ class ObjectProvider(ABC):
     @property
     def temperature(self):
         return self._object.temperature
+
+    @property
+    def is_periodic_orbit(self):
+        return isinstance(self._object.anchor.orbit, EllipticalOrbit)
+
+    @property
+    def orbit_period(self):
+        return abs(self._object.anchor.orbit.get_period())
+
+    @property
+    def is_uniform_rotation(self):
+        return isinstance(self._object.anchor.rotation, UniformRotation)
+
+    @property
+    def rotation_period(self):
+        return abs(self._object.anchor.rotation.get_period())
 
 
 class AutopilotProvider:
