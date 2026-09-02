@@ -259,6 +259,9 @@ class ScalesProvider:
     def speed(self, value):
         return units.toUnit(value, units.speeds_scale)
 
+    def time(self, value):
+        return units.toUnit(value, units.times_scale)
+
     def degrees(self, value):
         return "%d° %d' %g\"" % units.toDegMinSec(value)
 
