@@ -50,6 +50,7 @@ class OverlayManager:
         self.element = UIElement(None, class_='hud', id_='hud')
         self.widgets = {}
         self.shown = True
+        self.y_offset = 0
 
         # Map anchor names to Panda3D anchor nodes
         self._anchor_map = {
@@ -63,10 +64,16 @@ class OverlayManager:
             'bottom': self.base.p2dBottomCenter,
             'bottom-right': self.base.p2dBottomRight,
         }
-        if widgets:
-            self._initialize_widgets(widgets)
+        # Docks are added first so persistent toolbars (e.g. the top bar
+        # logo/search) always come first in a corner's stacking order (see
+        # set_y_offset) - otherwise a HUD widget sharing the same corner
+        # (e.g. object-info-card, also anchored top-left) would push the
+        # dock down by its own height, even while hidden, instead of
+        # appearing below the dock as intended.
         if docks:
             self._initialize_widgets(docks)
+        if widgets:
+            self._initialize_widgets(widgets)
         # Create info widget
         self.info = FadeTextLine('info', 'bottom-left', TextNode.ALeft, LVector2(0, -3), parent=self)
         self.info.set_anchor(self.base.p2dBottomLeft)
@@ -135,6 +142,7 @@ class OverlayManager:
         Args:
             y_offset: Offset to apply
         """
+        self.y_offset = y_offset
         for anchor_name, widget_list in self.widgets.items():
             if not anchor_name.startswith('top'):
                 continue
@@ -146,13 +154,24 @@ class OverlayManager:
     def update(self, global_vars):
         """Update all overlay elements.
 
+        A widget's height can change between frames (e.g. a collapsible
+        HudCard toggling), which would otherwise leave whatever is stacked
+        below it at the same corner (via set_y_offset) in the wrong place
+        until the next unrelated menubar show/hide. Re-run set_y_offset
+        whenever that happens, using the last y_offset base it was given.
+
         Args:
             global_vars: Global variables for dynamic updates
         """
         if not self.shown:
             return
+        heights_changed = False
         for widget in chain(*self.widgets.values()):
-            widget.update(global_vars)
+            has_changed = widget.update(global_vars)
+            if has_changed:
+                heights_changed = True
+        if heights_changed:
+            self.set_y_offset(self.y_offset)
 
     def update_size(self):
         """Propagate window size update to all overlay elements."""

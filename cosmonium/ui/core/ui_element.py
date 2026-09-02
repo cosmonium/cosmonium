@@ -85,8 +85,11 @@ class UIElement(ABC):
 
         Args:
             global_vars: Optional global variables for dynamic updates
+
+        Returns:
+            bool: True if the element size has changed, False otherwise
         """
-        pass
+        return False
 
     @abstractmethod
     def update_instance(self):

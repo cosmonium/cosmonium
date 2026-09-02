@@ -90,3 +90,5 @@ class DynamicTextBlock(TextBlock):
         self._update(self.entries, global_vars)
         for i in range(self._cursor, self.count):
             self.set(i, "")
+        # TODO: Should we return True if the number of lines changed? For now, we just return False.
+        return False
