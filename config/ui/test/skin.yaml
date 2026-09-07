@@ -9,6 +9,12 @@
     class: dock
   font-family: Material Design Icons
   font-size: 16px
+- element: borders
+  class: border
+  background-color: "#00000d"
+  border-color: "#00004D"
+  border-width: 3px
+  border-radius: 10px
 - element: frame
   class: dock
   height: 96px

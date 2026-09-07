@@ -25,10 +25,12 @@ from direct.gui.DirectScrollBar import DirectScrollBar
 from direct.gui.DirectSlider import DirectSlider
 from direct.gui.OnscreenText import OnscreenText, Plain
 from direct.showbase.DirectObject import DirectObject
-from panda3d.core import PGSliderBar, Point3, TextNode
+from panda3d.core import PGSliderBar, Point3, TextNode, TransparencyAttrib
 
 from ...geometry.geometry import FrameGeom
+from ..dock.decorated_sizer import COS_45
 from ..skin import UIElement
+from ..textures.circle_generator import CircleTextureGenerator
 from .draggable import DraggableWidgetMixin
 
 
@@ -50,7 +52,23 @@ class WindowFrame(DraggableWidgetMixin):
             self.skin = None
 
         self.anchor = parent.anchor
-        self.border = (1, 1)
+        # Border/rounded-corner geometry, resolved from the skin here and recreated by
+        # update() whenever the window's size changes.
+        border_element = UIElement('borders', class_='border')
+        border_style = self.skin.get(border_element)
+        self.border_width = border_style.get_length('border_width', border_element, self.skin, default=1.0)
+        self.border_color = border_style.border_color
+        self.background_color = border_style.background_color
+        self.corner_radius = border_style.get_length('border_radius', border_element, self.skin)
+        self.corner_texture = None
+        self.border = (self.border_width, self.border_width)
+        # The title bar, close button and content are inset from the frame innern edges.
+        # A plain rectangular border only needs to clear its own width, but a rounded one
+        # needs more to avoid being overridden by the window title or close button.
+        if self.corner_radius:
+            self.content_inset = self.corner_radius - (self.corner_radius - self.border_width) * COS_45
+        else:
+            self.content_inset = self.border_width
         self.event_handler = DirectObject()
         self.button_thrower = self.base.buttonThrowers[0].node()
         self.event_handler.accept("wheel_up-up", self.mouse_wheel_event, extraArgs=[-1])
@@ -58,13 +76,16 @@ class WindowFrame(DraggableWidgetMixin):
         self.scrollers = []
 
         self.frame = DirectFrame(parent=parent.anchor, state=DGG.NORMAL)
-        if max(self.border) > 0:
-            self.decorator_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, frameColor=(0, 0, 0, 0))
-            self.decorator_frame.set_pos((-self.border[0], 0, self.border[1]))
+        if self.border_width > 0 and self.border_color is not None:
+            # For frame with rounded corners, the decorator frame is used to draw the border and background.
+            # For frames without rounded corners, the frame itself is used to draw the border and background.
+            fill = (0, 0, 0, 0) if self.corner_radius else (self.background_color or (0, 0, 0, 0))
+            self.decorator_frame = DirectFrame(parent=self.frame, frameColor=fill)
         else:
             self.decorator_frame = None
         title_frame_element = UIElement('frame', class_='title-frame')
         self.title_frame = DirectFrame(parent=self.frame, state=DGG.NORMAL, **self.skin.get_style(title_frame_element))
+        self.title_frame.set_pos(self.content_inset, 0, -self.content_inset)
         title_element = UIElement('onscreen-text', class_='title-text')
         self.title = OnscreenText(
             text=self.title_text,
@@ -124,20 +145,33 @@ class WindowFrame(DraggableWidgetMixin):
             return
         title_frame_size = self.title_frame['frameSize']
         title_height = title_frame_size[3] - title_frame_size[2]
-        self.child.set_pos(0, 0, -title_height)
+        self.child.set_pos(self.content_inset, 0, -title_height - self.content_inset)
         frame_size = self.child.frame_size()
         width = frame_size[1] - frame_size[0]
         height = frame_size[3] - frame_size[2]
         title_size = self.title_frame['frameSize']
         title_size[1] = width
         self.title_frame['frameSize'] = title_size
-        self.close_frame.set_pos(width - self.close_frame['frameSize'][1], 0, 0)
+        self.close_frame.set_pos(self.content_inset + width - self.close_frame['frameSize'][1], 0, -self.content_inset)
         if self.decorator_frame is not None:
-            frame_element = UIElement('borders', class_='border')
-            extended_width = width + self.border[0] * 2
-            extended_height = height + title_height + self.border[1] * 2
-            geom = FrameGeom((extended_width, extended_height), self.border, outer=False, texture=False)
-            geom.set_color(*self.skin.get_style(frame_element)['border_color'])
+            extended_width = width + self.content_inset * 2
+            extended_height = height + title_height + self.content_inset * 2
+            size = (extended_width, extended_height)
+            if self.corner_radius:
+                if self.corner_texture is None:
+                    generator = CircleTextureGenerator(
+                        radius=self.corner_radius,
+                        border_width=self.border_width,
+                        border_color=self.border_color,
+                        inner_color=self.background_color,
+                    )
+                    self.corner_texture = generator.generate_circle()
+                geom = FrameGeom(size, (self.corner_radius, self.corner_radius), texture=True, fill=True)
+                geom.set_texture(self.corner_texture)
+                geom.set_transparency(TransparencyAttrib.M_alpha)
+            else:
+                geom = FrameGeom(size, self.border, outer=False, texture=False)
+                geom.set_color(*self.border_color)
             self.decorator_frame['geom'] = geom
             self.decorator_frame['frameSize'] = [0, extended_width, 0, -extended_height]
 
