@@ -33,7 +33,8 @@ if TYPE_CHECKING:
 
 
 class _DockOptionMenu(DirectOptionMenu):
-    """A DirectOptionMenu that pops its item list towards the dock's free side.
+    """A DirectOptionMenu that pops its item list towards the dock's free side, never over the
+    button itself.
 
     A dock anchored to a screen edge only has room to grow away from that edge: a dock at the
     bottom of the screen must pop its list upward, one at the right edge must pop it leftward,
@@ -57,10 +58,12 @@ class _DockOptionMenu(DirectOptionMenu):
         left, right, bottom, top = frame_size
         pos = self.popupMenu.get_pos(self)
         if self._dock.direction == "horizontal":
-            # A horizontal dock sits at the top or bottom of the screen: flip the list upward
-            # when the dock is at the bottom so it doesn't spill off-screen.
+            # Always pop the list clear of the button: upward when the dock is at the bottom
+            # of the screen, downward otherwise.
             if self._dock.location.startswith("bottom"):
                 pos.set_z(button_bounds[3] - bottom)
+            else:
+                pos.set_z(button_bounds[2] - top)
         else:
             # A vertical dock sits at the left or right of the screen: flip the list towards
             # the screen's center so it doesn't spill off-screen.
