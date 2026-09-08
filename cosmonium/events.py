@@ -196,6 +196,8 @@ class EventsDispatcher(DirectObject):
                 self.gui.set_display_render_info,
                 [display_render_info],
             )
+        # This event expect the emitter to send the render info mode as an argument.
+        self.accept('set-display-render-info', self.gui.set_display_render_info)
 
     def register(self, event, func, extraArgs=[]):
         self.accept(event, func, extraArgs)
