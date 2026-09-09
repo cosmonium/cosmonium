@@ -26,6 +26,7 @@ from ..config.models import (
     ButtonWidgetConfig,
     LayoutWidgetConfig,
     OptionMenuWidgetConfig,
+    SearchWidgetConfig,
     SpacerWidgetConfig,
     TextWidgetConfig,
 )
@@ -33,6 +34,7 @@ from .widgets import (
     ButtonWidgetLoader,
     LayoutWidgetLoader,
     OptionMenuWidgetLoader,
+    SearchWidgetLoader,
     SpacerWidgetLoader,
     TextWidgetLoader,
     WidgetYamlParser,
@@ -45,5 +47,6 @@ def init_widget_loaders():
     WidgetYamlParser.register_parser('button', ButtonWidgetLoader(), ButtonWidgetConfig)
     WidgetYamlParser.register_parser('layout', LayoutWidgetLoader(), LayoutWidgetConfig)
     WidgetYamlParser.register_parser('option-menu', OptionMenuWidgetLoader(), OptionMenuWidgetConfig)
+    WidgetYamlParser.register_parser('search', SearchWidgetLoader(), SearchWidgetConfig)
     WidgetYamlParser.register_parser('spacer', SpacerWidgetLoader(), SpacerWidgetConfig)
     WidgetYamlParser.register_parser('text', TextWidgetLoader(), TextWidgetConfig)

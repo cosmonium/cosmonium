@@ -33,8 +33,15 @@ from panda3d.core import LColor, TextNode
 from pydantic import BaseModel, Field
 
 from cosmonium.parsers.validator import ConfigValidator
-from cosmonium.ui.config.models import ButtonWidgetConfig, OptionMenuWidgetConfig, SpacerWidgetConfig, TextWidgetConfig
+from cosmonium.ui.config.models import (
+    ButtonWidgetConfig,
+    OptionMenuWidgetConfig,
+    SearchWidgetConfig,
+    SpacerWidgetConfig,
+    TextWidgetConfig,
+)
 from cosmonium.ui.dock.dock import Dock
+from cosmonium.ui.dock.search import SearchDockWidget
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
 from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.loaders.hud import HUDLoader
@@ -44,6 +51,7 @@ from cosmonium.ui.loaders.skin import SkinLoader
 from cosmonium.ui.loaders.widgets import (
     ButtonWidgetLoader,
     OptionMenuWidgetLoader,
+    SearchWidgetLoader,
     SpacerWidgetLoader,
     TextWidgetLoader,
     WidgetYamlParser,
@@ -427,6 +435,19 @@ class TestWidgetLoaders:
         # Check that enabled condition does read the variable
         Settings.can_click = False
         assert widget.enabled_condition.execute(global_vars) is False
+
+    def test__search_widget_loader(self, validator):
+        """Test SearchWidgetLoader."""
+
+        loader = SearchWidgetLoader()
+
+        data = {'type': 'search', 'placeholder': "Find...", 'width': 15, 'max_results': 5}
+        config = validator.validate_dict(data, SearchWidgetConfig)
+        widget = loader.decode(config, global_vars={})
+        assert isinstance(widget, SearchDockWidget)
+        assert widget.placeholder == "Find..."
+        assert widget.width == 15
+        assert widget.max_results == 5
 
     def test_spacer_widget_loader(self, validator):
         """Test SpacerWidgetLoader."""

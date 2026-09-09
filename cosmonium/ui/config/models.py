@@ -185,6 +185,15 @@ class TextWidgetConfig(WidgetLayoutConfig):
     )
 
 
+class SearchWidgetConfig(WidgetLayoutConfig):
+    """Configuration for quick-search dock widgets."""
+
+    type: Literal['search'] = Field(description="Widget type identifier")
+    placeholder: Optional[str] = Field(None, description="Placeholder text shown in the empty entry")
+    width: Optional[float] = Field(12, ge=1, description="Entry width, in characters")
+    max_results: Optional[int] = Field(8, ge=1, description="Maximum number of suggestions shown in the dropdown")
+
+
 class SpacerWidgetConfig(WidgetLayoutConfig):
     """Configuration for spacer dock widgets."""
 
@@ -204,7 +213,12 @@ class LayoutWidgetConfig(WidgetLayoutConfig, ContainerLayoutConfig):
 
 # Union type for all widget configs
 WidgetConfig = Union[
-    ButtonWidgetConfig, TextWidgetConfig, SpacerWidgetConfig, LayoutWidgetConfig, OptionMenuWidgetConfig
+    ButtonWidgetConfig,
+    TextWidgetConfig,
+    SpacerWidgetConfig,
+    LayoutWidgetConfig,
+    OptionMenuWidgetConfig,
+    SearchWidgetConfig,
 ]
 
 LayoutWidgetConfig.model_rebuild()  # Rebuild to resolve forward reference

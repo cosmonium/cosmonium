@@ -37,6 +37,7 @@ from ..config.models import (
     ContainerLayoutConfig,
     LayoutWidgetConfig,
     OptionMenuWidgetConfig,
+    SearchWidgetConfig,
     SpacerWidgetConfig,
     TextWidgetConfig,
     WidgetLayoutConfig,
@@ -44,6 +45,7 @@ from ..config.models import (
 from ..dock.button import ButtonDockWidget
 from ..dock.layouts import LayoutDockWidget, SpaceDockWidget
 from ..dock.option_menu import OptionMenuDockWidget
+from ..dock.search import SearchDockWidget
 from ..dock.text import TextDockWidget
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
@@ -228,6 +230,33 @@ class TextWidgetLoader(YamlModuleParser):
         return TextDockWidget(
             template,
             text_align=parsers.text_alignment.parse(data.text_align),
+            **widget_layout_kwargs(data),
+        )
+
+
+class SearchWidgetLoader(YamlModuleParser):
+    """
+    Loader for search widgets.
+
+    Handles loading of quick-search dock widgets.
+    """
+
+    def decode(self, data: SearchWidgetConfig, global_vars: Optional[Dict[str, Any]] = None) -> SearchDockWidget:
+        """
+        Load a search widget from configuration data.
+
+        Args:
+            widget_config: SearchWidgetConfig Pydantic model
+            global_vars: Dictionary of global variables for expression evaluation
+
+        Returns:
+            SearchDockWidget instance
+        """
+
+        return SearchDockWidget(
+            placeholder=data.placeholder,
+            width=data.width,
+            max_results=data.max_results,
             **widget_layout_kwargs(data),
         )
 
