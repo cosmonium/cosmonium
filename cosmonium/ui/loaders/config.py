@@ -107,7 +107,8 @@ class UIConfigLoader:
         The main config file should contain paths to component-specific files:
         - shortcuts: path to shortcuts.yaml
         - menus: path to menu.yaml
-        - popup: path to popup.yaml
+        - menubar: name of the named menu (from 'menus') to use as the menubar
+        - popup: name of the named menu (from 'menus') to use as the popup menu
         - dock: path to dock.yaml
         - hud: path to hud.yaml
         - skin: path to skin.yaml
@@ -141,21 +142,23 @@ class UIConfigLoader:
         else:
             self.gui.shortcuts_config = []
 
-        # Load named menus and menubar.
+        # Load named menus.
         self.gui.named_menus = {}
 
         menus_file = self._resolve_path(data.menus, basedir)
         if menus_file is not None:
-            named_menus, menubar_config = self.menu_loader.load_menus(menus_file)
+            named_menus = self.menu_loader.load_menus(menus_file)
             self.gui.named_menus.update(named_menus)
-            self.gui.menubar_config = menubar_config
+
+        # Build the menubar from the named menu referenced by 'menubar'.
+        if data.menubar is not None:
+            self.gui.menubar_config = self.menu_loader.build_menubar(self.gui.named_menus, data.menubar)
         else:
             self.gui.menubar_config = None
 
-        # Load popup menu
-        popup_file = self._resolve_path(data.popup, basedir)
-        if popup_file is not None:
-            self.gui.popup_config = self.menu_loader.load_popup(popup_file)
+        # Build the popup menu from the named menu referenced by 'popup'.
+        if data.popup is not None:
+            self.gui.popup_config = self.menu_loader.build_popup(self.gui.named_menus, data.popup)
         else:
             self.gui.popup_config = None
 

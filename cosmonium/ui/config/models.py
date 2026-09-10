@@ -323,20 +323,11 @@ MenuEntryConfig.model_rebuild()  # Rebuild to resolve forward reference
 
 
 class MenusConfigModel(ConfigBase):
-    """Configuration for the menus and menubar."""
+    """Configuration for the named menus."""
 
     model_config = ConfigDict(extra='forbid')
 
     menus: Dict[str, List[Union[MenuEntryConfig, None]]] = Field(default_factory=dict, description="Named menus")
-    menubar: Optional[List[MenuEntryConfig]] = Field(None, description="Menubar entries")
-
-
-class PopupMenuConfig(ConfigBase):
-    """Configuration for popup menus."""
-
-    model_config = ConfigDict(extra='forbid')
-
-    popup: List[Union[MenuEntryConfig, None]] = Field(default_factory=list, description="Popup menu entries")
 
 
 class ShortcutConfig(ConfigBase):
@@ -474,7 +465,8 @@ class UIConfigModel(ConfigBase):
         None,
         description="Path to a YAML file with the menus definitions",
     )
-    popup: Optional[str] = Field(None, description="Path to popup menu YAML file")
+    menubar: Optional[str] = Field(None, description="Name of the named menu to use as the menubar")
+    popup: Optional[str] = Field(None, description="Name of the named menu to use as the popup menu")
     dock: Optional[str] = Field(None, description="Path to dock YAML file")
     hud: Optional[str] = Field(None, description="Path to HUD YAML file")
     locale: Optional[str] = Field(None, description="Path to locale directory")

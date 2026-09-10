@@ -1,5 +1,6 @@
 skin: skin.yaml
 shortcuts: shortcuts.yaml
-menus: menubar.yaml
-popup: popup.yaml
+menus: menus.yaml
+menubar: app-menu
+popup: popup
 hud: hud.yaml

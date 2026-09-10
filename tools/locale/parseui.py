@@ -53,16 +53,11 @@ msgstr ""
     def parse(self, ui_config_file):
         basedir = os.path.dirname(ui_config_file)
         data = YamlLoader.load_file(ui_config_file)
-        menubar_file = data.get('menubar')
-        if menubar_file is not None:
-            if not os.path.isabs(menubar_file):
-                menubar_file = os.path.join(basedir, menubar_file)
-            self.parse_menubar(menubar_file)
-        popup_file = data.get('popup')
-        if popup_file is not None:
-            if not os.path.isabs(popup_file):
-                popup_file = os.path.join(basedir, popup_file)
-            self.parse_popup(popup_file)
+        menus_file = data.get('menus')
+        if menus_file is not None:
+            if not os.path.isabs(menus_file):
+                menus_file = os.path.join(basedir, menus_file)
+            self.parse_menus(menus_file)
 
     def parse_submenu(self, data):
         for entry in data:
@@ -74,19 +69,10 @@ msgstr ""
             if entries is not None:
                 self.parse_submenu(entries)
 
-    def parse_menubar(self, menubar_file):
-        data = YamlLoader.load_file(menubar_file)
+    def parse_menus(self, menus_file):
+        data = YamlLoader.load_file(menus_file)
         for name, entries in data.get('menus', {}).items():
-            submenu = self.parse_submenu(entries)
-        for menu_entry in data.get('menubar', []):
-            title = menu_entry.get('title')
-            self.add_entry(title)
-            submenu = menu_entry.get('entries', [])
-            submenu = self.parse_submenu(submenu)
-
-    def parse_popup(self, popup_file):
-        data = YamlLoader.load_file(popup_file)
-        self.parse_submenu(data.get('popup'))
+            self.parse_submenu(entries)
 
 
 output = open(sys.argv[1], 'w')

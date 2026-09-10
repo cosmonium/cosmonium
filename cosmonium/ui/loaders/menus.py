@@ -26,10 +26,10 @@ This module handles loading of menu and menubar configurations from YAML files.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from ...parsers.yamlloader import YamlLoader
-from ..config.models import MenuEntryConfig, MenusConfigModel, PopupMenuConfig
+from ..config.models import MenuEntryConfig, MenusConfigModel
 from ..menus.menubuilder import EventMenuEntry, MenubarConfig, MenuConfig, MenuSeparator, SubMenuEntry
 from ..templates.expression import PythonExpressionParser, true_expression, zero_expression
 from .base import BaseComponentLoader
@@ -137,7 +137,7 @@ class MenuLoader(BaseComponentLoader):
             named_menus[name] = self.load_submenu(entries)
         return named_menus
 
-    def load_menus(self, filepath: str) -> Tuple[Dict[str, List[Any]], MenubarConfig]:
+    def load_menus(self, filepath: str) -> Dict[str, List[Any]]:
         """
         Load a menus configuration from a YAML file.
 
@@ -145,7 +145,7 @@ class MenuLoader(BaseComponentLoader):
             filepath: Path to menus YAML file
 
         Returns:
-            Tuple with named menus dict and optional MenubarConfig instance
+            Dict of named menus
         """
         data = YamlLoader.load_file(filepath, use_splash=False)
 
@@ -155,46 +155,50 @@ class MenuLoader(BaseComponentLoader):
         # Load named menus that can be referenced elsewhere
         named_menus = self.load_named_menus(validated.menus)
 
-        # Load menubar if specified
-        if validated.menubar is not None:
-            entries = self.load_submenu(validated.menubar)
-            menubar = MenubarConfig(entries)
-        else:
-            menubar = None
+        return named_menus
 
-        return named_menus, menubar
+    def _get_named_menu(self, named_menus: Dict[str, List[Any]], menu_name: str, field_name: str) -> List[Any]:
+        entries = named_menus.get(menu_name)
+        if entries is None:
+            raise ValueError(f"Menu '{menu_name}' referenced by '{field_name}' was not found")
+        return entries
 
-    def load_popup(self, filepath: str) -> MenuConfig:
+    def build_menubar(self, named_menus: Dict[str, List[Any]], menu_name: str) -> MenubarConfig:
         """
-        Load a popup menu configuration from a YAML file.
+        Build a menubar configuration from one of the named menus.
 
         Args:
-            filepath: Path to popup YAML file
+            named_menus: Dict of named menus, as loaded by load_menus()
+            menu_name: Name of the menu to use as the menubar
+
+        Returns:
+            MenubarConfig instance
+        """
+        entries = self._get_named_menu(named_menus, menu_name, 'menubar')
+        return MenubarConfig(entries)
+
+    def build_popup(self, named_menus: Dict[str, List[Any]], menu_name: str) -> MenuConfig:
+        """
+        Build a popup menu configuration from one of the named menus.
+
+        Args:
+            named_menus: Dict of named menus, as loaded by load_menus()
+            menu_name: Name of the menu to use as the popup menu
 
         Returns:
             MenuConfig instance
         """
-        data = YamlLoader.load_file(filepath, use_splash=False)
-
-        # Validate popup configuration
-        validated = self.validator.validate_dict(data, PopupMenuConfig)
-        entries = self.load_submenu(validated.popup)
-
-        menuconfig = MenuConfig(entries)
-        return menuconfig
+        entries = self._get_named_menu(named_menus, menu_name, 'popup')
+        return MenuConfig(entries)
 
     def load(self, filepath: str) -> Any:
         """
-        Load a menu configuration from a file.
-
-        This method delegates to either load_menubar or load_popup
-        based on the file content structure.
+        Load a named menus configuration from a file.
 
         Args:
-            filepath: Path to menu configuration file
+            filepath: Path to menus configuration file
 
         Returns:
-            MenubarConfig or MenuConfig instance
+            Dict of named menus
         """
-        # No type detection yet, default to menubar
-        return self.load_menubar(filepath)
+        return self.load_menus(filepath)
