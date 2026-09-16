@@ -122,6 +122,10 @@ class Gui(object):
                 self.show_menu()
             else:
                 self.hide_menu()
+        else:
+            # Still set y_offset to 0 if no menubar is present,
+            # to ensure the HUD widgets are positioned correctly
+            self.hud.set_y_offset(0)
 
     def get_ui(self):
         return self
