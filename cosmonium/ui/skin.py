@@ -425,7 +425,16 @@ class UISkinEntry:
         ]
 
     def get_dgui_parameters_for(
-        self, element, prefix=None, skin=None, skip_font=False, usage=None, dgui=None, ui_scale=None, state=None
+        self,
+        element,
+        prefix=None,
+        skin=None,
+        skip_font=False,
+        skip_scale=False,
+        usage=None,
+        dgui=None,
+        ui_scale=None,
+        state=None,
     ):
         dgui_type = dgui or element.type_
         font_size = self.resolved_font_size(element, skin)
@@ -451,7 +460,7 @@ class UISkinEntry:
             parameters = {
                 'text_fg': self.text_color,
                 'frameColor': self.background_color,
-                **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
+                **(self.get_font_parameters(element, skin, 'text_', skip_scale=skip_scale) if not skip_font else {}),
             }
             self.add_text_align(parameters)
         elif dgui_type == 'frame':
@@ -537,8 +546,10 @@ class UISkinEntry:
                 'frameColor': self.background_color,
                 'scale': (font_size, 1, font_size),
             }
+            # The whole spin-box node is already scaled to font_size above, and that scale
+            # applies to every nested component, so the entry font scale must be skipped
             entry = UIElement(parent=element, type_='entry', class_='value-entry')
-            parameters.update(skin.get_style(entry, 'valueEntry_'))
+            parameters.update(skin.get_style(entry, prefix='valueEntry_', skip_scale=True))
             inc_button = UIElement(parent=element, type_='button', class_='inc-button')
             parameters.update(skin.get_style(inc_button, prefix='incButton_', skip_font=True))
             dec_button = UIElement(parent=element, type_='button', class_='dec-button')
@@ -617,6 +628,7 @@ class UISkin:
         state: Optional[Union[str, list[str]]] = None,
         prefix: Optional[str] = None,
         skip_font: bool = False,
+        skip_scale: bool = False,
         usage=None,
         dgui=None,
         ui_scale=None,
@@ -627,6 +639,7 @@ class UISkin:
             skin=self,
             prefix=prefix,
             skip_font=skip_font,
+            skip_scale=skip_scale,
             usage=usage,
             dgui=dgui,
             ui_scale=ui_scale,
