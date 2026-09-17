@@ -305,6 +305,10 @@ class TimeProvider:
         return self.engine.time.multiplier
 
     @property
+    def is_inverted(self):
+        return self.engine.time.multiplier < 0
+
+    @property
     def is_running(self):
         return self.engine.time.running
 
