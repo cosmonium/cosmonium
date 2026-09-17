@@ -132,7 +132,7 @@ class SearchDockWidget(DGuiDockWidget):
     def completion(self, event):
         self.search.update_query(self.entry.get())
 
-    def move_selection(self, event, increment):
+    def move_selection(self, increment, event):
         self.search.move_selection(increment)
 
     def _clear_result_buttons(self):
