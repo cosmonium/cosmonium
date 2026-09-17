@@ -401,7 +401,46 @@ class TestSkinGetStyle:
         # No hover/active/disabled override is declared, so all 4 native visual states
         # are set to the base color.
         assert params['frameColor'] == ['bg', 'bg', 'bg', 'bg']
-        assert params['text_fg'] == 'fg'
+        assert params['text0_fg'] == 'fg'
+        assert params['text1_fg'] == 'fg'
+        assert params['text2_fg'] == 'fg'
+        assert params['text3_fg'] == 'fg'
+
+    def test_get_style_for_textless_button_omits_text_color(self):
+        """A button with no label (e.g. a scrollbar thumb) must not get text0_fg..text3_fg."""
+        skin = UISkin()
+        skin.add_entry(
+            make_entry(
+                Selector('button', None, None, None), background_color='bg', text_color='fg', font_size=_fixed(12)
+            )
+        )
+        element = UIElement(type_='button')
+
+        params = skin.get_style(element, has_text=False)
+
+        assert params['frameColor'] == ['bg', 'bg', 'bg', 'bg']
+        assert 'text_fg' not in params
+        assert 'text0_fg' not in params
+        assert 'text1_fg' not in params
+        assert 'text2_fg' not in params
+        assert 'text3_fg' not in params
+
+    def test_get_style_for_check_button_indicator_sets_two_text_states(self):
+        """A DirectCheckButton's indicator is a DirectButton with only 2 states (unchecked/checked)."""
+        skin = UISkin()
+        skin.add_entry(
+            make_entry(
+                Selector('button', None, None, None), background_color='bg', text_color='fg', font_size=_fixed(12)
+            )
+        )
+        element = UIElement(type_='check-button')
+
+        params = skin.get_style(element)
+
+        assert params['indicator_text0_fg'] == 'fg'
+        assert params['indicator_text1_fg'] == 'fg'
+        assert 'indicator_text2_fg' not in params
+        assert 'indicator_text3_fg' not in params
 
     def test_get_style_for_frame_only_maps_background_color(self):
         skin = UISkin()

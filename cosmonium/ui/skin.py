@@ -435,15 +435,25 @@ class UISkinEntry:
         dgui=None,
         ui_scale=None,
         state=None,
+        has_text=True,
+        text_states=4,
     ):
         dgui_type = dgui or element.type_
         font_size = self.resolved_font_size(element, skin)
         if dgui_type == 'button':
             parameters = {
                 'frameColor': self.resolve_button_color(element, skin, 'background_color', extra_state=state),
-                'text_fg': self.text_color,
                 **(self.get_font_parameters(element, skin, 'text_') if not skip_font else {}),
             }
+            if has_text:
+                # Buttons have no per-state list form for text color: each of its  native visual states
+                # has its own text component (text0..textN), each with its own 'fg' option.
+                # `text_states` indicates how many of those components exist.
+                # DirectButton has 4 (ready/press/rollover/disabled), DirectCheckButton has 2 (unchecked/checked).
+                # Note: a textless button has no text components.
+                text_fg = self.resolve_button_color(element, skin, 'text_color', extra_state=state)
+                for i in range(text_states):
+                    parameters[f'text{i}_fg'] = text_fg[i]
             self.add_text_align(parameters)
         elif dgui_type == 'borders':
             parameters = {
@@ -455,7 +465,8 @@ class UISkinEntry:
                 'frameColor': self.resolve_button_color(element, skin, 'background_color', extra_state=state),
             }
             button = UIElement(parent=element, type_='button', class_='indicator')
-            parameters.update(skin.get_style(button, prefix='indicator_'))
+            # The indicator is a DirectButton with only 2 states (unchecked/checked).
+            parameters.update(skin.get_style(button, prefix='indicator_', text_states=2))
         elif dgui_type == 'entry':
             parameters = {
                 'text_fg': self.text_color,
@@ -513,13 +524,15 @@ class UISkinEntry:
             self.add_text_align(parameters)
             self.add_text_align(parameters, 'item_text_align')
         elif dgui_type == 'scroll-bar':
+            # The thumb and the increment/decrement buttons are plain color swatches with no label,
+            # so they never get a 'text' option and must not be given per-state text colors.
             parameters = {'frameColor': self.background_color}
             thumb = UIElement(parent=element, type_='button', class_='thumb')
-            parameters.update(skin.get_style(thumb, prefix='thumb_'))
+            parameters.update(skin.get_style(thumb, prefix='thumb_', has_text=False))
             inc_button = UIElement(parent=element, type_='button', class_='inc-button')
-            parameters.update(skin.get_style(inc_button, prefix='incButton_'))
+            parameters.update(skin.get_style(inc_button, prefix='incButton_', has_text=False))
             dec_button = UIElement(parent=element, type_='button', class_='dec-button')
-            parameters.update(skin.get_style(dec_button, prefix='decButton_'))
+            parameters.update(skin.get_style(dec_button, prefix='decButton_', has_text=False))
         elif dgui_type == 'scrolled-frame':
             parameters = {
                 'frameColor': self.background_color,
@@ -550,17 +563,21 @@ class UISkinEntry:
             # applies to every nested component, so the entry font scale must be skipped
             entry = UIElement(parent=element, type_='entry', class_='value-entry')
             parameters.update(skin.get_style(entry, prefix='valueEntry_', skip_scale=True))
+            # The increment/decrement buttons are plain color swatches with no label, so they never
+            # get a 'text' option and must not be given per-state text colors.
             inc_button = UIElement(parent=element, type_='button', class_='inc-button')
-            parameters.update(skin.get_style(inc_button, prefix='incButton_', skip_font=True))
+            parameters.update(skin.get_style(inc_button, prefix='incButton_', skip_font=True, has_text=False))
             dec_button = UIElement(parent=element, type_='button', class_='dec-button')
-            parameters.update(skin.get_style(dec_button, prefix='decButton_', skip_font=True))
+            parameters.update(skin.get_style(dec_button, prefix='decButton_', skip_font=True, has_text=False))
         elif dgui_type == 'slider':
             parameters = {
                 'frameColor': self.text_color,
                 **self.get_scale_from_width_height(element, skin, scale3=True),
             }
+            # The thumb is a plain color swatch with no label, so it never gets a 'text' option and
+            # must not be given per-state text colors.
             thumb = UIElement(parent=element, type_='button', class_='thumb')
-            parameters.update(skin.get_style(thumb, prefix='thumb_'))
+            parameters.update(skin.get_style(thumb, prefix='thumb_', has_text=False))
         elif dgui_type == 'tabbed-frame':
             # A tab style with no state is its "unselected" look, overridden by
             # `selected` for the current tab and `disabled` for the inactive tab,
@@ -632,6 +649,8 @@ class UISkin:
         usage=None,
         dgui=None,
         ui_scale=None,
+        has_text: bool = True,
+        text_states: int = 4,
     ):
         style = self.collect_entries_for(element, state)
         return style.get_dgui_parameters_for(
@@ -642,6 +661,8 @@ class UISkin:
             skip_scale=skip_scale,
             usage=usage,
             dgui=dgui,
+            has_text=has_text,
+            text_states=text_states,
             ui_scale=ui_scale,
             state=state,
         )
