@@ -23,6 +23,7 @@ import builtins
 from typing import TYPE_CHECKING
 
 from direct.gui.DirectButton import DirectButton
+from direct.gui.DirectGui import DGG
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from panda3d.core import LVector3, NodePath, TextNode
 
@@ -97,7 +98,7 @@ class ButtonDockWidget(DGuiDockWidget):
         button_style.setdefault('text_align', TextNode.A_boxed_center)
         button_kwargs = dict(
             **button_style,
-            relief=None,
+            relief=DGG.FLAT,
             pressEffect=1,
             text=self.text,
             textMayChange=True,
