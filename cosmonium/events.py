@@ -22,6 +22,15 @@ from __future__ import annotations
 
 from direct.showbase.DirectObject import DirectObject
 
+# Events that must stay reachable through their shortcut even while a text entry has
+# captured the keyboard.
+APPLICATION_WIDE_EVENTS = frozenset(
+    {
+        'exit',
+        'toggle-fullscreen',
+    }
+)
+
 
 class EventsDispatcher(DirectObject):
     _instance: EventsDispatcher

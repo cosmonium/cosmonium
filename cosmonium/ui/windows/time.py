@@ -50,6 +50,7 @@ class TimeEditor(UIWindow):
         self.hour_entry = None
         self.min_entry = None
         self.sec_entry = None
+        self.shortcut_bound_entries = []
 
     def create_label(self, frame, text):
         label_element = UIElement('label', parent=self.element, class_='time-label')
@@ -77,6 +78,10 @@ class TimeEditor(UIWindow):
             valueEntry_text_align=TextNode.A_left,
             **self.skin.get_style(spin_element),
         )
+        # Keep application-wide shortcuts (quit, fullscreen...) working while the spin box's
+        # entry suppresses the rest of the keyboard.
+        self.parent.shortcuts.bind_widget(entry.valueEntry)
+        self.shortcut_bound_entries.append(entry.valueEntry)
         return entry
 
     def add_entry(self, frame, hsizer, text, value, value_range, width):
@@ -156,6 +161,12 @@ class TimeEditor(UIWindow):
 
     def cancel(self):
         self.hide()
+
+    def destroy(self):
+        for entry in self.shortcut_bound_entries:
+            self.parent.shortcuts.unbind_widget(entry)
+        self.shortcut_bound_entries = []
+        super().destroy()
 
 
 def _show_time_editor_window():

@@ -42,6 +42,18 @@ class ParamEditor(UIWindow):
         UIWindow.__init__(self, parent=parent)
         self.width = settings.default_window_width
         self.height = settings.default_window_height
+        self.shortcut_bound_widgets = []
+
+    def _bind_application_wide_shortcuts(self, widget):
+        # Enable application-wide shortcuts for the given widget.
+        self.parent.shortcuts.bind_widget(widget)
+        self.shortcut_bound_widgets.append(widget)
+
+    def destroy(self):
+        for widget in self.shortcut_bound_widgets:
+            self.parent.shortcuts.unbind_widget(widget)
+        self.shortcut_bound_widgets = []
+        super().destroy()
 
     def make_entries(self):
         pass
@@ -62,6 +74,7 @@ class ParamEditor(UIWindow):
             suppressKeys=1,
             **self.skin.get_style(entry_element),
         )
+        self._bind_application_wide_shortcuts(entry)
         widget = SizerWidget(entry)
         return widget
 
@@ -83,6 +96,7 @@ class ParamEditor(UIWindow):
             **self.skin.get_style(check_button_element),
         )
         btn['indicatorValue'] = param.get_param()
+        self._bind_application_wide_shortcuts(btn)
         widget = SizerWidget(btn)
         return widget
 
@@ -100,6 +114,7 @@ class ParamEditor(UIWindow):
             command=self.do_update_slider,
             **self.skin.get_style(slider_element),
         )
+        self._bind_application_wide_shortcuts(slider)
         widget1 = SizerWidget(slider)
         widget2 = self.create_spin_entry(frame, param, slider, component)
         slider['extraArgs'] = [slider, widget2[0].dgui_obj, param, component]
@@ -135,6 +150,7 @@ class ParamEditor(UIWindow):
         )
         entry.valueEntry.unbind(WHEELUP)
         entry.valueEntry.unbind(WHEELDOWN)
+        self._bind_application_wide_shortcuts(entry.valueEntry)
         widget = SizerWidget(entry)
         return widget, (0, 0)
 

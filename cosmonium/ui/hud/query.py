@@ -57,6 +57,7 @@ class Query(OverlayUIElement):
         self.close()
 
     def close(self):
+        self.parent.shortcuts.unbind_widget(self.query)
         self.background.destroy()
         self.background = None
         self.prefix.destroy()
@@ -172,6 +173,8 @@ class Query(OverlayUIElement):
         self.query.bind("press-tab-", self.select)
         self.query.accept(self.query.guiItem.getTypeEvent(), self.completion)
         self.query.accept(self.query.guiItem.getEraseEvent(), self.completion)
+        # Enable application-wide shortcuts.
+        self.parent.shortcuts.bind_widget(self.query)
         self.suggestions_root = self.anchor.attach_new_node('query-suggestions')
         self.suggestions_root.set_pos(0, 0, suggestion_height - line_height * 0.5)
 

@@ -23,6 +23,8 @@ from collections import defaultdict
 
 from direct.showbase.DirectObject import DirectObject
 
+from ..events import APPLICATION_WIDE_EVENTS
+
 
 class Shortcuts(DirectObject):
 
@@ -32,6 +34,8 @@ class Shortcuts(DirectObject):
         self.gui = gui
         self.eventmap = defaultdict(lambda: [])
         self.keystrokes = {}
+        # Active widgets that have been bound to application-wide shortcuts, and the list of events bound on each.
+        self.widget_bindings = {}
         if not base.app_config.test_start:
             base.buttonThrowers[0].node().set_keystroke_event('keystroke')
         self.accept('keystroke', self.keystroke_event)
@@ -51,6 +55,42 @@ class Shortcuts(DirectObject):
 
     def get_shortcuts_for(self, event):
         return self.eventmap.get(event, None)
+
+    def bind_widget(self, widget):
+        """
+        Bind every application-wide shortcut directly on `widget`.
+
+        A widget that suppresses keyboard events while it has focus stops the raw key events from ever
+        # reaching this object. So we bind application-wide shortcuts on the widget to keep them working.
+        # Must be paired with a call to unbind_widget() when the widget loses focus or is destroyed.
+
+        Note: PGItem own press event is named after the plain key only, without any modifier prefix.
+        So shortcuts are grouped by their plain button, and the actual modifiers held are checked against
+        each candidate shortcut in _dispatch_widget_press().
+        """
+        by_button = {}
+        for event in APPLICATION_WIDE_EVENTS:
+            for shortcut in self.eventmap.get(event, []):
+                button = shortcut.rsplit('-', 1)[-1]
+                by_button.setdefault(button, []).append((shortcut, event))
+
+        bindings = []
+        for button, candidates in by_button.items():
+            gevent = 'press-' + button + '-' + widget.guiId
+            self.accept(gevent, self._dispatch_widget_press, [candidates])
+            bindings.append(gevent)
+        self.widget_bindings[widget] = bindings
+
+    def _dispatch_widget_press(self, candidates, param):
+        prefix = param.getModifierButtons().getPrefix()
+        for shortcut, event in candidates:
+            if prefix + shortcut.rsplit('-', 1)[-1] == shortcut:
+                self.messenger.send(event)
+                return
+
+    def unbind_widget(self, widget):
+        for gevent in self.widget_bindings.pop(widget, []):
+            self.ignore(gevent)
 
     def keystroke_event(self, keyname):
         # TODO: The menu widget should use suppressKey

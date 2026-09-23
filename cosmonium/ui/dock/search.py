@@ -129,6 +129,7 @@ class SearchDockWidget(DGuiDockWidget):
         self._suppress_keys(False)
         if self.dock is not None:
             self.dock.unpin(self)
+        builtins.base.gui.shortcuts.unbind_widget(self.entry)
 
     def _on_focus_in(self):
         if self.entry.get() == self.placeholder_text:
@@ -140,6 +141,8 @@ class SearchDockWidget(DGuiDockWidget):
         # Pin the dock when a quick search is initiated.
         if self.dock is not None:
             self.dock.pin(self)
+        # Enable application-wide shortcuts.
+        builtins.base.gui.shortcuts.bind_widget(self.entry)
 
     def _on_focus_out(self):
         if self.entry.get() == '':
@@ -147,6 +150,7 @@ class SearchDockWidget(DGuiDockWidget):
         self._suppress_keys(False)
         if self.dock is not None:
             self.dock.unpin(self)
+        builtins.base.gui.shortcuts.unbind_widget(self.entry)
 
     def _suppress_keys(self, suppress: bool) -> None:
         flags = self.entry.guiItem.get_suppress_flags()
