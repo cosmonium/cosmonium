@@ -28,7 +28,7 @@ from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
-from panda3d.core import TextNode
+from panda3d.core import MouseWatcherRegion, TextNode
 
 from ... import settings
 from ...fonts import Font, fontsManager
@@ -67,13 +67,14 @@ class SearchDockWidget(DGuiDockWidget):
         self.placeholder_text = self.placeholder if self.placeholder is not None else _("Search...")
 
         entry_style = skin.get_style(self.element)
+        # Don't set suppressKeys=1 here; the flag causes the keys to be suppressed when the mouse hover
+        # the entry, not only when focused. We manually manage the key suppression in the focus callbacks.
         self.entry = DirectEntry(
             initialText=self.placeholder_text,
             command=self.do_query,
             numLines=1,
             width=self.width,
             focus=0,
-            suppressKeys=1,
             focusInCommand=self._on_focus_in,
             focusOutCommand=self._on_focus_out,
             **entry_style,
@@ -117,6 +118,7 @@ class SearchDockWidget(DGuiDockWidget):
         self.panel.hide()
         self.entry.set(self.placeholder_text)
         self.entry['focus'] = 0
+        self._suppress_keys(False)
 
     def _on_focus_in(self):
         if self.entry.get() == self.placeholder_text:
@@ -124,10 +126,20 @@ class SearchDockWidget(DGuiDockWidget):
         if self.search is None:
             gui = builtins.base.gui
             self.search = NameSearchController(gui, settings.query_delay, self.update_results, self.max_results)
+        self._suppress_keys(True)
 
     def _on_focus_out(self):
         if self.entry.get() == '':
             self.entry.set(self.placeholder_text)
+        self._suppress_keys(False)
+
+    def _suppress_keys(self, suppress: bool) -> None:
+        flags = self.entry.guiItem.get_suppress_flags()
+        if suppress:
+            flags |= MouseWatcherRegion.SF_other_button
+        else:
+            flags &= ~MouseWatcherRegion.SF_other_button
+        self.entry.guiItem.set_suppress_flags(flags)
 
     def completion(self, event):
         self.search.update_query(self.entry.get())
