@@ -29,6 +29,7 @@ from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import PNMImage, Texture
 
 from ..skin import UIElement, UISkin, combine_classes, resolve_edge_lengths
+from ..widgets.tooltip import tooltip_instance
 
 if TYPE_CHECKING:
     from .dock import Dock
@@ -144,10 +145,11 @@ class DockWidgetBase(ABC):
 class DGuiDockWidget(DockWidgetBase):
     """Base class of the dock widgets using a DirectGui widget."""
 
-    def __init__(self, enabled=None, **kwargs):
+    def __init__(self, enabled=None, tooltip: str = None, **kwargs):
         DockWidgetBase.__init__(self, **kwargs)
         self.enabled_condition = enabled
         self.is_enabled = True
+        self.tooltip = tooltip
 
     @abstractmethod
     def create(self, dock: Dock, parent, messenger, skin: UISkin) -> DirectGuiWidget:
@@ -169,6 +171,30 @@ class DGuiDockWidget(DockWidgetBase):
         instance = self.create(dock, parent, builtins.base.messenger, skin)
         instance.reparent_to(dock.instance)
         self.widget = SizerWidget(instance)
+        if self.tooltip:
+            self._bind_tooltip(dock, instance, skin)
+
+    def _bind_tooltip(self, dock: Dock, instance: DirectGuiWidget, skin: UISkin) -> None:
+        """Show `self.tooltip` next to `instance`, via the common `Tooltip`, while hovered."""
+        side = self._tooltip_side(dock)
+        text = self.tooltip
+
+        def show_tooltip(_param=None):
+            tooltip_instance.show(self, text, instance, side, skin)
+
+        def hide_tooltip(_param=None):
+            tooltip_instance.hide(self)
+
+        instance.bind(DGG.ENTER, show_tooltip)
+        instance.bind(DGG.EXIT, hide_tooltip)
+
+    def _tooltip_side(self, dock: Dock) -> str:
+        """Which side of the widget to place its tooltip, away from the dock's anchored edge."""
+        if dock.direction == 'vertical':
+            # Buttons are stacked along the vertical axis: place the tooltip next to the stack,
+            # on the side awa from the window edge.
+            return 'left' if dock.location.endswith('right') else 'right'
+        return 'above' if dock.location.startswith('bottom') else 'below'
 
     def update(self, global_vars):
         if self.enabled_condition is None:

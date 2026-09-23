@@ -90,6 +90,22 @@
   text-color: var(text-muted)
   background-color: var(bg-hover)
 
+# Tooltips
+
+- element: frame
+  class: tooltip
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+  border-radius: 6px
+  padding: 4px 8px
+
+- element: label
+  class: tooltip
+  text-color: var(text-primary)
+  background-color: var(transparent)
+  font-size: 11px
+
 # Window frames
 
 - element: borders

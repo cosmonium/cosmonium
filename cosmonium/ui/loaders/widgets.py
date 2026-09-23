@@ -155,6 +155,7 @@ class ButtonWidgetLoader(YamlModuleParser):
             text_checked=text_checked,
             checked=checked,
             enabled=enabled,
+            tooltip=data.tooltip,
             **widget_layout_kwargs(data),
         )
 
@@ -196,6 +197,7 @@ class OptionMenuWidgetLoader(YamlModuleParser):
             data.event,
             selected=selected,
             enabled=enabled,
+            tooltip=data.tooltip,
             **widget_layout_kwargs(data),
         )
 
