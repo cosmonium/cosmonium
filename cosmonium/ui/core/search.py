@@ -46,6 +46,8 @@ class NameSearchController:
         # List of objects matching the current query, as (name, object) tuples,
         # name being the display name of the object.
         self.current_list: List[Tuple[str, StellarObject]] = []
+        # Text of the last query that was actually resolved (after debouncing), matching current_list.
+        self.current_query: str = ''
         # Current selection index in the current_list, or None if no selection is made.
         self.current_selection: Optional[int] = None
         # Handle of the pending debounced update task, or None if no update is pending.
@@ -54,6 +56,7 @@ class NameSearchController:
     def reset(self) -> None:
         """Clear the search state and cancel any pending debounced update."""
         self.current_list = []
+        self.current_query = ''
         self.current_selection = None
         self.cancel_pending()
 
@@ -78,6 +81,7 @@ class NameSearchController:
             self.current_list = results
         else:
             self.current_list = []
+        self.current_query = text
         self.current_selection = None
         self.completion_task = None
         self.on_suggestions_updated()

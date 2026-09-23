@@ -26,6 +26,7 @@ from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectEntry import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGuiBase import DirectGuiWidget
+from direct.gui.DirectLabel import DirectLabel
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import MouseWatcherRegion, TextNode
@@ -58,6 +59,8 @@ class SearchDockWidget(DGuiDockWidget):
         self.result_style = None
         self.result_font_bold = None
         self.result_gap = 0
+        self.no_results_style = None
+        self.no_results_label = None
         self.search = None
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
@@ -95,6 +98,10 @@ class SearchDockWidget(DGuiDockWidget):
             'text_font'
         )
         self.result_gap = self.result_style['text_scale'][1] * 0.3
+        no_results_element = UIElement(
+            'label', class_=combine_classes('search-results', self.class_), parent=parent.element
+        )
+        self.no_results_style = skin.get_style(no_results_element)
         self.panel = DirectFrame(parent=self.entry, **skin.get_style(panel_element))
         self.panel.hide()
         return self.entry
@@ -115,6 +122,7 @@ class SearchDockWidget(DGuiDockWidget):
     def _reset_to_default(self):
         self.search.reset()
         self._clear_result_buttons()
+        self._clear_no_results()
         self.panel.hide()
         self.entry.set(self.placeholder_text)
         self.entry['focus'] = 0
@@ -152,13 +160,35 @@ class SearchDockWidget(DGuiDockWidget):
             button.destroy()
         self.result_buttons = []
 
+    def _clear_no_results(self):
+        if self.no_results_label is not None:
+            self.no_results_label.destroy()
+            self.no_results_label = None
+
+    def _show_no_results(self):
+        self.no_results_label = DirectLabel(
+            text=_("No matches"),
+            text_align=TextNode.ALeft,
+            relief=None,
+            parent=self.panel,
+            **self.no_results_style,
+        )
+        sizer = Sizer("vertical", gaps=(0, self.result_gap))
+        sizer.add(SizerWidget(self.no_results_label), proportions=(1.0, 0.0), alignments=("expand", "min"))
+        self._layout_panel(sizer)
+        self.panel.show()
+
     def update_results(self):
         current_list = self.search.current_list
         current_selection = self.search.current_selection
 
         self._clear_result_buttons()
+        self._clear_no_results()
         if not current_list:
-            self.panel.hide()
+            if self.search.current_query:
+                self._show_no_results()
+            else:
+                self.panel.hide()
             return
 
         sizer = Sizer("vertical", gaps=(0, self.result_gap))
