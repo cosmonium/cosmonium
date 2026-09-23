@@ -449,6 +449,15 @@ class UISkinConfig(ConfigBase):
     entries: List[SkinEntryConfig] = Field(default_factory=list)
 
 
+class TipConfig(ConfigBase):
+    """Configuration for a single first-run tip."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    title: str = Field(description="Short heading for the tip")
+    text: str = Field(description="Body of the tip, shown as plain, word-wrapped text")
+
+
 # ============================================================================
 # Main UI Configuration Model
 # ============================================================================
@@ -469,4 +478,5 @@ class UIConfigModel(ConfigBase):
     popup: Optional[str] = Field(None, description="Name of the named menu to use as the popup menu")
     dock: Optional[str] = Field(None, description="Path to dock YAML file")
     hud: Optional[str] = Field(None, description="Path to HUD YAML file")
+    tips: Optional[str] = Field(None, description="Path to a YAML file with the first-run tips")
     locale: Optional[str] = Field(None, description="Path to locale directory")

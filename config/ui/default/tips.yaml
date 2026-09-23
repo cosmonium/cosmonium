@@ -1,0 +1,27 @@
+tips:
+  - title: Select an object
+    text: >
+      Left-click any star, planet, or moon to select it. Right-click it for a
+      context menu with more options.
+
+  - title: Find anything by name
+    text: >
+      Use the search box at the top to find any object by name.
+      Start typing and pick a match from the list below it.
+
+  - title: Track, follow, or orbit
+    text: >
+      Once something is selected, the icons on the right let you center the
+      view on it, keep the camera locked on it, follow it as it moves, or
+      orbit around it. The house icon takes you back home.
+
+  - title: Control the flow of time
+    text: >
+      The bar at the bottom plays, pauses, speeds up, slows down, or reverses
+      the flow of time, and shows the current simulated date.
+
+  - title: Everything else
+    text: >
+      Click the COSMONIUM button at the top-left for the full menu,
+      including preferences and scripts. The ? icon opens the complete
+      list of keyboard shortcuts.

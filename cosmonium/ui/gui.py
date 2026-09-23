@@ -46,6 +46,7 @@ from .windows.browser import Browser
 class Gui(object):
 
     def __init__(self, config_file, cosmonium, time, camera, mouse, autopilot):
+        self.ui_config_file = config_file
         self.base = cosmonium
         self.cosmonium = cosmonium
         self.time = time
@@ -135,6 +136,18 @@ class Gui(object):
         """Load UI configuration and apply directly to GUI."""
         loader = UIConfigLoader(self)
         loader.load(ui_config_file)
+
+    def maybe_show_first_run_tips(self):
+        """Show the first-run tips, once per UI configuration, the first time it is used."""
+        if not self.tips_config:
+            return
+        # Keyed by the UI config's own directory name
+        key = os.path.basename(os.path.dirname(self.ui_config_file))
+        if key in settings.tips_shown:
+            return
+        settings.tips_shown.append(key)
+        configParser.save()
+        self.messenger.send('gui-show-tips')
 
     def set_nav(self, nav):
         self.nav = nav

@@ -106,6 +106,43 @@
   background-color: var(transparent)
   font-size: 11px
 
+# First-run tips
+
+- element: frame
+  class: tips
+  background-color: var(bg-panel)
+  border-color: var(border)
+  border-width: 1px
+  border-radius: 8px
+  padding: 14px 16px
+
+- element: onscreen-text
+  id: tips-title
+  text-color: var(accent-bright)
+  font-size: 14px
+  font-weight: bold
+
+- element: onscreen-text
+  id: tips-body
+  text-color: var(text-secondary)
+  font-size: 12px
+
+- element: onscreen-text
+  id: tips-counter
+  text-color: var(text-muted)
+  font-size: 11px
+
+- element: button
+  class: [tips, nav]
+  background-color: var(bg-inset)
+  text-color: var(text-secondary)
+
+- element: button
+  class: [tips, nav]
+  state: hover
+  background-color: var(bg-hover)
+  text-color: var(text-primary)
+
 # Window frames
 
 - element: borders

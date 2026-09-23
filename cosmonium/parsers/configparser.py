@@ -169,6 +169,14 @@ class ConfigParser:
         data['size'] = settings.constellations_label_size
         return data
 
+    def decode_ui_tips(self, data):
+        settings.tips_shown = data.get('shown', settings.tips_shown)
+
+    def encode_ui_tips(self):
+        data = {}
+        data['shown'] = settings.tips_shown
+        return data
+
     def decode_ui(self, data):
         self.decode_ui_general(data.get('general', {}))
         self.decode_ui_hud(data.get('hud', {}))
@@ -177,6 +185,7 @@ class ConfigParser:
         self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
         self.decode_ui_constellations(data.get('constellations', {}))
+        self.decode_ui_tips(data.get('tips', {}))
 
     def encode_ui(self):
         data = {}
@@ -187,6 +196,7 @@ class ConfigParser:
         data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()
         data['constellations'] = self.encode_ui_constellations()
+        data['tips'] = self.encode_ui_tips()
         return data
 
     def decode_win(self, data):

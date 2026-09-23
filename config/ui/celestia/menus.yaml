@@ -370,6 +370,9 @@ menus:
   menu-help:
     - title: 'User _guide'
       event: 'gui-show-help'
+    - title: '_Tips'
+      event: 'gui-show-tips'
+      visible: 'gui.tips_available'
     -
     - title: '_Credits'
       event: 0

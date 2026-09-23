@@ -28,6 +28,7 @@ from .preferences import register_preferences_window
 from .select_screenshots import register_select_screenshots_window
 from .ship_editor import register_ship_editor_window
 from .time import register_time_editor_window
+from .tips import register_tips_window
 
 
 def register_windows():
@@ -41,3 +42,4 @@ def register_windows():
     register_select_screenshots_window()
     register_ship_editor_window()
     register_time_editor_window()
+    register_tips_window()

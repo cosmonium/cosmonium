@@ -483,6 +483,9 @@ class Cosmonium(CosmoniumBase):
 
         register_windows()
 
+        if not self.app_config.test_start:
+            self.gui.maybe_show_first_run_tips()
+
         # Use the first of each controllers as default
         self.set_nav(self.nav_controllers[0])
         self.set_ship(self.ships[0])

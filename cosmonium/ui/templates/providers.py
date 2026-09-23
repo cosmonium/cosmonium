@@ -226,6 +226,10 @@ class GuiProvider:
     def menubar_shown(self):
         return self.gui.menubar_shown
 
+    @property
+    def tips_available(self):
+        return bool(self.gui.tips_config)
+
 
 class LabelsProvider:
 

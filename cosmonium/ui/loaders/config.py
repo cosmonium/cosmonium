@@ -35,6 +35,7 @@ from .hud import HUDLoader
 from .menus import MenuLoader
 from .shortcuts import ShortcutsLoader
 from .skin import SkinLoader
+from .tips import TipsLoader
 
 if TYPE_CHECKING:
     from ..gui import Gui
@@ -79,6 +80,7 @@ class UIConfigLoader:
         self.hud_loader = HUDLoader(gui, self.validator)
         self.skin_loader = SkinLoader(gui, self.validator)
         self.shortcuts_loader = ShortcutsLoader(gui, self.validator)
+        self.tips_loader = TipsLoader(gui, self.validator)
 
     def _resolve_path(self, path: Optional[str], basedir: str) -> Optional[str]:
         """
@@ -112,6 +114,7 @@ class UIConfigLoader:
         - dock: path to dock.yaml
         - hud: path to hud.yaml
         - skin: path to skin.yaml
+        - tips: path to tips.yaml (optional)
         - locale: path to locale directory (optional)
 
         Args:
@@ -175,3 +178,10 @@ class UIConfigLoader:
             self.gui.hud_config = self.hud_loader.load(hud_file)
         else:
             self.gui.hud_config = {}
+
+        # Load first-run tips
+        tips_file = self._resolve_path(data.tips, basedir)
+        if tips_file is not None:
+            self.gui.tips_config = self.tips_loader.load(tips_file)
+        else:
+            self.gui.tips_config = []

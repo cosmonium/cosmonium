@@ -247,6 +247,9 @@ dock_trigger_size = 8
 
 menu_text_size = 12
 
+# Names of the UI configurations whose first-run tips have already been shown to the user.
+tips_shown = []
+
 query_delay = 0.333
 
 default_window_width = 800
