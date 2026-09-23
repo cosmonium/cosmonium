@@ -330,13 +330,58 @@ class MenusConfigModel(ConfigBase):
     menus: Dict[str, List[Union[MenuEntryConfig, None]]] = Field(default_factory=dict, description="Named menus")
 
 
+class ShortcutKeyConfig(ConfigBase):
+    """A single key combination bound to a shortcut, with its own arguments."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    key: str = Field(description="Key combination")
+    args: List[Any] = Field(default_factory=list, description="Arguments sent with the event for this key")
+
+
 class ShortcutConfig(ConfigBase):
-    """Configuration for a keyboard shortcut."""
+    """Configuration for a keyboard shortcut.
+
+    A shortcut binds one or more keys to an event. All keys share the same
+    `args` unless a key overrides them with its own.
+    """
 
     model_config = ConfigDict(extra='forbid')
 
     event: str = Field(description="Event name to trigger")
-    keys: List[str] = Field(min_length=1, description="Key combinations")
+    description: Optional[str] = Field(
+        None,
+        description="Human readable description of the action, shown in the control help. Defaults to the "
+        "event's description in code; set this to override it for this shortcut",
+    )
+    keys: List[Union[str, ShortcutKeyConfig]] = Field(
+        min_length=1, description="Key combination, or list of key combinations, bound to this shortcut"
+    )
+    args: List[Any] = Field(
+        default_factory=list, description="Arguments sent with the event, unless overridden per-key"
+    )
+    link: Optional[str] = Field(
+        None,
+        description="Identifier used to merge this shortcut with other related ones into a single entry "
+        "in the generated control help",
+    )
+
+    @model_validator(mode='before')
+    @classmethod
+    def _wrap_single_key(cls, data):
+        # Convert a single key string into a valid data structure with a list of keys.
+        if isinstance(data, dict) and isinstance(data.get('keys'), (str, dict)):
+            data = {**data, 'keys': [data['keys']]}
+        return data
+
+
+class ShortcutCategoryConfig(ConfigBase):
+    """A named group of shortcuts, used to organize the control help document."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    category: str = Field(description="Category name, used to group shortcuts in the control help")
+    shortcuts: List[ShortcutConfig] = Field(default_factory=list)
 
 
 # ============================================================================

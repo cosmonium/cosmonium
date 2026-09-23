@@ -1,0 +1,130 @@
+#
+# This file is part of Cosmonium.
+#
+# Copyright (C) 2018-2026 Laurent Deru.
+#
+# Cosmonium is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Cosmonium is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Cosmonium.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+"""
+Default human readable descriptions for shortcut events, shown in the
+generated control help document.
+"""
+
+SHORTCUT_DESCRIPTIONS = {
+    'exit': 'Exit Cosmonium',
+    'escape-dispatch': 'Reset navigation and script',
+    'select-or-center': 'Select object under cursor, or center on it if already selected',
+    'gui-show-context-menu': 'Show the contextual menu',
+    'follow-selected': 'Follow selected object',
+    'sync-selected': 'Orbit selected object',
+    'track-selected': 'Track selected object',
+    'control-selected': 'Take control of selected object',
+    'goto-front': 'Go to the side of the object facing its parent',
+    'goto-illuminated-front': 'Go to the fully illuminated side of the object',
+    'goto-selected': 'Go to selected object',
+    'center-selected': 'Center on selected object',
+    'goto-north': 'Go above the North pole of the object',
+    'goto-south': 'Go above the South pole of the object',
+    'goto-meridian': 'Go in front of the Prime Meridian of the object',
+    'align-ecliptic': 'Align on the Ecliptic plane',
+    'align-equatorial': 'Align on the Equatorial plane',
+    'goto-surface': 'Go to the surface of the selected object',
+    'select-home': 'Go Home (go to the star of the default system)',
+    'select-object': 'Select the Nth body of the current system (0 selects its primary star)',
+    'set-j2000-date': 'Set time to the J2000.0 epoch',
+    'set-current-date': 'Set time to system time',
+    'accelerate-time-2': 'Speed up time (2x)',
+    'slow-time-2': 'Slow down time (2x)',
+    'accelerate-time-10': 'Speed up time (10x)',
+    'slow-time-10': 'Slow down time (10x)',
+    'invert-time': 'Invert the flow of time',
+    'toggle-freeze-time': 'Freeze or resume the flow of time',
+    'set-real-time': 'Reset the flow of time to real time',
+    'gui-toggle-menubar': 'Toggle the menu bar',
+    'gui-search-object': 'Find object by name',
+    'toggle-fullscreen': 'Toggle fullscreen mode',
+    'gui-show-preferences': 'Show the preferences window',
+    'gui-show-editor': 'Show the editor window',
+    'gui-show-info': 'Show information about the selected object',
+    'gui-show-help': 'Show the control help',
+    'toggle-hud': 'Toggle the HUD',
+    'zoom-in': 'Zoom in',
+    'zoom-out': 'Zoom out',
+    'reset-zoom': 'Reset zoom',
+    'toggle-hdr': 'Toggle HDR rendering (deprecated)',
+    'save-screenshot': 'Save a screenshot',
+    'save-screenshot-no-gui': 'Save a screenshot without the HUD',
+    'increase-ambient': 'Increase ambient lighting',
+    'decrease-ambient': 'Decrease ambient lighting',
+    'increase-limit-magnitude': 'Increase the magnitude limit',
+    'decrease-limit-magnitude': 'Decrease the magnitude limit',
+    'increase-exposure': 'Increase exposure',
+    'decrease-exposure': 'Decrease exposure',
+    'toggle-atmosphere': 'Toggle atmosphere rendering',
+    'toggle-clouds': 'Toggle clouds rendering',
+    'toggle-body-class-galaxy': 'Toggle galaxies rendering',
+    'toggle-asterisms': 'Toggle constellation asterisms',
+    'toggle-constellations-boundaries': 'Toggle constellation boundaries',
+    'toggle-equatorial-grid': 'Toggle the equatorial grid',
+    'toggle-ecliptic-grid': 'Toggle the ecliptic grid',
+    'toggle-rotation-axis': 'Toggle the rotation axis',
+    'toggle-reference-axis': 'Toggle the reference axis',
+    'toggle-orbits': 'Toggle all orbits',
+    'toggle-orbit-star': 'Toggle orbits of stars',
+    'toggle-orbit-planet': 'Toggle orbits of planets',
+    'toggle-orbit-dwarfplanet': 'Toggle orbits of dwarf planets',
+    'toggle-orbit-moon': 'Toggle orbits of moons',
+    'toggle-orbit-minormoon': 'Toggle orbits of minor moons',
+    'toggle-orbit-comet': 'Toggle orbits of comets',
+    'toggle-orbit-asteroid': 'Toggle orbits of asteroids',
+    'toggle-orbit-spacecraft': 'Toggle orbits of spacecrafts',
+    'toggle-label-galaxy': 'Toggle galaxy labels',
+    'toggle-label-star': 'Toggle star labels',
+    'toggle-label-planet': 'Toggle planet labels',
+    'toggle-label-dwarfplanet': 'Toggle dwarf planet labels',
+    'toggle-label-moon': 'Toggle moon labels',
+    'toggle-label-minormoon': 'Toggle minor moon labels',
+    'toggle-label-comet': 'Toggle comet labels',
+    'toggle-label-asteroid': 'Toggle asteroid labels',
+    'toggle-label-spacecraft': 'Toggle spacecraft labels',
+    'toggle-label-constellation': 'Toggle constellation labels',
+    'save-cel-url': 'Save the current view as a URL',
+    'load-cel-url': 'Load a view from a URL',
+    'open-script': 'Open a script',
+    'mark-selected': 'Mark selected object',
+    'unmark-selected': 'Unmark selected object',
+    'unmark-all': 'Unmark all objects',
+    'debug-connect-pstats': 'Connect to PStats',
+    'debug-toggle-filled-wireframe': 'Toggle filled wireframe',
+    'debug-toggle-wireframe': 'Toggle wireframe',
+    'debug-toggle-buffer-viewer': 'Toggle offscreen buffers debug view',
+    'debug-dump-octree-stats': 'Dump octree statistics',
+    'debug-dump-octree': 'Dump octree content',
+    'debug-freeze-lod': 'Toggle LOD freeze',
+    'debug-dump-objects-stats': 'Dump LOD statistics',
+    'debug-dump-objects-info': 'Dump LOD tree',
+    'debug-toggle-split-merge-log': 'Toggle LOD debug traces',
+    'debug-toggle-shader-debug-coord': 'Toggle boundary debug',
+    'debug-toggle-bounding-boxes': 'Toggle bounding box display',
+    'debug-toggle-lod-frustum': 'Toggle camera frustum display',
+    'debug-toggle-shadows-frustum': 'Toggle shadow frustum display',
+    'debug-scene-ls': 'Dump scene tree info',
+    'debug-scene-explore': 'Open the scene explorer',
+    'debug-scene-analyze': 'Trigger scene analysis',
+    'debug-print-tasks': 'Print running tasks',
+    'debug-toggle-jump': 'Toggle immediate displacement',
+    'debug-print-info': 'Print debug information',
+    'toggle-fly-mode': 'Toggle fly mode / walk mode',
+}

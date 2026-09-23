@@ -93,17 +93,47 @@ class TestShortcutsLoader:
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
             filepath = f.name
             f.write("""
-event-1: 1
-event-2: [2, control-2]
+- category: Category 1
+  shortcuts:
+    - event: event-1
+      keys: "1"
+    - event: event-2
+      description: Overridden description
+      keys: ["2", control-2]
+
+- category: Category 2
+  shortcuts:
+    - event: event-3
+      link: value
+      keys: "]"
+      args: [1]
+    - event: event-3
+      link: value
+      keys:
+        - key: "["
+          args: [-1]
 """)
         try:
             loader = ShortcutsLoader(None, validator)
-            shortcuts = loader.load(filepath)
+            categories = loader.load(filepath)
 
-            assert isinstance(shortcuts, list)
-            assert len(shortcuts) == 2
+            assert isinstance(categories, list)
+            assert len(categories) == 2
 
-            assert shortcuts == [('event-1', ['1']), ('event-2', ['2', 'control-2'])]
+            assert categories[0].category == 'Category 1'
+            assert len(categories[0].shortcuts) == 2
+            assert categories[0].shortcuts[0].event == 'event-1'
+            assert categories[0].shortcuts[0].description is None
+            assert categories[0].shortcuts[0].keys == ['1']
+            assert categories[0].shortcuts[1].description == 'Overridden description'
+            assert categories[0].shortcuts[1].keys == ['2', 'control-2']
+
+            assert categories[1].category == 'Category 2'
+            increase, decrease = categories[1].shortcuts
+            assert increase.link == decrease.link == 'value'
+            assert increase.args == [1]
+            assert decrease.keys[0].key == '['
+            assert decrease.keys[0].args == [-1]
         finally:
             os.unlink(filepath)
 

@@ -1,113 +1,292 @@
-exit: control-q
-gui-search-object: enter
-escape-dispatch: escape
-toggle-fullscreen: alt-enter
-zoom-in: ","
-zoom-out: "."
-reset-zoom: control-r
-gui-show-context-menu: mouse3-click
-gui-toggle-menubar: control-m
-gui-show-preferences: control-p
-gui-show-editor: control-e
-gui-show-info: f1
-gui-show-help: shift-f1
-debug-connect-pstats: f2
-debug-toggle-filled-wireframe: f3
-debug-toggle-wireframe: shift-f3
-toggle-hdr: f4
-debug-toggle-buffer-viewer: f5
-debug-dump-octree-stats: f7
-debug-dump-octree: shift-f7
-debug-freeze-lod: f8
-debug-dump-objects-stats: shift-f8
-debug-dump-objects-info: shift-control-f8
-debug-toggle-split-merge-log: control-f8
-debug-toggle-shader-debug-coord: f9
-debug-toggle-bounding-boxes: shift-f9
-debug-toggle-lod-frustum: control-f9
-debug-toggle-shadows-frustum: shift-control-f9
-save-screenshot: f10
-save-screenshot-no-gui: shift-f10
-debug-scene-ls: f11
-debug-scene-explore: control-f11
-debug-scene-analyze: f12
-debug-print-tasks: shift-f12
-select-or-center: mouse1-click
-follow-selected: f
-sync-selected: y
-track-selected: t
-control-selected: control-t
-goto-front: d
-goto-illuminated-front: shift-d
-goto-selected: g
-center-selected: c
-debug-toggle-jump: control-j
-goto-north: shift-n
-goto-south: shift-s
-goto-meridian: shift-r
-align-ecliptic: shift-e
-align-equatorial: shift-q
-goto-surface: control-g
-select-home: h
-save-cel-url: control-c
-load-cel-url: control-v
-open-script: control-o
-set-j2000-date: shift-j
-set-current-date: "!"
-accelerate-time-10: l
-accelerate-time-2: shift-l
-slow-time-10: k
-slow-time-2: shift-k
-invert-time: j
-toggle-freeze-time: space
-set-real-time: "\\"
-decrease-ambient: "{"
-increase-ambient: "}"
-decrease-limit-magnitude: "["
-increase-limit-magnitude: "]"
-decrease-exposure: "<"
-increase-exposure: ">"
-toggle-atmosphere: control-a
-toggle-rotation-axis: shift-a
-toggle-reference-axis: shift-control-r
-toggle-constellations-boundaries: control-b
-toggle-clouds: i
-toggle-orbits: o
-toggle-body-class-galaxy: u
-toggle-equatorial-grid: ;
-toggle-ecliptic-grid: ":"
-toggle-asterisms: /
-toggle-orbit-star: shift-control-b
-toggle-orbit-planet: shift-control-p
-toggle-orbit-dwarfplanet: shift-control-d
-toggle-orbit-moon: shift-control-m
-toggle-orbit-minormoon: shift-control-o
-toggle-orbit-comet: shift-control-c
-toggle-orbit-asteroid: shift-control-a
-toggle-orbit-spacecraft: shift-control-s
-toggle-label-galaxy: e
-toggle-label-star: b
-toggle-label-planet: p
-toggle-label-dwarfplanet: shift-p
-toggle-label-moon: m
-toggle-label-minormoon: shift-m
-toggle-label-comet: shift-w
-toggle-label-asteroid: w
-toggle-label-spacecraft: n
-toggle-label-constellation: "="
-mark-selected: shift-control-m
-unmark-selected: shift-control-u
-unmark-all: shift-control-alt-m
-toggle-hud: v
-select-object-0: 0
-select-object-1: 1
-select-object-2: 2
-select-object-3: 3
-select-object-4: 4
-select-object-5: 5
-select-object-6: 6
-select-object-7: 7
-select-object-8: 8
-select-object-9: 9
-debug-print-info: shift-h
-toggle-fly-mode: shift-y
+# Keyboard and mouse shortcuts for the Celestia-compatible UI skin.
+#
+# See `config/ui/default/shortcuts.yaml` for a description of the file format.
+
+- category: Application
+  shortcuts:
+    - event: exit
+      keys: control-q
+    - event: escape-dispatch
+      keys: escape
+
+- category: Mouse
+  shortcuts:
+    - event: select-or-center
+      keys: mouse1-click
+    - event: gui-show-context-menu
+      keys: mouse3-click
+
+- category: Selection and tracking
+  shortcuts:
+    - event: follow-selected
+      keys: f
+    - event: sync-selected
+      keys: y
+    - event: track-selected
+      keys: t
+    - event: control-selected
+      keys: control-t
+    - event: goto-front
+      link: goto-front
+      keys: d
+    - event: goto-illuminated-front
+      link: goto-front
+      keys: shift-d
+    - event: goto-selected
+      keys: g
+    - event: center-selected
+      keys: c
+    - event: goto-north
+      link: goto-pole
+      keys: shift-n
+    - event: goto-south
+      link: goto-pole
+      keys: shift-s
+    - event: goto-meridian
+      keys: shift-r
+    - event: align-ecliptic
+      keys: shift-e
+    - event: align-equatorial
+      keys: shift-q
+    - event: goto-surface
+      keys: control-g
+    - event: select-home
+      keys: h
+    - event: select-object
+      keys:
+        - key: "0"
+          args: [0]
+        - key: "1"
+          args: [1]
+        - key: "2"
+          args: [2]
+        - key: "3"
+          args: [3]
+        - key: "4"
+          args: [4]
+        - key: "5"
+          args: [5]
+        - key: "6"
+          args: [6]
+        - key: "7"
+          args: [7]
+        - key: "8"
+          args: [8]
+        - key: "9"
+          args: [9]
+
+- category: Time
+  shortcuts:
+    - event: set-j2000-date
+      keys: shift-j
+    - event: set-current-date
+      keys: "!"
+    - event: accelerate-time-2
+      link: time-rate-2x
+      keys: shift-l
+    - event: slow-time-2
+      link: time-rate-2x
+      keys: shift-k
+    - event: accelerate-time-10
+      link: time-rate-10x
+      keys: l
+    - event: slow-time-10
+      link: time-rate-10x
+      keys: k
+    - event: invert-time
+      keys: j
+    - event: toggle-freeze-time
+      keys: space
+    - event: set-real-time
+      keys: "\\"
+
+- category: UI
+  shortcuts:
+    - event: gui-toggle-menubar
+      keys: control-m
+    - event: gui-search-object
+      keys: enter
+    - event: toggle-fullscreen
+      keys: alt-enter
+    - event: gui-show-preferences
+      keys: control-p
+    - event: gui-show-editor
+      keys: control-e
+    - event: gui-show-info
+      keys: f1
+    - event: gui-show-help
+      keys: shift-f1
+    - event: toggle-hud
+      keys: v
+
+- category: Camera
+  shortcuts:
+    - event: zoom-in
+      link: zoom
+      keys: ","
+    - event: zoom-out
+      link: zoom
+      keys: "."
+    - event: reset-zoom
+      keys: control-r
+
+- category: Rendering
+  shortcuts:
+    - event: toggle-hdr
+      keys: f4
+    - event: save-screenshot
+      link: screenshot
+      keys: f10
+    - event: save-screenshot-no-gui
+      link: screenshot
+      keys: shift-f10
+    - event: increase-ambient
+      link: ambient
+      keys: "}"
+    - event: decrease-ambient
+      link: ambient
+      keys: "{"
+    - event: increase-limit-magnitude
+      link: limit-magnitude
+      keys: "]"
+    - event: decrease-limit-magnitude
+      link: limit-magnitude
+      keys: "["
+    - event: increase-exposure
+      link: exposure
+      keys: ">"
+    - event: decrease-exposure
+      link: exposure
+      keys: "<"
+    - event: toggle-atmosphere
+      keys: control-a
+    - event: toggle-clouds
+      keys: i
+    - event: toggle-body-class-galaxy
+      keys: u
+
+- category: Annotations
+  shortcuts:
+    - event: toggle-asterisms
+      keys: /
+    - event: toggle-constellations-boundaries
+      keys: control-b
+    - event: toggle-equatorial-grid
+      keys: ;
+    - event: toggle-ecliptic-grid
+      keys: ":"
+    - event: toggle-rotation-axis
+      keys: shift-a
+    - event: toggle-reference-axis
+      keys: shift-control-r
+
+- category: Orbits
+  shortcuts:
+    - event: toggle-orbits
+      keys: o
+    - event: toggle-orbit-star
+      keys: shift-control-b
+    - event: toggle-orbit-planet
+      keys: shift-control-p
+    - event: toggle-orbit-dwarfplanet
+      keys: shift-control-d
+    - event: toggle-orbit-moon
+      keys: shift-control-m
+    - event: toggle-orbit-minormoon
+      keys: shift-control-o
+    - event: toggle-orbit-comet
+      keys: shift-control-c
+    - event: toggle-orbit-asteroid
+      keys: shift-control-a
+    - event: toggle-orbit-spacecraft
+      keys: shift-control-s
+
+- category: Labels
+  shortcuts:
+    - event: toggle-label-galaxy
+      keys: e
+    - event: toggle-label-star
+      keys: b
+    - event: toggle-label-planet
+      keys: p
+    - event: toggle-label-dwarfplanet
+      keys: shift-p
+    - event: toggle-label-moon
+      keys: m
+    - event: toggle-label-minormoon
+      keys: shift-m
+    - event: toggle-label-comet
+      keys: shift-w
+    - event: toggle-label-asteroid
+      keys: w
+    - event: toggle-label-spacecraft
+      keys: n
+    - event: toggle-label-constellation
+      keys: "="
+
+- category: Scripts
+  shortcuts:
+    - event: save-cel-url
+      link: cel-url
+      keys: control-c
+    - event: load-cel-url
+      link: cel-url
+      keys: control-v
+    - event: open-script
+      keys: control-o
+
+- category: Marks
+  shortcuts:
+    - event: mark-selected
+      link: mark
+      keys: shift-control-m
+    - event: unmark-selected
+      link: mark
+      keys: shift-control-u
+    - event: unmark-all
+      keys: shift-control-alt-m
+
+- category: Debug
+  shortcuts:
+    - event: debug-connect-pstats
+      keys: f2
+    - event: debug-toggle-filled-wireframe
+      keys: f3
+    - event: debug-toggle-wireframe
+      keys: shift-f3
+    - event: debug-toggle-buffer-viewer
+      keys: f5
+    - event: debug-dump-octree-stats
+      keys: f7
+    - event: debug-dump-octree
+      keys: shift-f7
+    - event: debug-freeze-lod
+      keys: f8
+    - event: debug-dump-objects-stats
+      keys: shift-f8
+    - event: debug-dump-objects-info
+      keys: shift-control-f8
+    - event: debug-toggle-split-merge-log
+      keys: control-f8
+    - event: debug-toggle-shader-debug-coord
+      keys: f9
+    - event: debug-toggle-bounding-boxes
+      keys: shift-f9
+    - event: debug-toggle-lod-frustum
+      keys: control-f9
+    - event: debug-toggle-shadows-frustum
+      keys: shift-control-f9
+    - event: debug-scene-ls
+      keys: f11
+    - event: debug-scene-explore
+      keys: control-f11
+    - event: debug-scene-analyze
+      keys: f12
+    - event: debug-print-tasks
+      keys: shift-f12
+    - event: debug-toggle-jump
+      keys: control-j
+    - event: debug-print-info
+      keys: shift-h
+    - event: toggle-fly-mode
+      keys: shift-y

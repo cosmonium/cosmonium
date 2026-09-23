@@ -26,6 +26,21 @@ from direct.showbase.DirectObject import DirectObject
 from ..events import APPLICATION_WIDE_EVENTS
 
 
+def remap_key_for_platform(key):
+    """
+    Remap a generic key combination read from a shortcuts file to the actual key
+    combination bound at runtime on the current platform.
+
+    Used both when binding shortcuts and when generating the control help
+    document, so the displayed keys always match what is actually bound.
+    """
+    if sys.platform == 'darwin':
+        key = key.replace('control', 'meta')
+        if key == 'f11':
+            key = 'shift-f11'
+    return key
+
+
 class Shortcuts(DirectObject):
 
     def __init__(self, base, messenger, gui):
@@ -40,18 +55,19 @@ class Shortcuts(DirectObject):
             base.buttonThrowers[0].node().set_keystroke_event('keystroke')
         self.accept('keystroke', self.keystroke_event)
 
-    def add(self, event, shortcuts):
-        for shortcut in shortcuts:
-            if sys.platform == 'darwin':
-                shortcut = shortcut.replace('control', 'meta')
-                if shortcut == 'f11':
-                    shortcut = 'shift-f11'
-            self.eventmap[event].append(shortcut)
-            self.accept(shortcut, self.messenger.send, [event])
+    def add_key(self, event, key, args=[]):
+        key = remap_key_for_platform(key)
+        self.eventmap[event].append(key)
+        self.accept(key, self.messenger.send, [event, args])
 
-    def set_shortcuts(self, shortcuts_items):
-        for event, shortcuts in shortcuts_items:
-            self.add(event, shortcuts)
+    def set_shortcuts(self, categories):
+        for category in categories:
+            for shortcut in category.shortcuts:
+                for key in shortcut.keys:
+                    if isinstance(key, str):
+                        self.add_key(shortcut.event, key, shortcut.args)
+                    else:
+                        self.add_key(shortcut.event, key.key, key.args or shortcut.args)
 
     def get_shortcuts_for(self, event):
         return self.eventmap.get(event, None)
