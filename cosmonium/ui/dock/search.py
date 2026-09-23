@@ -127,6 +127,8 @@ class SearchDockWidget(DGuiDockWidget):
         self.entry.set(self.placeholder_text)
         self.entry['focus'] = 0
         self._suppress_keys(False)
+        if self.dock is not None:
+            self.dock.unpin(self)
 
     def _on_focus_in(self):
         if self.entry.get() == self.placeholder_text:
@@ -135,11 +137,16 @@ class SearchDockWidget(DGuiDockWidget):
             gui = builtins.base.gui
             self.search = NameSearchController(gui, settings.query_delay, self.update_results, self.max_results)
         self._suppress_keys(True)
+        # Pin the dock when a quick search is initiated.
+        if self.dock is not None:
+            self.dock.pin(self)
 
     def _on_focus_out(self):
         if self.entry.get() == '':
             self.entry.set(self.placeholder_text)
         self._suppress_keys(False)
+        if self.dock is not None:
+            self.dock.unpin(self)
 
     def _suppress_keys(self, suppress: bool) -> None:
         flags = self.entry.guiItem.get_suppress_flags()

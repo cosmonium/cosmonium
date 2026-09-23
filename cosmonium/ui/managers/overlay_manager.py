@@ -24,6 +24,8 @@ from itertools import chain
 
 from panda3d.core import LVector2, TextNode
 
+from ... import settings
+from ..dock.dock import Dock
 from ..hud.fadetextline import FadeTextLine
 from ..skin import UIElement
 
@@ -64,12 +66,6 @@ class OverlayManager:
             'bottom': self.base.p2dBottomCenter,
             'bottom-right': self.base.p2dBottomRight,
         }
-        # Docks are added first so persistent toolbars (e.g. the top bar
-        # logo/search) always come first in a corner's stacking order (see
-        # set_y_offset) - otherwise a HUD widget sharing the same corner
-        # (e.g. object-info-card, also anchored top-left) would push the
-        # dock down by its own height, even while hidden, instead of
-        # appearing below the dock as intended.
         if docks:
             self._initialize_widgets(docks)
         if widgets:
@@ -136,6 +132,45 @@ class OverlayManager:
             widget.show()
         self.shown = True
 
+    def set_auto_hide_docks(self, enabled):
+        """Enable or disable the auto-hide behaviour of every dock.
+
+        Args:
+            enabled: True to have docks slide out of view when not hovered
+        """
+        for widget in chain(*self.widgets.values()):
+            if isinstance(widget, Dock):
+                widget.set_auto_hide(enabled)
+
+    def _mouse_pixel(self):
+        """Current mouse position in window pixels or None if the mouse isn't over the window."""
+        win = self.base.win
+        if win is None:
+            return None
+        pointer = win.get_pointer(0)
+        if not pointer.get_in_window():
+            return None
+        return (pointer.get_x(), pointer.get_y())
+
+    def _update_dock_auto_hide_mouse_state(self):
+        """Refresh the mouse state every auto-hiding dock uses to drive its own auto-hide."""
+        docks = [widget for widget in chain(*self.widgets.values()) if isinstance(widget, Dock) and widget.auto_hide]
+        if not docks:
+            return
+        mouse = self._mouse_pixel()
+        near_edge = {}
+        if mouse is not None:
+            x, y = mouse
+            threshold = settings.dock_trigger_size
+            near_edge = {
+                'top': y <= threshold,
+                'bottom': (self.gui.height - y) <= threshold,
+                'left': x <= threshold,
+                'right': (self.gui.width - x) <= threshold,
+            }
+        for dock in docks:
+            dock.set_mouse_state(mouse, near_edge.get(dock.edge, False))
+
     def set_y_offset(self, y_offset):
         """Set vertical offset for top-anchored widgets.
 
@@ -165,6 +200,7 @@ class OverlayManager:
         """
         if not self.shown:
             return
+        self._update_dock_auto_hide_mouse_state()
         heights_changed = False
         for widget in chain(*self.widgets.values()):
             has_changed = widget.update(global_vars)

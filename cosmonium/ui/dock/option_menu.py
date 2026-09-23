@@ -49,6 +49,12 @@ class _DockOptionMenu(DirectOptionMenu):
     def showPopupMenu(self, event=None):
         DirectOptionMenu.showPopupMenu(self, event)
         self._reposition_popup()
+        # Showing the dropdown pins the dock visible.
+        self._dock.pin(self)
+
+    def hidePopupMenu(self, event=None):
+        DirectOptionMenu.hidePopupMenu(self, event)
+        self._dock.unpin(self)
 
     def _reposition_popup(self):
         frame_size = self.popupMenu['frameSize']

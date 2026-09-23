@@ -274,6 +274,9 @@ menus:
       event: 'gui-toggle-menubar'
     - title: 'Toggle _HUD'
       event: 'toggle-hud'
+    - title: 'Auto-_hide docks'
+      checked: 'settings.auto_hide_docks'
+      event: 'toggle-dock-auto-hide'
     -
     - title: 'Save _screenshot'
       event: 'save-screenshot'

@@ -72,11 +72,21 @@ class ButtonDockWidget(DGuiDockWidget):
         self.button_element = None
         self.skin = None
         self.is_checked = False
+        self.dock = None
 
     def _open_menu(self):
-        builtins.base.gui.open_named_menu(self.menu)
+        # Keep the dock from auto-hiding while its pop-up menu, which extends outside the
+        # dock's own bounds, is open.
+        if self.dock is not None:
+            self.dock.pin(self)
+        builtins.base.gui.open_named_menu(self.menu, on_close=self._on_menu_closed)
+
+    def _on_menu_closed(self):
+        if self.dock is not None:
+            self.dock.unpin(self)
 
     def create(self, dock: Dock, parent, messenger, skin) -> DirectGuiWidget:
+        self.dock = dock
         self.skin = skin
         style = skin.get(self.element)
         font_size = style.resolved_font_size(self.element, skin)

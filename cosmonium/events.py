@@ -178,6 +178,7 @@ class EventsDispatcher(DirectObject):
         self.accept('unmark-all', self.engine.unmark_all)
 
         self.accept('toggle-hud', self.gui.toggle_hud)
+        self.accept('toggle-dock-auto-hide', self.gui.toggle_dock_auto_hide)
 
         for i in range(0, 10):
             self.accept("select-object-{}".format(i), self.engine.select_planet, [i])

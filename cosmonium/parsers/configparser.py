@@ -131,6 +131,14 @@ class ConfigParser:
         data['text-size'] = settings.menu_text_size
         return data
 
+    def decode_ui_dock(self, data):
+        settings.auto_hide_docks = data.get('auto-hide', settings.auto_hide_docks)
+
+    def encode_ui_dock(self):
+        data = {}
+        data['auto-hide'] = settings.auto_hide_docks
+        return data
+
     def decode_ui_nav(self, data):
         settings.invert_wheel = data.get('invert-wheel', settings.invert_wheel)
         settings.celestia_nav = data.get('celestia-nav', settings.celestia_nav)
@@ -165,6 +173,7 @@ class ConfigParser:
         self.decode_ui_general(data.get('general', {}))
         self.decode_ui_hud(data.get('hud', {}))
         self.decode_ui_menu(data.get('menu', {}))
+        self.decode_ui_dock(data.get('dock', {}))
         self.decode_ui_nav(data.get('nav', {}))
         self.decode_ui_labels(data.get('labels', {}))
         self.decode_ui_constellations(data.get('constellations', {}))
@@ -174,6 +183,7 @@ class ConfigParser:
         data['general'] = self.encode_ui_general()
         data['hud'] = self.encode_ui_hud()
         data['menu'] = self.encode_ui_menu()
+        data['dock'] = self.encode_ui_dock()
         data['nav'] = self.encode_ui_nav()
         data['labels'] = self.encode_ui_labels()
         data['constellations'] = self.encode_ui_constellations()

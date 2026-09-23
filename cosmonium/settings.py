@@ -234,6 +234,17 @@ show_hud = True
 show_menubar = True
 display_render_info = 'fps'
 
+# Auto-hide docks.
+auto_hide_docks = False
+# Seconds the mouse must stay away from a (non-pinned) dock before the dock starts sliding out of view.
+dock_auto_hide_delay = 0.6
+# Seconds the mouse must hover near an edge before hidden docks of that edge slide back in.
+dock_reveal_delay = 0.15
+# Duration, in seconds, of the slide animation.
+dock_slide_duration = 0.2
+# Distance, in pixels from the window edge, within which the mouse trigger dock visibility.
+dock_trigger_size = 8
+
 menu_text_size = 12
 
 query_delay = 0.333

@@ -53,6 +53,7 @@ gui-show-editor: control-e
 gui-show-info: control-i
 gui-show-help: "?"
 toggle-hud: h
+toggle-dock-auto-hide: control-h
 
 # Camera
 zoom-in: "+"

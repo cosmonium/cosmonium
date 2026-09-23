@@ -92,6 +92,7 @@ class Gui(object):
 
         # Initialize overlay manager (replaces Huds)
         self.hud = OverlayManager(self, self.hud_config, self.dock_config)
+        self.hud.set_auto_hide_docks(settings.auto_hide_docks)
 
         # Initialize query object
         self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, parent=self)
@@ -233,6 +234,11 @@ class Gui(object):
         settings.show_hud = self.hud.shown
         self.cosmonium.save_settings()
 
+    def toggle_dock_auto_hide(self):
+        settings.auto_hide_docks = not settings.auto_hide_docks
+        self.hud.set_auto_hide_docks(settings.auto_hide_docks)
+        self.cosmonium.save_settings()
+
     def show_menu(self):
         if self.menubar is None:
             return
@@ -273,7 +279,7 @@ class Gui(object):
         popup_menu.create()
         self.popup_menu_shown = True
 
-    def open_named_menu(self, name):
+    def open_named_menu(self, name, on_close=None):
         """Open one of self.named_menus (see MenuBuilder.get_auto_menu) as a
         standalone popup, e.g. from a dock button (ButtonWidgetConfig.menu)
         instead of a persistent menubar.
@@ -281,16 +287,27 @@ class Gui(object):
         A no-op while a popup is already open (from this or any other
         source) - without this guard, repeatedly clicking a menu button
         (e.g. the top-bar logo) stacks a new Popup on top of the existing
-        one on every click instead of leaving the open one alone."""
+        one on every click instead of leaving the open one alone.
+
+        Args:
+            name: Name of the menu, as registered in self.named_menus
+            on_close: Optional callback invoked when the popup closes, in addition to popup_done()
+        """
         if self.popup_menu_shown:
             return
+
+        def done():
+            self.popup_done()
+            if on_close is not None:
+                on_close()
+
         popup_menu = Popup(
             self.cosmonium,
             self.scale,
             lambda: self.menu_builder.get_auto_menu(name),
             None,
             self,
-            self.popup_done,
+            done,
         )
         popup_menu.create()
         self.popup_menu_shown = True
