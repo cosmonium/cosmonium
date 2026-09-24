@@ -24,7 +24,6 @@ import platformdirs
 from panda3d.core import LColor, LPoint3, LPoint3d
 
 from .astro import units
-from .bodyclass import BodyClass, bodyClasses
 
 app_name = 'cosmonium'
 
@@ -297,80 +296,3 @@ shader_debug_coord = False
 shader_debug_coord_line_width = 0.005
 shader_debug_raymarching_canvas = False
 shader_debug_raymarching_slice = False
-
-bodyClasses.register_class(
-    "galaxy",
-    "galaxies",
-    BodyClass(label_color=LColor(0.0, 0.45, 0.5, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "globular",
-    "globulars",
-    BodyClass(label_color=LColor(0.8, 0.45, 0.5, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "nebula",
-    "nebulae",
-    BodyClass(label_color=LColor(0.541, 0.764, 0.278, 1), orbit_color=LColor(1, 1, 1, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "star",
-    "stars",
-    BodyClass(label_color=LColor(0.471, 0.356, 0.682, 1), orbit_color=LColor(0.5, 0.5, 0.8, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "planet",
-    "planets",
-    BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1), orbit_color=LColor(0.3, 0.323, 0.833, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "dwarfplanet",
-    "dwarfplanets",
-    BodyClass(label_color=LColor(0.407, 0.333, 0.964, 1), orbit_color=LColor(0.3, 0.323, 0.833, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "moon",
-    "moons",
-    BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1), orbit_color=LColor(0.08, 0.407, 0.392, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "minormoon",
-    "minormoons",
-    BodyClass(label_color=LColor(0.231, 0.733, 0.792, 1), orbit_color=LColor(0.08, 0.407, 0.392, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "lostmoon",
-    "lostmoons",
-    BodyClass(
-        label_color=LColor(0.231, 0.733, 0.792, 1),
-        orbit_color=LColor(0.08, 0.407, 0.392, 1),
-        show=False,
-        show_label=False,
-    ),
-)
-bodyClasses.register_class(
-    "comet",
-    "comets",
-    BodyClass(label_color=LColor(0.768, 0.607, 0.227, 1), orbit_color=LColor(0.639, 0.487, 0.168, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "asteroid",
-    "asteroids",
-    BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1), orbit_color=LColor(0.58, 0.152, 0.08, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "interstellar",
-    "interstellars",
-    BodyClass(label_color=LColor(0.596, 0.305, 0.164, 1), orbit_color=LColor(0.58, 0.152, 0.08, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "spacecraft",
-    "spacecrafts",
-    BodyClass(label_color=LColor(0.93, 0.93, 0.93, 1), orbit_color=LColor(0.4, 0.4, 0.4, 1), show_label=False),
-)
-bodyClasses.register_class(
-    "constellation",
-    "constellations",
-    BodyClass(label_color=LColor(0.225, 0.301, 0.36, 1), orbit_color=LColor(0.0, 0.24, 0.36, 1.0), show_label=False),
-)
-bodyClasses.register_class("boundary", "boundaries", BodyClass(orbit_color=LColor(0.24, 0.10, 0.12, 1.0)))
