@@ -435,7 +435,7 @@ menus:
     - title: "More info"
       visible: 'engine.selected'
       menu: extra-info
-    - visible: 'not gui.menubar_shown'
+    - visible: 'gui.has_menubar and not gui.menubar_shown'
     - title: "Show _menubar"
       event: 'gui-show-menubar'
-      visible: 'not gui.menubar_shown'
+      visible: 'gui.has_menubar and not gui.menubar_shown'
