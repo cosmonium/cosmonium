@@ -40,7 +40,7 @@ class Popup(UIElement):
         items = self.menu_builder()
         popup_element = SKinUIElement('menu', id_="popup")
         style = self.skin.get_style(popup_element, ui_scale=self.scale)
-        PopupMenu(
+        self.instance = PopupMenu(
             items=items,
             baselineOffset=-0.35,
             itemHeight=1.2,

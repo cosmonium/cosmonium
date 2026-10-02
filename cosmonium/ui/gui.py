@@ -114,6 +114,9 @@ class Gui(object):
 
         self.popup_menu_config = self.menu_builder.create_menu(self.popup_config) if self.popup_config else None
         self.popup_menu_shown = False
+        # The currently opened popup menu, if any, and its name
+        self.current_popup = None
+        self.current_menu_key = None
 
         if settings.show_hud:
             self.show_hud()
@@ -166,6 +169,13 @@ class Gui(object):
 
     def popup_done(self):
         self.popup_menu_shown = False
+        self.current_popup = None
+        self.current_menu_key = None
+
+    def close_current_popup(self):
+        """Close whichever popup menu is currently open, if any."""
+        if self.current_popup is not None:
+            self.current_popup.destroy()
 
     def set_display_render_info(self, mode):
         settings.display_render_info = mode
@@ -283,31 +293,38 @@ class Gui(object):
         self.cosmonium.save_settings()
 
     def show_context_menu(self):
-        if self.popup_menu_config is None or self.popup_menu_shown:
+        if self.popup_menu_config is None:
+            return
+        if self.popup_menu_shown and self.current_menu_key == self.popup_menu_name:
+            # Already open, leave it alone.
             return
         over = self.mouse.get_over()
         if over is None and self.menubar_shown:
             return
+        if self.popup_menu_shown:
+            # Another popup menu is open, close it first.
+            self.close_current_popup()
         popup_menu = Popup(self.cosmonium, self.scale, self.popup_menu_config, over, self, self.popup_done)
         popup_menu.create()
         self.popup_menu_shown = True
+        self.current_popup = popup_menu
+        self.current_menu_key = self.popup_menu_name
 
     def open_named_menu(self, name, on_close=None):
-        """Open one of self.named_menus (see MenuBuilder.get_auto_menu) as a
-        standalone popup, e.g. from a dock button (ButtonWidgetConfig.menu)
-        instead of a persistent menubar.
+        """Open one of the named menus as a standalone popup.
 
-        A no-op while a popup is already open (from this or any other
-        source) - without this guard, repeatedly clicking a menu button
-        (e.g. the top-bar logo) stacks a new Popup on top of the existing
-        one on every click instead of leaving the open one alone.
+        If this same named menu is already open, it is closed instead.
+        If another popup menu is open, it is closed before this one is opened.
 
         Args:
             name: Name of the menu, as registered in self.named_menus
-            on_close: Optional callback invoked when the popup closes, in addition to popup_done()
+            on_close: Optional callback invoked when the popup closes
         """
         if self.popup_menu_shown:
-            return
+            already_open = self.current_menu_key == name
+            self.close_current_popup()
+            if already_open:
+                return
 
         def done():
             self.popup_done()
@@ -324,3 +341,5 @@ class Gui(object):
         )
         popup_menu.create()
         self.popup_menu_shown = True
+        self.current_popup = popup_menu
+        self.current_menu_key = name

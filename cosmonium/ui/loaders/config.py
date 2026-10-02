@@ -164,6 +164,7 @@ class UIConfigLoader:
             self.gui.popup_config = self.menu_loader.build_popup(self.gui.named_menus, data.popup)
         else:
             self.gui.popup_config = None
+        self.gui.popup_menu_name = data.popup
 
         # Load dock
         dock_file = self._resolve_path(data.dock, basedir)
