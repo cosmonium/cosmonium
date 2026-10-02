@@ -227,6 +227,10 @@ class GuiProvider:
         return self.gui.menubar_shown
 
     @property
+    def has_menubar(self):
+        return self.gui.menubar is not None
+
+    @property
     def tips_available(self):
         return bool(self.gui.tips_config)
 
