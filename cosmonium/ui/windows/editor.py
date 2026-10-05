@@ -22,6 +22,7 @@ from direct.gui.DirectCheckButton import DirectCheckButton
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGui import DirectEntry, DirectSlider
 from direct.gui.DirectLabel import DirectLabel
+from direct.gui.DirectOptionMenu import DirectOptionMenu
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from directspinbox.DirectSpinBox import WHEELDOWN, WHEELUP, DirectSpinBox
@@ -154,6 +155,26 @@ class ParamEditor(UIWindow):
         widget = SizerWidget(entry)
         return widget, (0, 0)
 
+    def create_option_entry(self, frame, param):
+        option_menu_element = UIElement('option-menu', parent=self.element)
+        labels = param.get_choice_labels()
+        current_label = param.get_choice_label(param.get_param())
+        style = self.skin.get_style(option_menu_element)
+        style.setdefault('text_align', TextNode.A_left)
+        style.setdefault('item_text_align', TextNode.A_left)
+        option_menu = DirectOptionMenu(
+            parent=frame,
+            items=labels,
+            initialitem=current_label if current_label in labels else 0,
+            textMayChange=True,
+            command=self.do_update,
+            extraArgs=[None, param],
+            **style,
+        )
+        self._bind_application_wide_shortcuts(option_menu)
+        widget = SizerWidget(option_menu)
+        return widget
+
     def add_parameter(self, frame, hsizer, param):
         hsizer_element = UIElement('sizer', class_='editor-entry-sizer', parent=self.element)
         label_element = UIElement('label', parent=self.element, class_='editor-entry-label')
@@ -172,6 +193,10 @@ class ParamEditor(UIWindow):
             hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_STRING:
             widget = self.create_text_entry(frame, param)
+            hsizer.add(widget, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
+            hsizer.add((0, 0))
+        elif param.param_type == UserParameter.TYPE_CHOICE:
+            widget = self.create_option_entry(frame, param)
             hsizer.add(widget, alignments=("min", "center"), **self.skin.get_style(hsizer_element, usage='cell'))
             hsizer.add((0, 0))
         elif param.param_type == UserParameter.TYPE_INT:

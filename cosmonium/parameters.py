@@ -102,6 +102,7 @@ class UserParameterBase(ABC):
     TYPE_INT = 2
     TYPE_BOOL = 3
     TYPE_VEC = 4
+    TYPE_CHOICE = 5
 
     SCALE_LINEAR = 0
     SCALE_LOG = 1
@@ -146,6 +147,8 @@ class UserParameterBase(ABC):
             return bool
         elif self.param_type == self.TYPE_VEC:
             return float
+        elif self.param_type == self.TYPE_CHOICE:
+            return str
         else:
             return None
 
@@ -163,8 +166,25 @@ class UserParameterBase(ABC):
                 return float(value)
             else:
                 return list(map(lambda x: float(x), value))
+        elif self.param_type == self.TYPE_CHOICE:
+            # `value` is the label picked in the UI: map it back to its id.
+            for choice_id, choice_label in self.value_range:
+                if choice_label == value:
+                    return choice_id
+            return value
         else:
             return value
+
+    def get_choice_label(self, value):
+        """For TYPE_CHOICE: the label (from `value_range`) matching `value`, or `value` itself."""
+        for choice_id, choice_label in self.value_range:
+            if choice_id == value:
+                return choice_label
+        return value
+
+    def get_choice_labels(self):
+        """For TYPE_CHOICE: the list of labels, in `value_range` order."""
+        return [choice_label for (_choice_id, choice_label) in self.value_range]
 
     @abstractmethod
     def do_get_param(self): ...
@@ -173,7 +193,7 @@ class UserParameterBase(ABC):
     def do_set_param(self, value): ...
 
     def scale_value(self, value, scale):
-        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):
+        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING, self.TYPE_CHOICE):
             return value
         if self.scale == self.SCALE_LINEAR:
             return value
@@ -189,7 +209,7 @@ class UserParameterBase(ABC):
         return value
 
     def unscale_value(self, value, scale):
-        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING):
+        if self.param_type in (self.TYPE_BOOL, self.TYPE_STRING, self.TYPE_CHOICE):
             return value
         if self.scale == self.SCALE_LINEAR:
             return value
