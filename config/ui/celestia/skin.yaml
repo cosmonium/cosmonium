@@ -1,31 +1,54 @@
+- variables:
+    # Backgrounds
+    bg-base: "#B2B2B2" # base application background
+    bg-surface: "#CCCCCC" # light gray surface: buttons, tabbed-frame states
+    bg-panel: "#7F7F7F" # title bar / close button background
+    bg-menu: [0.9, 0.9, 0.9, 0.9]
+    bg-menu-hover: [0.3, 0.3, 0.3, 1]
+    bg-menu-active: [0.3, 0.3, 0.3, 0.1]
+    bg-input: "#000000" # dark input surface (slider track)
+    bg-transparent: [0, 0, 0, 0]
+    bg-accent-wash: [0.7, 0.7, 1.0, 0.3] # translucent blue wash behind the find-object query box
+
+    # Borders
+    border: "#CCCCCC"
+    border-dark: "#000000"
+
+    # Text
+    text-primary: "#000000"
+    text-inverted: "#CCCCCC" # light text on a dark surface (slider)
+    text-menu-hover: [0.7, 0.7, 0.7, 1]
+    text-menu-disabled: [0.3, 0.3, 0.3, 1]
+    text-accent: [0.7, 0.7, 1.0] # HUD readouts and the find-object query text
+
 -
-  background-color: "#B2B2B2"
-  text-color: "#000000"
-  border-color: "#CCCCCC"
+  background-color: var(bg-base)
+  text-color: var(text-primary)
+  border-color: var(border)
   font-family: DejaVuSans
   font-size: 12px
 
 - element: menu
-  text-color: [0, 0, 0, 1]
-  background-color: [0.9, 0.9, 0.9, 0.9]
+  text-color: var(text-primary)
+  background-color: var(bg-menu)
 
 - element: menu
   state: hover
-  text-color: [0.7, 0.7, 0.7, 1]
-  background-color: [0.3, 0.3, 0.3, 1]
+  text-color: var(text-menu-hover)
+  background-color: var(bg-menu-hover)
 
 - element: menu
   state: active
-  text-color: [0, 0, 0, 1]
-  background-color: [0.3, 0.3, 0.3, 0.1]
+  text-color: var(text-primary)
+  background-color: var(bg-menu-active)
 
 - element: menu
   state: disabled
-  text-color: [0.3, 0.3, 0.3, 1]
+  text-color: var(text-menu-disabled)
 
 - parent:
     class: hud
-  text-color: [0.7, 0.7, 1.0]
+  text-color: var(text-accent)
 
 - element: onscreen-text
   id: title
@@ -41,13 +64,13 @@
 
 - parent:
     id: query
-  text-color: [0.7, 0.7, 1.0]
-  background-color: [0, 0, 0, 0]
+  text-color: var(text-accent)
+  background-color: var(bg-transparent)
 
 - element: frame
   parent:
     id: query
-  background-color: [0.7, 0.7, 1.0, 0.3]
+  background-color: var(bg-accent-wash)
 
 - parent:
     id: query
@@ -56,33 +79,33 @@
 
 - element: frame
   class: title-frame
-  background-color: "#7F7F7F"
+  background-color: var(bg-panel)
 
 - element: frame
   class: close-frame
-  background-color: "#7F7F7F"
+  background-color: var(bg-panel)
 
 - element: button
-  background-color: "#CCCCCC"
-  text-color: "#000000"
-  border-color: "#000000"
+  background-color: var(bg-surface)
+  text-color: var(text-primary)
+  border-color: var(border-dark)
 
 - element: slider
-  text-color: "#CCCCCC"
-  background-color: "#000000"
-  border-color: "#000000"
+  text-color: var(text-inverted)
+  background-color: var(bg-input)
+  border-color: var(border-dark)
 
 - element: tabbed-frame
   state: selected
-  background-color: "#CCCCCC"
+  background-color: var(bg-surface)
 
 - element: tabbed-frame
   state: hover
-  background-color: "#CCCCCC"
+  background-color: var(bg-surface)
 
 - element: tabbed-frame
   state: active
-  background-color: "#CCCCCC"
+  background-color: var(bg-surface)
 
 - element: slider
   parent:
