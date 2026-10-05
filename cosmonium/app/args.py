@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument("--common", help="Path to the file with the basic common configuration", default=None)
     parser.add_argument("--main", help="Path to the file with the universe configuration", default=None)
     parser.add_argument("--ui", help="Path to the file with the UI configuration", default=None)
+    parser.add_argument("--skin-variant", help="Force the id of the skin variant (color theme) to use", default=None)
     parser.add_argument("--home", help="Default home system of body", default=None)
     parser.add_argument("--default", help="Default body to show when there is no start up script", default=None)
     parser.add_argument("--extra", help="Extra configuration files or directories to load", nargs='+', default=None)

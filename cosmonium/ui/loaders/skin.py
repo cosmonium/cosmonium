@@ -38,6 +38,7 @@ from ..config.models import (
     SkinRootConfig,
     SkinSelectorConfig,
     SkinVariablesConfig,
+    SkinVariantConfig,
 )
 from ..skin import ParentSelector, Selector, UISkin, UISkinEntry, report_error
 from .base import BaseComponentLoader
@@ -238,13 +239,32 @@ class SkinLoader(BaseComponentLoader):
         report_error(f"Invalid root font-size {value!r} (must be a plain number or px value)", context)
         return None
 
-    def load_skin_entries(self, data: List[Any], filepath: str = None) -> UISkin:
+    def load_variant(self, filepath: str) -> SkinVariantConfig:
+        """
+        Load a skin variant file.
+
+        A variant only declares a label and a subset of variable overrides.
+
+        Args:
+            filepath: Path to the variant YAML file
+
+        Returns:
+            SkinVariantConfig instance
+        """
+        data = YamlLoader.load_file(filepath, use_splash=False) or {}
+        return self.validator.validate_dict(data, SkinVariantConfig, context=filepath)
+
+    def load_skin_entries(
+        self, data: List[Any], filepath: str = None, variable_overrides: Optional[Dict[str, Any]] = None
+    ) -> UISkin:
         """
         Load skin entries from configuration data.
 
         Args:
             data: List of skin entry configurations, root definition, or `variables:` blocks
             filepath: Optional path of the skin file being loaded, for error reporting
+            variable_overrides: Optional mapping of variable name to value, applied on top of
+                the `variables` block collected from `data`.
 
         Returns:
             UISkin instance
@@ -264,6 +284,9 @@ class SkinLoader(BaseComponentLoader):
                 continue
             pending.append((index, raw_item, parsed))
 
+        if variable_overrides:
+            variables.update(variable_overrides)
+
         for index, raw_item, parsed in pending:
             context = f'{filepath or "<skin>"}, entry #{index}'
             if isinstance(parsed, SkinRootConfig):
@@ -279,16 +302,20 @@ class SkinLoader(BaseComponentLoader):
             skin.add_entry(entry)
         return skin
 
-    def load(self, filepath: str) -> UISkin:
+    def load(self, filepath: str, variant_filepath: Optional[str] = None) -> UISkin:
         """
         Load skin configuration from a YAML file.
 
         Args:
             filepath: Path to skin YAML file
+            variant_filepath: Optional path to a skin variant YAML file
 
         Returns:
             UISkin instance
         """
         data = YamlLoader.load_file(filepath, use_splash=False)
-        skin = self.load_skin_entries(data, filepath)
+        variable_overrides = None
+        if variant_filepath is not None:
+            variable_overrides = self.load_variant(variant_filepath).variables
+        skin = self.load_skin_entries(data, filepath, variable_overrides=variable_overrides)
         return skin

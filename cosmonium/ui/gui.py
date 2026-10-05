@@ -75,6 +75,10 @@ class Gui(object):
 
         self.update_size(self.screen_width, self.screen_height)
         self.skin = None
+        self.skin_file = None
+        self.skin_variants = {}
+        self.active_skin_variant = None
+        self.skin_variant = cosmonium.app_config.skin_variant
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
 

@@ -488,6 +488,22 @@ SkinFileEntryConfig = Annotated[
 ]
 
 
+class SkinVariantConfig(ConfigBase):
+    """
+    Configuration for a skin variant file.
+
+    A variant is a lightweight skin: it only overrides a subset of the base skin's `variables`.
+    It allows a UI configuration to offer several color themes without duplicating the whole skin.
+    """
+
+    model_config = ConfigDict(extra='forbid')
+
+    label: Optional[str] = Field(None, description="Variant description")
+    variables: Dict[str, Any] = Field(
+        default_factory=dict, description="Variable overrides, merged on top of the base skin"
+    )
+
+
 class UISkinConfig(ConfigBase):
     """Configuration for a skin style."""
 
@@ -514,6 +530,13 @@ class UIConfigModel(ConfigBase):
     model_config = ConfigDict(extra='forbid')
 
     skin: Optional[str] = Field(None, description="Path to skin YAML file")
+    skin_variants: Optional[Dict[str, str]] = Field(
+        None,
+        description="Mapping of variant id to path of a skin variant YAML file",
+    )
+    default_skin_variant: Optional[str] = Field(
+        None, description="Id (from skin_variants) of the variant applied by default"
+    )
     shortcuts: Optional[str] = Field(None, description="Path to shortcuts YAML file")
     menus: Optional[str] = Field(
         None,

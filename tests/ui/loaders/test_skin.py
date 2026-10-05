@@ -22,12 +22,34 @@
 Unit tests for the skin loader.
 """
 
+import os
+import tempfile
+
 import pytest
+from panda3d.core import LColor
 from pydantic import ValidationError
 
-from cosmonium.ui.config.models import SkinRootConfig, SkinVariablesConfig
+from cosmonium.parsers.validator import ConfigValidator
+from cosmonium.ui.config.models import SkinRootConfig, SkinVariablesConfig, SkinVariantConfig
 from cosmonium.ui.loaders.skin import SkinLoader, resolve_variables
 from cosmonium.ui.skin import UISkin
+
+
+@pytest.fixture
+def yaml_file():
+    """Write YAML content to a temporary file and return its path, cleaning up afterwards."""
+    paths = []
+
+    def _write(content):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            f.write(content)
+            paths.append(f.name)
+        return f.name
+
+    yield _write
+
+    for path in paths:
+        os.unlink(path)
 
 
 class TestResolveVariables:
@@ -122,3 +144,95 @@ class TestRootFontSize:
         assert root_font_size is None
         assert "Invalid root font-size" in caplog.text
         assert 'test-context' in caplog.text
+
+
+class TestSkinVariantConfig:
+    """Tests for the SkinVariantConfig model that validates a skin variant file."""
+
+    def test_a_variant_validates(self):
+        config = SkinVariantConfig(label='Light', variables={'bg-base': '#ffffff'})
+
+        assert config.label == 'Light'
+        assert config.variables == {'bg-base': '#ffffff'}
+
+    def test_label_is_optional(self):
+        config = SkinVariantConfig(variables={'bg-base': '#ffffff'})
+
+        assert config.label is None
+
+    def test_variables_default_to_empty(self):
+        config = SkinVariantConfig()
+
+        assert config.variables == {}
+
+    def test_extra_keys_are_rejected(self):
+        with pytest.raises(ValidationError):
+            SkinVariantConfig(variables={'bg-base': '#ffffff'}, element='button')
+
+
+class TestSkinLoaderVariants:
+    """Tests for SkinLoader.load_variant() and SkinLoader.load() with a variant applied."""
+
+    def test_load_variant_returns_label_and_variables(self, yaml_file):
+        variant_file = yaml_file("""
+label: Light
+variables:
+  bg-base: "#ffffff"
+""")
+        loader = SkinLoader(None, ConfigValidator())
+
+        variant = loader.load_variant(variant_file)
+
+        assert variant.label == 'Light'
+        assert variant.variables == {'bg-base': '#ffffff'}
+
+    def test_variant_overrides_the_base_skins_variables(self, yaml_file):
+        skin_file = yaml_file("""
+- variables:
+    bg-base: "#000000"
+- element: button
+  background-color: var(bg-base)
+""")
+        variant_file = yaml_file("""
+label: Light
+variables:
+  bg-base: "#ffffff"
+""")
+        loader = SkinLoader(None, ConfigValidator())
+
+        skin = loader.load(skin_file, variant_filepath=variant_file)
+
+        assert skin.entries[0].background_color == LColor(1, 1, 1, 1)
+
+    def test_variant_only_overrides_variables_it_declares(self, yaml_file):
+        skin_file = yaml_file("""
+- variables:
+    bg-base: "#000000"
+    accent: "#3388ff"
+- element: button
+  background-color: var(bg-base)
+  border-color: var(accent)
+""")
+        variant_file = yaml_file("""
+variables:
+  bg-base: "#ffffff"
+""")
+        loader = SkinLoader(None, ConfigValidator())
+
+        skin = loader.load(skin_file, variant_filepath=variant_file)
+
+        assert skin.entries[0].background_color == LColor(1, 1, 1, 1)
+        assert skin.entries[0].border_color == LColor(0x33 / 255, 0x88 / 255, 1, 1)
+
+    def test_no_variant_keeps_the_base_skins_own_variables(self, yaml_file):
+        skin_file = yaml_file("""
+- variables:
+    bg-base: "#000000"
+- element: button
+  background-color: var(bg-base)
+""")
+        loader = SkinLoader(None, ConfigValidator())
+
+        skin = loader.load(skin_file)
+
+        assert skin.entries[0].background_color == LColor(0, 0, 0, 1)

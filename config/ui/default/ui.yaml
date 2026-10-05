@@ -1,4 +1,8 @@
 skin: skin.yaml
+skin_variants:
+  dark: skins/dark.yaml
+  light: skins/light.yaml
+default_skin_variant: dark
 shortcuts: shortcuts.yaml
 menus: ../celestia/menus.yaml
 popup: popup

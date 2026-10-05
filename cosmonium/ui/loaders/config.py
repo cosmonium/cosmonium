@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, Optional
 from ...parsers.validator import ConfigValidator
 from ...parsers.yamlloader import YamlLoader
 from ..config.models import UIConfigModel
+from ..skin import SkinVariant
 from .dock import DockLoader
 from .hud import HUDLoader
 from .menus import MenuLoader
@@ -114,6 +115,8 @@ class UIConfigLoader:
         - dock: path to dock.yaml
         - hud: path to hud.yaml
         - skin: path to skin.yaml
+        - skin_variants: mapping of variant id to path of a skin variant YAML file (optional)
+        - default_skin_variant: id of the variant applied by default (optional)
         - tips: path to tips.yaml (optional)
         - locale: path to locale directory (optional)
 
@@ -128,11 +131,26 @@ class UIConfigLoader:
 
         # Load skin first (needed by other components)
         skin_file = self._resolve_path(data.skin, basedir)
+
+        # Resolve the declared skin variants (if any), without loading them yet.
+        skin_variants = {}
+        for variant_id, variant_path in (data.skin_variants or {}).items():
+            variant_file = self._resolve_path(variant_path, basedir)
+            label = self.skin_loader.load_variant(variant_file).label or variant_id
+            skin_variants[variant_id] = SkinVariant(variant_id, label, variant_file)
+
+        active_variant = self.gui.skin_variant
+        if active_variant not in skin_variants:
+            active_variant = data.default_skin_variant
+        active_variant_file = skin_variants[active_variant].filepath if active_variant in skin_variants else None
+
         if skin_file is not None:
-            skin = self.skin_loader.load(skin_file)
+            skin = self.skin_loader.load(skin_file, variant_filepath=active_variant_file)
         else:
             skin = None
         self.gui.skin = skin
+        self.gui.skin_variants = skin_variants
+        self.gui.active_skin_variant = active_variant if active_variant in skin_variants else None
 
         # Load locale
         locale = self._resolve_path(data.locale, basedir) or os.path.join(basedir, 'locale')

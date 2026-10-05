@@ -616,6 +616,20 @@ class UISkinEntry:
         return parameters
 
 
+@dataclass(frozen=True)
+class SkinVariant:
+    """
+    Describes a skin variant declared by a UI configuration: a named set of
+    variable overrides applied on top of the base skin's own `variables`.
+
+    Note: the actual loading and override is done in `SkinLoader`.
+    """
+
+    id: str
+    label: str
+    filepath: str
+
+
 class UISkin:
     # Default root font size (in logical px, before ui_scale), matching the common browser default
     DEFAULT_ROOT_FONT_SIZE = 16.0

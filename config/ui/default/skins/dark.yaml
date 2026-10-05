@@ -1,0 +1,24 @@
+label: Dark
+variables:
+  transparent: [0, 0, 0, 0]
+
+  # Backgrounds
+  bg-base: "#0c0e12" # application background / opaque panels
+  bg-panel: [0.06, 0.067, 0.086, 0.92] # translucent panel background
+  bg-inset: "#1b1f28" # idle inputs, idle icon buttons, grouped toolbar clusters
+  bg-hover: "#262c37" # hover background
+
+  # Accent
+  accent: "#3b82d6"
+  accent-bright: "#7fb3e8"
+  accent-wash: [0.231, 0.510, 0.839, 0.18]
+
+  # Border.
+  border: [0.227, 0.255, 0.314, 0.5]
+
+  # Text
+  text-primary: "#e9edf2" # titles, values, primary labels
+  text-secondary: "#a3aebd" # default body/icon colour
+  text-muted: "#7b8494" # secondary readouts, placeholders
+  text-disabled: "#4d5566"
+  text-on-accent: "#ffffff" # text drawn on top of an accent-background
