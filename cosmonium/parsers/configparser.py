@@ -103,12 +103,16 @@ class ConfigParser:
         # Set default value DPI aware scaling to True if there is no custom scaling
         settings.ui_scale_dpi_aware = data.get('dpi-aware', settings.custom_ui_scale == 1.0)
         settings.last_script_path = data.get('last-script-path', settings.last_script_path)
+        settings.ui_skin_variant = data.get('skin-variant', settings.ui_skin_variant)
+        settings.ui_config = data.get('config', settings.ui_config)
 
     def encode_ui_general(self):
         data = {}
         data['dpi-aware'] = settings.ui_scale_dpi_aware
         data['scale'] = settings.custom_ui_scale
         data['last-script-path'] = settings.last_script_path
+        data['skin-variant'] = settings.ui_skin_variant
+        data['config'] = settings.ui_config
         return data
 
     def decode_ui_hud(self, data):

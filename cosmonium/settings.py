@@ -232,6 +232,10 @@ ui_scale = 1.0
 show_hud = True
 show_menubar = True
 display_render_info = 'fps'
+# Name of the UI to load, under config/ui. If None, the default UI is used.
+ui_config = None
+# Name of the skin variant to apply to the UI. If None, the default skin variant is used.
+ui_skin_variant = None
 
 # Auto-hide docks.
 auto_hide_docks = False

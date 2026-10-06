@@ -28,6 +28,7 @@ import tempfile
 import pytest
 from panda3d.core import LColor
 
+from cosmonium import settings
 from cosmonium.ui.loaders.config import UIConfigLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
 
@@ -97,30 +98,48 @@ default_skin_variant: dark
         yield ui_config_file
 
 
+@pytest.fixture(autouse=True)
+def restore_ui_skin_variant_setting():
+    saved = settings.ui_skin_variant
+    yield
+    settings.ui_skin_variant = saved
+
+
 class TestUIConfigLoaderSkinVariants:
     """Tests for the active skin variant selection in UIConfigLoader.load()."""
 
-    def test_uses_the_configs_default_variant_when_no_skin_variant_is_set(self, init_registry, basic_ui_config):
+    def test_uses_the_configs_default_variant_when_no_setting_is_stored(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = None
         gui = MockGUI()
-        gui.skin_variant = None
+        gui.skin_variant_override = None
 
         UIConfigLoader(gui).load(basic_ui_config)
 
         assert gui.active_skin_variant == 'dark'
         assert gui.skin.entries[0].background_color == LColor(0, 0, 0, 1)
 
-    def test_a_defined_skin_variant_is_used(self, init_registry, basic_ui_config):
+    def test_a_stored_setting_overrides_the_configs_default(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = 'light'
         gui = MockGUI()
-        gui.skin_variant = 'light'
-
+        gui.skin_variant_override = None
         UIConfigLoader(gui).load(basic_ui_config)
 
         assert gui.active_skin_variant == 'light'
         assert gui.skin.entries[0].background_color == LColor(1, 1, 1, 1)
 
+    def test_an_unknown_stored_variant_falls_back_to_the_configs_default(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = 'nonexistent'
+        gui = MockGUI()
+        gui.skin_variant_override = None
+
+        UIConfigLoader(gui).load(basic_ui_config)
+
+        assert gui.active_skin_variant == 'dark'
+        assert gui.skin.entries[0].background_color == LColor(0, 0, 0, 1)
+
     def test_available_variants_are_exposed_with_their_labels(self, init_registry, basic_ui_config):
         gui = MockGUI()
-        gui.skin_variant = None
+        gui.skin_variant_override = None
 
         UIConfigLoader(gui).load(basic_ui_config)
 
@@ -128,3 +147,32 @@ class TestUIConfigLoaderSkinVariants:
             'dark': 'Dark',
             'light': 'Light',
         }
+
+    def test_a_command_line_override_wins_over_the_stored_setting(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = 'dark'
+        gui = MockGUI()
+        gui.skin_variant_override = 'light'
+
+        UIConfigLoader(gui).load(basic_ui_config)
+
+        assert gui.active_skin_variant == 'light'
+        assert gui.skin.entries[0].background_color == LColor(1, 1, 1, 1)
+
+    def test_an_unknown_command_line_override_falls_back_to_the_configs_default(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = 'light'
+        gui = MockGUI()
+        gui.skin_variant_override = 'nonexistent'
+
+        UIConfigLoader(gui).load(basic_ui_config)
+
+        assert gui.active_skin_variant == 'dark'
+        assert gui.skin.entries[0].background_color == LColor(0, 0, 0, 1)
+
+    def test_no_command_line_override_falls_back_to_the_stored_setting(self, init_registry, basic_ui_config):
+        settings.ui_skin_variant = 'light'
+        gui = MockGUI()
+        gui.skin_variant_override = None
+
+        UIConfigLoader(gui).load(basic_ui_config)
+
+        assert gui.active_skin_variant == 'light'

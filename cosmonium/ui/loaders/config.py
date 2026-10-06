@@ -27,6 +27,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Optional
 
+from ... import settings
 from ...parsers.validator import ConfigValidator
 from ...parsers.yamlloader import YamlLoader
 from ..config.models import UIConfigModel
@@ -139,7 +140,8 @@ class UIConfigLoader:
             label = self.skin_loader.load_variant(variant_file).label or variant_id
             skin_variants[variant_id] = SkinVariant(variant_id, label, variant_file)
 
-        active_variant = self.gui.skin_variant
+        # Use command line skin variant if set, otherwise use the specified from the config.
+        active_variant = self.gui.skin_variant_override or settings.ui_skin_variant
         if active_variant not in skin_variants:
             active_variant = data.default_skin_variant
         active_variant_file = skin_variants[active_variant].filepath if active_variant in skin_variants else None

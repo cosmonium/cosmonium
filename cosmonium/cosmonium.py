@@ -475,7 +475,7 @@ class Cosmonium(CosmoniumBase):
         self.splash.close()
 
         if self.gui is None:
-            self.gui = Gui(self.app_config.ui, self, self.time, self.observer, self.mouse, self.autopilot)
+            self.gui = Gui(self.app_config, self, self.time, self.observer, self.mouse, self.autopilot)
 
         # TODO: Temporarily until event registration is split up between each class
         self.events_dispatcher = EventsDispatcher(self, self.time, self.observer, self.autopilot, self.gui, self.debug)

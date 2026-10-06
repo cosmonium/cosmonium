@@ -34,6 +34,7 @@ class CosmoniumConfig:
         self.common = os.path.join(base_path, 'data/defaults.yaml')
         self.main = os.path.join(base_path, 'data/cosmonium.yaml')
         self.ui = os.path.join(base_path, 'config/ui/default/ui.yaml')
+        self.ui_from_args = False
         self.skin_variant = None
         self.catalogs = 'config/catalogs.yaml'
         self.default_home = None
@@ -80,6 +81,7 @@ class CosmoniumConfig:
             self.main = args.main
         if args.ui is not None:
             self.ui = args.ui
+            self.ui_from_args = True
         if args.skin_variant is not None:
             self.skin_variant = args.skin_variant
         if args.script is not None:

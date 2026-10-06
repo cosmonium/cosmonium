@@ -43,10 +43,9 @@ from .templates.providers import GlobalVars
 from .windows.browser import Browser
 
 
-class Gui(object):
+class Gui:
 
-    def __init__(self, config_file, cosmonium, time, camera, mouse, autopilot):
-        self.ui_config_file = config_file
+    def __init__(self, app_config, cosmonium, time, camera, mouse, autopilot):
         self.base = cosmonium
         self.cosmonium = cosmonium
         self.time = time
@@ -74,18 +73,28 @@ class Gui(object):
         self.anchors = AnchorLayout(cosmonium)
 
         self.update_size(self.screen_width, self.screen_height)
+
+        self.ui_config_file = None
         self.skin = None
         self.skin_file = None
         self.skin_variants = {}
         self.active_skin_variant = None
-        self.skin_variant = cosmonium.app_config.skin_variant
+        self.skin_variant_override = cosmonium.app_config.skin_variant
+
+        if settings.ui_config and not app_config.ui_from_args:
+            candidate = os.path.join(app_config.main_dir, 'config/ui', settings.ui_config, 'ui.yaml')
+            if os.path.isfile(candidate):
+                self.ui_config_file = candidate
+        if self.ui_config_file is None:
+            self.ui_config_file = app_config.ui
+
         self.clipboard = create_clipboard()
         self.shortcuts = Shortcuts(self.base, self.base.messenger, self)
 
         self.global_vars = GlobalVars(self.base, self)
 
         init_widget_loaders()
-        self.load(config_file)
+        self.load()
         self.translation = self.cosmonium.lang_manager.load_lang("ui", self.locale)
 
         self.shortcuts.set_shortcuts(self.shortcuts_config)
@@ -139,10 +148,10 @@ class Gui(object):
     def get_ui(self):
         return self
 
-    def load(self, ui_config_file):
+    def load(self):
         """Load UI configuration and apply directly to GUI."""
         loader = UIConfigLoader(self)
-        loader.load(ui_config_file)
+        loader.load(self.ui_config_file)
 
     def maybe_show_first_run_tips(self):
         """Show the first-run tips, once per UI configuration, the first time it is used."""
