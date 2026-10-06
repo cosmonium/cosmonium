@@ -186,16 +186,39 @@ class Preferences(ParamEditor):
         ]
 
     def make_ui(self):
-        return [
-            ParametersGroup(
-                _('UI'),
-                [
-                    SettingParameter(_("UI scale with DPI"), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
-                    SettingParameter(_("Custom UI scale"), 'custom_ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
-                    SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
-                ],
-            ),
+        parameters = [
+            SettingParameter(_("UI scale with DPI"), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
+            SettingParameter(_("Custom UI scale"), 'custom_ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
+            SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
         ]
+        theme_manager = self.parent.theme_manager
+        ui_configs = theme_manager.get_available_ui_configs()
+        choices = [(None, "-default-")]
+        choices += [(config_id, config_id) for config_id in ui_configs]
+        parameters.append(
+            ParametricFunctionParameter(
+                _("UI configuration (requires restart)"),
+                'ui_config',
+                theme_manager.set_selected_ui_config,
+                theme_manager.get_selected_ui_config,
+                SettingParameter.TYPE_CHOICE,
+                choices,
+            )
+        )
+        variants = theme_manager.get_available_variants()
+        choices = [(None, "-default-")]
+        choices += [(variant.id, variant.label) for variant in variants]
+        parameters.append(
+            ParametricFunctionParameter(
+                _("Theme (requires restart)"),
+                'ui_skin_variant',
+                theme_manager.set_selected_theme,
+                theme_manager.get_selected_theme,
+                SettingParameter.TYPE_CHOICE,
+                choices,
+            )
+        )
+        return [ParametersGroup(_('UI'), parameters)]
 
     def make_advanced(self):
         return [
