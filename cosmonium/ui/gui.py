@@ -102,7 +102,7 @@ class Gui:
         # Initialize managers
         self.window_manager = WindowManager(self)
         self.window_manager.register_instance(self.window_manager)
-        self.theme_manager = ThemeManager(self, self.skin)
+        self.theme_manager = ThemeManager(self, self.skin, self.skin_variants, self.active_skin_variant)
 
         # Initialize overlay manager (replaces Huds)
         self.hud = OverlayManager(self, self.hud_config, self.dock_config)
