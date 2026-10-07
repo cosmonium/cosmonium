@@ -322,7 +322,13 @@ class CosmoniumBase(ShowBase):
         configParser.save()
 
     def save_screenshot(self, filename=None):
-        if settings.screenshot_path is not None:
+        if filename is not None:
+            # Explicit filename
+            if self.screenshot(namePrefix=Filename.from_os_specific(filename), defaultFilename=False) is not None:
+                print("Saving screenshot into", filename)
+            else:
+                print("Could not save", filename)
+        elif settings.screenshot_path is not None:
             filename = self.screenshot(namePrefix=settings.screenshot_path)
             if filename is not None:
                 print("Saving screenshot into", filename)
