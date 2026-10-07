@@ -18,6 +18,11 @@ ralph:
         vertex-color: true
         material: false
 
+water:
+  level: 0
+  visible: true
+  scale: 8
+
 scattering:
   type: oneil
   size: 32768
@@ -148,10 +153,6 @@ terrain:
       material: false
     placer: random
     min-lod: 4
-  water:
-    level: 0
-    visible: true
-    scale: 8
   fog2:
     falloff: 0.035
     density: 10

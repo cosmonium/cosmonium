@@ -52,7 +52,7 @@ class WaterNode:
         self.x = x
         self.y = y
         self.size = size
-        self.scale = 1.0  # scale
+        self.scale = scale
         self.parent = parent
         self.waterNP = None
 
@@ -66,8 +66,8 @@ class WaterNode:
         self.waterNP.hide(BaseObject.AllCamerasMask)
         self.waterNP.show(BaseObject.DefaultCameraFlag)
         self.waterNP.setHpr(0, -90, 0)
-        self.waterNP.setPos(self.x, self.y, self.z)
-        self.waterNP.setScale(self.size, self.size, 1.0)
+        self.waterNP.setPos(self.x, self.y, self.z / self.scale)
+        self.waterNP.setScale(self.size, 1.0, self.size)
         self.waterNP.setTransparency(TransparencyAttrib.MAlpha)
         vertex_shader = defaultDirContext.find_shader('water-vertex.glsl')
         fragment_shader = defaultDirContext.find_shader('water-fragment.glsl')
@@ -78,7 +78,7 @@ class WaterNode:
                 fragment=Filename.from_os_specific(fragment_shader).get_fullpath(),
             )
         )
-        self.waterNP.setShaderInput('wateranim', Vec4(0.03, -0.015, self.scale, 0))  # vx, vy, scale, skip
+        self.waterNP.setShaderInput('wateranim', Vec4(0.03, -0.015, 1, 0))  # vx, vy, scale, skip
         # offset, strength, refraction factor (0=perfect mirror, 1=total refraction), refractivity
         self.waterNP.setShaderInput('waterdistort', Vec4(0.4, 1.0, 0.25, 0.45))
         self.waterNP.setShaderInput('time', 0)

@@ -45,6 +45,7 @@ class Tile(PatchBase):
         self.face = -1
         self.size = 1.0 / (1 << lod)
         self.half_size = 1.0 / (1 << (lod + 1))
+        self.surface_scale = surface_scale
 
         self.x0 = x
         self.y0 = y

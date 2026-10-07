@@ -35,4 +35,5 @@ void main()
 	// water distortion map
     // animate and scale distortions
 	texcoord1.xy = p3d_MultiTexCoord0.xy * wateranim.z + wateranim.xy * osg_FrameTime;
+	texcoord1.zw = vec2(0.0, 1.0);
 }

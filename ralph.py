@@ -96,8 +96,7 @@ class WaterLayer(PatchLayer):
                 self.instance.remove_instance()
 
     def create_instance(self, patch, tasks_tree):
-        scale = patch.scale * patch.size / self.config.scale
-        self.instance = WaterNode(patch.x0, patch.y0, patch.size, scale, patch)
+        self.instance = WaterNode(patch.x0, patch.y0, patch.size, patch.surface_scale, patch)
         if self.config.visible:
             self.instance.create_instance()
 
