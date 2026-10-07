@@ -94,15 +94,14 @@ class HeightmapPatch(PatchData):
             factor = 1 << self.patch.lod
         u_scale = 1 / (self.width * factor)
         v_scale = 1 / (self.height * factor)
-        # Data is set as RGBA, but stored as BGRA
         data += [
-            v_scale,
-            u_scale,
             self.parent.get_height_scale(self.patch),
+            u_scale,
+            v_scale,
             0.0,
-            self.texture_scale[0],
-            self.texture_offset[1],
             self.texture_offset[0],
+            self.texture_offset[1],
+            self.texture_scale[0],
             self.texture_scale[1],
         ]
 

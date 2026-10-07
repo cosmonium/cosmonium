@@ -18,6 +18,7 @@
 #
 
 from .. import settings
+from ..opengl import OpenGLConfig
 from .component import ShaderComponent
 
 
@@ -45,17 +46,33 @@ class OffsetScaleInstanceControl(InstanceControl):
     vertex_requires = {'model_vertex'}
     vertex_provides = {'world_vertex'}
 
+    def __init__(self, max_instances):
+        InstanceControl.__init__(self, max_instances)
+        if OpenGLConfig.shader_buffer:
+            self.storage = 'ssbo'
+        elif settings.instancing_use_tex:
+            self.storage = 'tex'
+        else:
+            self.storage = 'uniform'
+
     def get_id(self):
-        return "offset%d" % self.max_instances
+        if self.storage == 'uniform':
+            return "offset%d" % self.max_instances
+        else:
+            return "offset-" + self.storage
 
     def vertex_uniforms(self, code):
-        if settings.instancing_use_tex:
+        if self.storage == 'ssbo':
+            code.append("layout(std430) readonly buffer InstancesOffsetBuffer {")
+            code.append("    vec4 instances_offset[];")
+            code.append("};")
+        elif self.storage == 'tex':
             code.append("uniform samplerBuffer instances_offset;")
         else:
             code.append("uniform vec4 instances_offset[%d];" % self.max_instances)
 
     def update_vertex(self, code):
-        if settings.instancing_use_tex:
+        if self.storage == 'tex':
             code.append("vec4 offset_data = texelFetch(instances_offset, gl_InstanceID);")
         else:
             code.append("vec4 offset_data = instances_offset[gl_InstanceID];")

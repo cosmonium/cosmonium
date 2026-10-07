@@ -21,7 +21,7 @@
 import os
 import sys
 
-from panda3d.core import FrameBufferProperties
+from panda3d.core import FrameBufferProperties, GraphicsEngine
 
 from . import settings
 
@@ -37,6 +37,7 @@ class OpenGLConfig:
     hardware_tessellation = False
     hardware_instancing = False
     texture_array = False
+    shader_buffer = False
 
     @classmethod
     def request_opengl_config(cls, data):
@@ -144,6 +145,12 @@ class OpenGLConfig:
         cls.inverse_z = settings.use_inverse_z
         cls.check_floating_point_buffer(base)
         cls.check_glsl_version(cls.glsl_version)
+        # Shader storage buffers require OpenGL 4.3 and Panda3D 1.11.0 after 1st January 2026
+        cls.shader_buffer = (
+            settings.use_shader_buffers
+            and settings.shader_version >= 430
+            and hasattr(GraphicsEngine, 'update_shader_buffer_data')
+        )
 
         if settings.use_color_picking and cls.non_power_of_two_textures and cls.glsl_version >= 420:
             settings.color_picking = True
@@ -159,3 +166,4 @@ class OpenGLConfig:
         print("Render to buffer:", cls.buffer_texture)
         print("Floating point buffer:", cls.floating_point_buffer)
         print("Texture array:", cls.texture_array)
+        print("Shader storage buffer:", cls.shader_buffer)

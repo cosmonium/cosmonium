@@ -23,7 +23,7 @@ from itertools import chain
 from random import random, uniform
 
 from direct.task.TaskManagerGlobal import taskMgr
-from panda3d.core import GeomEnums, OmniBoundingVolume, PTAVecBase4f, Texture
+from panda3d.core import GeomEnums, OmniBoundingVolume, PTAVecBase4f, ShaderBuffer, Texture
 
 from .. import settings
 from ..entities.datasource import DataSource
@@ -295,19 +295,23 @@ class OffsetsDataSource(DataSource):
     def __init__(self):
         DataSource.__init__(self, "offsets")
         self.offsets = None
+        self.input_name = 'instances_offset'
 
-    def set_offsets(self, offsets):
+    def set_offsets(self, offsets, storage):
         self.offsets = offsets
+        # Shader storage buffers are bound using the name of the buffer block
+        self.input_name = 'InstancesOffsetBuffer' if storage == 'ssbo' else 'instances_offset'
 
     def apply(self, shape, instance):
-        instance.set_shader_input('instances_offset', self.offsets)
+        instance.set_shader_input(self.input_name, self.offsets)
 
 
 class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
     def __init__(self, object_template, count, max_instances, placer, min_lod=0):
         PatchedTerrainPopulatorBase.__init__(self, object_template, count, placer, min_lod)
         self.max_instances = max_instances
-        self.object_template.shader.set_instance_control(OffsetScaleInstanceControl(self.max_instances))
+        self.instance_control = OffsetScaleInstanceControl(self.max_instances)
+        self.object_template.shader.set_instance_control(self.instance_control)
         self.rebuild = False
 
     def configure_object_template(self):
@@ -330,22 +334,22 @@ class GpuTerrainPopulator(PatchedTerrainPopulatorBase):
         offsets_nb = len(data)
         if settings.debug_lod_split_merge:
             print("Populator regenerate", offsets_nb)
-        if settings.instancing_use_tex:
-            offsets = data
-        else:
+        storage = self.instance_control.storage
+        if storage == 'uniform':
             offsets = PTAVecBase4f.emptyArray(offsets_nb)
-            for offset in data:
-                offsets[offsets_nb] = offset
-        if settings.instancing_use_tex:
-            texture = Texture()
-            texture.setup_buffer_texture(len(offsets), Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
-            flattened_data = list(chain.from_iterable(offsets))
-            data = array("f", flattened_data)
-            texture.set_ram_image(data.tobytes())
-            data_source = self.object_template.get_source('offsets')
-            data_source.set_offsets(texture)
+            for i, offset in enumerate(data):
+                offsets[i] = offset
         else:
-            data_source.set_offsets(offsets)
+            packed_data = array("f", chain.from_iterable(data)).tobytes()
+            if storage == 'ssbo':
+                # An empty buffer is not valid, make sure it holds at least one element
+                offsets = ShaderBuffer('instances_offset', packed_data or bytes(16), GeomEnums.UH_static)
+            else:
+                offsets = Texture()
+                offsets.setup_buffer_texture(offsets_nb, Texture.T_float, Texture.F_rgba32, GeomEnums.UH_static)
+                offsets.set_ram_image(packed_data)
+        data_source = self.object_template.get_source('offsets')
+        data_source.set_offsets(offsets, storage)
         self.object_template.instance.set_instance_count(offsets_nb)
         self.object_template.update_shader()
         self.rebuild = False

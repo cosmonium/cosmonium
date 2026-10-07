@@ -26,13 +26,41 @@ class DataStoreManagerShaderDataSource(CompositeShaderDataSource):
 
 
 class ParametersDataStoreShaderDataSource(ShaderDataSource):
+    def __init__(self, data_store):
+        ShaderDataSource.__init__(self)
+        self.data_store = data_store
+
     def get_id(self):
-        return "ds"
+        if self.data_store.use_shader_buffer:
+            return "ds-ssbo%d" % self.data_store.stride
+        else:
+            return "ds%d" % self.data_store.stride
+
+    def uniforms(self, code):
+        if self.data_store.use_shader_buffer:
+            code.append("layout(std430) readonly buffer DataStoreBuffer {")
+            code.append("    vec4 data_store[];")
+            code.append("};")
+        else:
+            code.append("uniform sampler1D data_store;")
+        code.append("uniform int entry_id;")
+
+    def fetch_data_store(self, code):
+        code.append("vec4 fetch_data_store(int index) {")
+        if self.data_store.use_shader_buffer:
+            code.append("    return data_store[entry_id * %d + index];" % self.data_store.stride)
+        else:
+            code.append("    return texelFetch(data_store, entry_id * %d + index, 0);" % self.data_store.stride)
+        code.append("}")
 
     def vertex_uniforms(self, code):
-        code.append("uniform sampler1D data_store;")
-        code.append("uniform int entry_id;")
+        self.uniforms(code)
 
     def fragment_uniforms(self, code):
-        code.append("uniform sampler1D data_store;")
-        code.append("uniform int entry_id;")
+        self.uniforms(code)
+
+    def vertex_extra(self, code):
+        self.shader.vertex_shader.add_function(code, 'fetch_data_store', self.fetch_data_store)
+
+    def fragment_extra(self, code):
+        self.shader.fragment_shader.add_function(code, 'fetch_data_store', self.fetch_data_store)

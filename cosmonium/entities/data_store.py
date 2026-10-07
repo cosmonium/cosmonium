@@ -18,12 +18,14 @@
 #
 
 
+import builtins
 import logging
 import struct
 from collections import deque
 
-from panda3d.core import Texture
+from panda3d.core import GeomEnums, ShaderBuffer, Texture
 
+from ..opengl import OpenGLConfig
 from ..shaders.data_source.data_store import DataStoreManagerShaderDataSource, ParametersDataStoreShaderDataSource
 
 logger = logging.getLogger('data_store')
@@ -87,46 +89,70 @@ class PatchDataStoreManager:
 
 class PatchParametersDataStore:
     def __init__(self):
+        self.use_shader_buffer = OpenGLConfig.shader_buffer
         self.texture_data = None
+        self.shader_buffer = None
         self.data_sources = []
         self.data_size = 0
-        self.texture_size = 0
+        self.stride = 0
         self.pack_format = ''
 
     def get_shader_data_source(self):
-        return ParametersDataStoreShaderDataSource()
+        return ParametersDataStoreShaderDataSource(self)
+
+    def is_initialized(self):
+        return self.texture_data is not None or self.shader_buffer is not None
 
     def add_data_source(self, data_source):
-        if self.texture_data is not None:
+        if self.is_initialized():
             logger.error("Can not add data source '%s'", data_source.name)
             return
         self.data_sources.append(data_source)
         self.data_size += data_source.get_nb_shader_data()
-        self.texture_size = self.parent.max_elem * ((self.data_size * 4 + 15) // 16)
-        self.pack_format = 'f' * self.data_size
+        # Each entry is stored as an array of vec4
+        self.stride = (self.data_size + 3) // 4
+        self.pack_format = 'f' * self.stride * 4
 
     def init(self):
-        if self.texture_size == 0:
+        if self.stride == 0:
             return
-        self.texture_data = Texture()
-        self.texture_data.setup_1d_texture(self.texture_size, Texture.T_float, Texture.F_rgba32)
-        self.texture_data.set_clear_color(0.0)
+        nb_vec4 = self.parent.max_elem * self.stride
+        if self.use_shader_buffer:
+            self.shader_buffer = ShaderBuffer('data_store', bytes(nb_vec4 * 16), GeomEnums.UH_dynamic)
+        else:
+            self.texture_data = Texture()
+            self.texture_data.setup_1d_texture(nb_vec4, Texture.T_float, Texture.F_rgba32)
+            self.texture_data.set_clear_color(0.0)
 
     def apply(self, instance):
-        if self.texture_size == 0:
-            return
-        instance.set_shader_input("data_store", self.texture_data)
+        if self.use_shader_buffer:
+            if self.shader_buffer is not None:
+                instance.set_shader_input("DataStoreBuffer", self.shader_buffer)
+        else:
+            if self.texture_data is not None:
+                instance.set_shader_input("data_store", self.texture_data)
 
     def clear(self):
         self.texture_data = None
+        self.shader_buffer = None
 
     def update_patch(self, patch):
-        if self.texture_size == 0:
+        if not self.is_initialized():
             return
         data = []
         for data_source in self.data_sources:
             data_source.collect_shader_data(data, patch)
-        data_buffer = memoryview(self.texture_data.modify_ram_image())
-        offset = patch.entry_id * self.data_size * 4
-        packed_data = struct.pack(self.pack_format, *data)
-        data_buffer[offset : offset + self.data_size * 4] = packed_data
+        data += [0.0] * (self.stride * 4 - len(data))
+        offset = patch.entry_id * self.stride * 16
+        if self.use_shader_buffer:
+            packed_data = struct.pack(self.pack_format, *data)
+            builtins.base.graphics_engine.update_shader_buffer_data(
+                self.shader_buffer, builtins.base.win.gsg, packed_data, offset
+            )
+        else:
+            # Texture data is stored as BGRA, swap the R and B components of each vec4
+            for i in range(0, len(data), 4):
+                data[i], data[i + 2] = data[i + 2], data[i]
+            packed_data = struct.pack(self.pack_format, *data)
+            data_buffer = memoryview(self.texture_data.modify_ram_image())
+            data_buffer[offset : offset + len(packed_data)] = packed_data

@@ -44,6 +44,7 @@ use_hardware_tessellation = True
 use_hardware_instancing = True
 use_inverse_z = False
 instancing_use_tex = True
+use_shader_buffers = True
 use_texture_array = True
 use_aux_buffer = False
 sync_video = True

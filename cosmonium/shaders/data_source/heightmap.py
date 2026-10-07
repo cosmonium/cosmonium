@@ -217,11 +217,11 @@ struct HeightmapParameters {
         code.append("HeightmapParameters heightmap_%s_params;" % self.name)
         if self.data_store:
             code.append("vec4 encoded_data_%s;" % self.name)
-            code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2, 0);" % self.name)
+            code.append("encoded_data_%s = fetch_data_store(0);" % self.name)
             code.append("heightmap_%s_params.height_scale = encoded_data_%s.x;" % (self.name, self.name))
             code.append("heightmap_%s_params.u_scale = encoded_data_%s.y;" % (self.name, self.name))
             code.append("heightmap_%s_params.v_scale = encoded_data_%s.z;" % (self.name, self.name))
-            code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2 + 1, 0);" % self.name)
+            code.append("encoded_data_%s = fetch_data_store(1);" % self.name)
             code.append("heightmap_%s_params.offset = encoded_data_%s.xy;" % (self.name, self.name))
             code.append("heightmap_%s_params.scale = encoded_data_%s.zw;" % (self.name, self.name))
         else:
@@ -235,11 +235,11 @@ struct HeightmapParameters {
         code.append("HeightmapParameters heightmap_%s_params;" % self.name)
         if self.data_store:
             code.append("vec4 encoded_data_%s;" % self.name)
-            code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2, 0);" % self.name)
+            code.append("encoded_data_%s = fetch_data_store(0);" % self.name)
             code.append("heightmap_%s_params.height_scale = encoded_data_%s.x;" % (self.name, self.name))
             code.append("heightmap_%s_params.u_scale = encoded_data_%s.y;" % (self.name, self.name))
             code.append("heightmap_%s_params.v_scale = encoded_data_%s.z;" % (self.name, self.name))
-            code.append("encoded_data_%s = texelFetch(data_store, entry_id * 2 + 1, 0);" % self.name)
+            code.append("encoded_data_%s = fetch_data_store(1);" % self.name)
             code.append("heightmap_%s_params.offset = encoded_data_%s.xy;" % (self.name, self.name))
             code.append("heightmap_%s_params.scale = encoded_data_%s.zw;" % (self.name, self.name))
         else:
