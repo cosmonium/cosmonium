@@ -46,5 +46,5 @@ class TextureDictionaryConfig(ConfigBase):
 
     srgb: Optional[bool] = Field(None, description="Use sRGB color space")
     entries: Dict[str, Any] = Field(default_factory=dict, description="Dictionary entries")
-    scale: Optional[float | List[float]] = Field(None, description="Texture scale")
+    scale: Optional[float | List[float]] = Field(1.0, description="Texture scale")
     tiling: Optional[Any] = Field(None, description="Tiling configuration")
