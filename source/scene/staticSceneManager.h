@@ -58,6 +58,9 @@ PUBLISHED:
   NodePath get_root(void);
   MAKE_PROPERTY(root, get_root);
 
+  PerspectiveLens *get_lens(void);
+  MAKE_PROPERTY(lens, get_lens);
+
 protected:
   std::vector<PT(RenderPass)> rendering_passes;
   PT(PerspectiveLens) lens;

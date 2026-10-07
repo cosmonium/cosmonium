@@ -221,3 +221,10 @@ DynamicSceneManager::get_root(void)
 {
   return root;
 }
+
+
+PerspectiveLens *
+DynamicSceneManager::get_lens(void)
+{
+  return lens;
+}

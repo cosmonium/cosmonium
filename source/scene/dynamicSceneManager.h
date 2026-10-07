@@ -64,6 +64,9 @@ PUBLISHED:
   NodePath get_root(void);
   MAKE_PROPERTY(root, get_root);
 
+  PerspectiveLens *get_lens(void);
+  MAKE_PROPERTY(lens, get_lens);
+
 
   static bool auto_scale;
   static double min_scale;

@@ -165,3 +165,10 @@ StaticSceneManager::get_root(void)
 {
   return root;
 }
+
+
+PerspectiveLens *
+StaticSceneManager::get_lens(void)
+{
+  return lens;
+}
