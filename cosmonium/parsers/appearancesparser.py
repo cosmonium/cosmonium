@@ -145,7 +145,7 @@ class ProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, heightmap, radius, patched_shape):
         control_parser = TextureControlYamlParser()
-        textures_source = TextureDictionaryYamlParser.decode(data.textures)
+        textures_source = TextureDictionaryYamlParser.decode(data.textures or {})
         texture_control = control_parser.decode(data.control, heightmap, radius)
         appearance = ProceduralAppearance(texture_control, textures_source, heightmap)
         return appearance
@@ -155,7 +155,7 @@ class DeferredProceduralAppearanceYamlParser(YamlModuleParser):
     @classmethod
     def decode(cls, data, heightmap, radius, patched_shape):
         control_parser = TextureControlYamlParser()
-        textures_source = TextureDictionaryYamlParser.decode(data.textures)
+        textures_source = TextureDictionaryYamlParser.decode(data.textures or {})
         texture_control = control_parser.decode(data.control, heightmap, radius)
         tex_generator = DetailMapTextureGenerator(data.size, heightmap, texture_control, textures_source)
         texture_source = PatchedProceduralVirtualTextureSource(tex_generator, data.size)
