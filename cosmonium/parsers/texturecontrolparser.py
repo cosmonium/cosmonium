@@ -51,22 +51,19 @@ class HeightColorControlYamlParser:
         self.height_scale = 0.0
         self.height_offset = 0.0
 
+    def decode_color(self, color):
+        if not self.float_values:
+            return LColor(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0, 1.0)
+        else:
+            return LColor(color[0], color[1], color[2], 1.0)
+
     def decode_height_layer(self, data):
         height = data.height
         if not self.percentage:
             height_units = DistanceUnitsYamlParser.decode(data.height_units, units.m)
             height *= height_units
-        bottom = data.bottom
-        top = data.top
-        if bottom is not None:
-            if not self.float_values:
-                bottom = LColor(bottom[0] / 255.0, bottom[1] / 255.0, bottom[2] / 255.0, 1.0)
-            else:
-                bottom = LColor(bottom[0], bottom[1], bottom[2], 1.0)
-        if not self.float_values:
-            top = LColor(top[0] / 255.0, top[1] / 255.0, top[2] / 255.0, 1.0)
-        else:
-            top = LColor(top[0], top[1], top[2], 1.0)
+        bottom = self.decode_color(data.bottom) if data.bottom is not None else None
+        top = self.decode_color(data.top)
         return ColormapLayer(height * self.height_scale - self.height_offset, bottom, top)
 
     def decode_height_control(self, entries):
