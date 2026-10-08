@@ -37,6 +37,9 @@ class TextureControl(ShaderComponent):
     def color_func_call(self, code):
         pass
 
+    def get_provided_categories(self, texture_source):
+        return set(texture_source.texture_categories.keys())
+
 
 class ColormapLayer(object):
     def __init__(self, height, bottom=None, top=None):
@@ -52,6 +55,9 @@ class HeightColorMap(TextureControl):
 
     def collect_required_data(self, data):
         data.setdefault('heightmap', set()).add('height')
+
+    def get_provided_categories(self, texture_source):
+        return {'albedo'}
 
     def fragment_extra(self, code):
         TextureControl.fragment_extra(self, code)

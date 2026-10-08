@@ -154,10 +154,11 @@ class DetailMap(ShaderAppearance):
 
     def create_shader_configuration(self, appearance):
         self.textures_control.create_shader_configuration(appearance.texture_source)
-        self.has_surface = 'albedo' in appearance.texture_source.texture_categories
+        categories = self.textures_control.get_provided_categories(appearance.texture_source)
+        self.has_surface = 'albedo' in categories
         self.has_normal = self.create_normals
-        self.has_detail_normal = 'normal' in appearance.texture_source.texture_categories
-        self.has_occlusion = 'occlusion' in appearance.texture_source.texture_categories
+        self.has_detail_normal = 'normal' in categories
+        self.has_occlusion = 'occlusion' in categories
 
     def get_id(self):
         name = "dm"
