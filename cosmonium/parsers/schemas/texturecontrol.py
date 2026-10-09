@@ -47,6 +47,16 @@ class HeightColorControlConfig(ConfigBase):
     float_values: bool = Field(
         False, description="Whether color values are floats (0-1) or integers (0-255)", alias='float'
     )
+    interpolation: Literal['linear', 'smooth', 'none'] = Field(
+        'linear', description="How colors blend between layers: linear ramp, smooth ramp, or no blending"
+    )
+    slope_color: Optional[Any] = Field(None, description="Color blended in on steep slopes")
+    slope_start_angle: float = Field(
+        30.0, description="Slope angle in degree (from horizontal) where the slope color starts to appear"
+    )
+    slope_end_angle: float = Field(
+        50.0, description="Slope angle in degree (from horizontal) where the slope color is fully opaque"
+    )
 
 
 class HeightTextureEntryConfig(ConfigBase):

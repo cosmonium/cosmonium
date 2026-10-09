@@ -103,6 +103,7 @@ terrain:
     control2:
          type: colormap
          percentage: true
+         interpolation: smooth
          entries:
            - height: 0
              bottom: [0, 0, 0] #black
@@ -112,15 +113,13 @@ terrain:
            - height: .4
              top: [120, 255, 255] #Aqua
            - height: .6
-             top: [120, 255, 1201] #Green
+             top: [120, 255, 120] #Green
            - height: .7
              top: [255, 255, 120] #Yellow
            - height: .9
              top: [255, 120, 120] #Red
            - height: 1.0
              top: [255, 255, 255] #White
-           - height: 1.0
-             top: [0, 0, 0] #black
     control:
        biome:
            - entry:

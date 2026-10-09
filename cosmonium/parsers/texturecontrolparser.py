@@ -67,23 +67,34 @@ class HeightColorControlYamlParser:
         return ColormapLayer(height * self.height_scale - self.height_offset, bottom, top)
 
     def decode_height_control(self, entries):
-        self.colormap_id += 1
         result = []
         for entry in entries:
             result.append(self.decode_height_layer(entry))
-        return HeightColorMap('colormap_%d' % self.colormap_id, result)
+        return result
 
     def decode(self, data, heightmap, radius=1.0):
         config = HeightColorControlConfig.model_validate(data)
+        self.colormap_id += 1
         self.percentage = config.percentage
         self.float_values = config.float_values
         if self.percentage:
-            self.height_scale = 1.0 / (heightmap.max_height - heightmap.min_height) / radius
-            self.height_offset = heightmap.min_height * self.height_scale
+            # `height` is a 0..1 fraction of the heightmap  [min_height, max_height] range :
+            # scale it up to an height in radius-relative unit.
+            self.height_scale = (heightmap.max_height - heightmap.min_height) / radius
+            self.height_offset = -heightmap.min_height / radius
         else:
             self.height_scale = 1.0 / radius
             self.height_offset = 0.0
-        return self.decode_height_control(config.entries)
+        layers = self.decode_height_control(config.entries)
+        slope_color = self.decode_color(config.slope_color) if config.slope_color is not None else None
+        return HeightColorMap(
+            'colormap_%d' % self.colormap_id,
+            layers,
+            interpolation=config.interpolation,
+            slope_color=slope_color,
+            slope_start=config.slope_start_angle,
+            slope_end=config.slope_end_angle,
+        )
 
 
 class MixTextureControlYamlParser:

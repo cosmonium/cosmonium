@@ -49,9 +49,20 @@ class ColormapLayer(object):
 
 
 class HeightColorMap(TextureControl):
-    def __init__(self, name, colormap):
+    """
+    Procedurally colors the terrain by interpolating between a list of
+    (height, color) layers using the heightmap (and optionally the surface slope).
+    """
+
+    def __init__(self, name, colormap, interpolation='linear', slope_color=None, slope_start=0.0, slope_end=0.0):
         TextureControl.__init__(self, name)
         self.colormap = colormap
+        self.interpolation = interpolation
+        self.slope_color = slope_color
+        # Converted angle to cos(angle) to directly compare with the slope value
+        # (cosine of the angle between the surface normal and the up vector)
+        self.slope_start = cos(slope_start * pi / 180)
+        self.slope_end = cos(slope_end * pi / 180)
 
     def collect_required_data(self, data):
         data.setdefault('heightmap', set()).add('height')
@@ -61,42 +72,77 @@ class HeightColorMap(TextureControl):
 
     def fragment_extra(self, code):
         TextureControl.fragment_extra(self, code)
-        code.append("vec3 detail_%s(TextureControlParams params)" % self.name)
+        signature = "float height"
+        if self.slope_color is not None:
+            signature += ", float angle"
+        code.append("vec3 detail_%s(%s)" % (self.name, signature))
         code.append("{")
-        code.append("    vec3 texture_color;")
-        code.append("    float base;")
-        code.append("    float delta;")
-        code.append("    vec3 bottom;")
-        code.append("    vec3 top;")
-        previous_layer = None
-        for layer in self.colormap:
-            if previous_layer is None:
-                code.append("   if (params.heightmap_height <= %g) {" % (layer.height))
+        code.append("    vec3 color;")
+        if not self.colormap:
+            # Misconfigured colormap (no entries) : flag it with an obviously wrong color
+            # instead of failing shader generation.
+            code.append("    color = vec3(1.0, 0.0, 1.0);")
+        else:
+            previous_layer = None
+            for layer in self.colormap:
+                bottom = layer.bottom
+                if previous_layer is None:
+                    # Below the first threshold, extend the first layer's bottom color (or its
+                    # top color if no bottom was given).
+                    if bottom is None:
+                        bottom = layer.top
+                    code.append("    if (height <= %g) {" % (layer.height))
+                    code.append('        color = vec3(%g, %g, %g);' % (bottom[0], bottom[1], bottom[2]))
+                    code.append("    }")
+                else:
+                    if bottom is None:
+                        bottom = previous_layer.top
+                    delta = layer.height - previous_layer.height
+                    if delta <= 0.0:
+                        # Guard against a degenerate (duplicated or decreasing) height entry
+                        # producing a division by zero.
+                        delta = 1e-6
+                    code.append("    else if (height <= %g) {" % (layer.height))
+                    if self.interpolation == 'none':
+                        code.append('        color = vec3(%g, %g, %g);' % (layer.top[0], layer.top[1], layer.top[2]))
+                    else:
+                        code.append(
+                            '        float e = clamp((height - %g) / %g, 0.0, 1.0);' % (previous_layer.height, delta)
+                        )
+                        if self.interpolation == 'smooth':
+                            code.append('        e = smoothstep(0.0, 1.0, e);')
+                        code.append(
+                            '        color = mix(vec3(%g, %g, %g), vec3(%g, %g, %g), e);'
+                            % (bottom[0], bottom[1], bottom[2], layer.top[0], layer.top[1], layer.top[2])
+                        )
+                    code.append("    }")
                 previous_layer = layer
-            else:
-                code.append("   } else if (params.heightmap_height <= %g) {" % (layer.height))
-            bottom = layer.bottom
-            if bottom is None:
-                bottom = previous_layer.top
-            code.append('       bottom = vec3(%g, %g, %g);' % (bottom[0], bottom[1], bottom[2]))
-            code.append('       top = vec3(%g, %g, %g);' % (layer.top[0], layer.top[1], layer.top[2]))
-            code.append('       base = %g;' % (previous_layer.height))
-            code.append('       delta = %g;' % (layer.height - previous_layer.height))
-            previous_layer = layer
-        code.append("   } else {")
-        code.append('       top = vec3(%g, %g, %g);' % (layer.top[0], layer.top[1], layer.top[2]))
-        code.append('       return top;')
-        code.append('    }')
-        code.append('    float e = (params.heightmap_height - base) / delta;')
-        code.append('    vec3 color = top * e + bottom * (1 - e);')
-        code.append('    return color;')
-        code.append('}')
+            code.append("    else {")
+            code.append(
+                '        color = vec3(%g, %g, %g);'
+                % (previous_layer.top[0], previous_layer.top[1], previous_layer.top[2])
+            )
+            code.append("    }")
+        if self.slope_color is not None:
+            slope_range = self.slope_start - self.slope_end
+            if abs(slope_range) < 1e-6:
+                slope_range = 1e-6
+            code.append("    float slope_e = clamp((%g - angle) / %g, 0.0, 1.0);" % (self.slope_start, slope_range))
+            code.append(
+                "    color = mix(color, vec3(%g, %g, %g), slope_e);"
+                % (self.slope_color[0], self.slope_color[1], self.slope_color[2])
+            )
+        code.append("    return color;")
+        code.append("}")
 
     def color_func_call(self, code):
         pass
 
     def get_value(self, code, category):
-        code.append("    vec4 %s_%s = vec4(detail_%s(params), 1.0);" % (self.name, category, self.name))
+        args = "height"
+        if self.slope_color is not None:
+            args += ", angle"
+        code.append("    vec4 %s_%s = vec4(detail_%s(%s), 1.0);" % (self.name, category, self.name, args))
 
 
 class SimpleTextureControl(TextureControl):
