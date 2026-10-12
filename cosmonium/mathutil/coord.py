@@ -27,12 +27,9 @@ def cartesian_to_spherical(position):
     distance = position.length()
     if distance > 0:
         theta = asin(position[2] / distance)
-        if position[0] != 0.0:
-            phi = atan2(position[1], position[0])
-            # Offset phi by 180 deg with proper wrap around
-            # phi = (phi + pi + pi) % (2 * pi) - pi
-        else:
-            phi = 0.0
+        phi = atan2(position[1], position[0])
+        # Offset phi by 180 deg with proper wrap around
+        # phi = (phi + pi + pi) % (2 * pi) - pi
     else:
         phi = 0.0
         theta = 0.0

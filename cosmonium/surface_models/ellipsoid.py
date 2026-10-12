@@ -172,12 +172,9 @@ class SphereModel(EllipsoidModelInterface):
         distance = position.length()
         if distance > 0:
             theta = asin(position[2] / distance)
-            if position[0] != 0.0:
-                phi = atan2(position[1], position[0])
-                # Offset phi by 180 deg with proper wrap around
-                # phi = (phi + pi + pi) % (2 * pi) - pi
-            else:
-                phi = 0.0
+            phi = atan2(position[1], position[0])
+            # Offset phi by 180 deg with proper wrap around
+            # phi = (phi + pi + pi) % (2 * pi) - pi
         else:
             phi = 0.0
             theta = 0.0
@@ -227,10 +224,7 @@ class SpheroidModel(EllipsoidModelInterface):
         return LVector3d(1.0, 1.0, 1.0 - self.ellipticity) * self.radius
 
     def get_point_under(self, position: LPoint3d, strict: bool = False) -> LPoint3d:
-        if position[0] != 0.0:
-            phi = atan2(position[1], position[0])
-        else:
-            phi = 0.0
+        phi = atan2(position[1], position[0])
         y0 = sqrt(position[0] * position[0] + position[1] * position[1]) / self.radius
         y1 = position[2] / self.radius
         x0, x1, _distance = DistancePointEllipse(1.0, 1.0 - self.ellipticity, y0, y1)
@@ -267,10 +261,7 @@ class SpheroidModel(EllipsoidModelInterface):
     def cartesian_to_geodetic(self, position: LPoint3d) -> tuple[float, float, float]:
         y0 = sqrt(position[0] * position[0] + position[1] * position[1]) / self.radius
         y1 = position[2] / self.radius
-        if position[0] != 0.0:
-            phi = atan2(position[1], position[0])
-        else:
-            phi = 0.0
+        phi = atan2(position[1], position[0])
         theta, h = PointToGeodetic(1.0, 1.0 - self.ellipticity, y0, y1)
         return (phi, theta, h * self.radius)
 
@@ -291,12 +282,9 @@ class SpheroidModel(EllipsoidModelInterface):
         distance = scaled_position.length()
         if distance > 0:
             theta = asin(scaled_position[2] / distance)
-            if scaled_position[0] != 0.0:
-                phi = atan2(scaled_position[1], scaled_position[0])
-                # Offset phi by 180 deg with proper wrap around
-                # phi = (phi + pi + pi) % (2 * pi) - pi
-            else:
-                phi = 0.0
+            phi = atan2(scaled_position[1], scaled_position[0])
+            # Offset phi by 180 deg with proper wrap around
+            # phi = (phi + pi + pi) % (2 * pi) - pi
         else:
             phi = 0.0
             theta = 0.0
@@ -391,12 +379,9 @@ class EllipsoidModel(EllipsoidModelInterface):
         distance = scaled_position.length()
         if distance > 0:
             theta = asin(scaled_position[2] / distance)
-            if scaled_position[0] != 0.0:
-                phi = atan2(scaled_position[1], scaled_position[0])
-                # Offset phi by 180 deg with proper wrap around
-                # phi = (phi + pi + pi) % (2 * pi) - pi
-            else:
-                phi = 0.0
+            phi = atan2(scaled_position[1], scaled_position[0])
+            # Offset phi by 180 deg with proper wrap around
+            # phi = (phi + pi + pi) % (2 * pi) - pi
         else:
             phi = 0.0
             theta = 0.0
