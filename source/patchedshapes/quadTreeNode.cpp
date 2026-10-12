@@ -17,6 +17,7 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
 #include "py_panda.h"
 #include "dcast.h"
 #include "cullingFrustum.h"
@@ -112,7 +113,7 @@ QuadTreeNode::check_visibility(CullingFrustumBase *culling_frustum, LPoint2d loc
       distance = altitude;
   } else {
       within_patch = false;
-      distance = std::max(abs(altitude), (centre - model_camera_pos).length() - length * 0.7071067811865476);
+      distance = std::max(std::abs(altitude), (centre - model_camera_pos).length() - length * 0.7071067811865476);
   }
   patch_in_view = culling_frustum->is_patch_in_view(this);
   visible = within_patch || patch_in_view;

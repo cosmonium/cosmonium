@@ -17,6 +17,7 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
 #include "frames_base.h"
 #include "orbits.h"
 #include "kepler.h"
@@ -302,7 +303,7 @@ EllipticalOrbit::get_time_of_perihelion(void)
 double
 EllipticalOrbit::get_bounding_radius(void)
 {
-  return abs(pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity));
+  return std::fabs(pericenter_distance * (1.0 + eccentricity) / (1.0 - eccentricity));
 }
 
 TypeHandle FunctionOrbit::_type_handle;
