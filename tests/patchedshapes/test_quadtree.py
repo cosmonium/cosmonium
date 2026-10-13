@@ -92,6 +92,9 @@ class TestQuadTreeNode:
         assert node.shown is False
         assert node.visible is False
         assert node.instance_ready is False
+        assert node.normal == LVector3d()
+        assert node.min_height == 0.0
+        assert node.max_height == 0.0
 
     def test_set_shown(self):
         """Test setting shown state."""
@@ -217,6 +220,27 @@ class TestQuadTreeNode:
 
         assert node.visible is False
         assert node.patch_in_view is False
+
+    def test_set_height_range(self):
+        """Test setting the normal and height range of a node."""
+        node = QuadTreeNode(create_mock_patch(), 0, 32, LVector3d(), 1.0, LVector3d(), 0, create_mock_bounds())
+
+        node.set_normal(LVector3d(0, 0, 1))
+        node.set_height_range(-0.1, 0.2)
+
+        assert node.normal == LVector3d(0, 0, 1)
+        assert node.min_height == -0.1
+        assert node.max_height == 0.2
+
+    def test_get_closest_point(self):
+        """Test the closest point is the center offset by the average height of the patch."""
+        node = QuadTreeNode(
+            create_mock_patch(), 0, 32, LVector3d(0.1, 0.2, 0.3), 1.0, LVector3d(0, 0, 1), 0, create_mock_bounds()
+        )
+        node.set_normal(LVector3d(0, 0, 1))
+        node.set_height_range(-0.1, 0.2)
+
+        assert node.get_closest_point(LVector3d(0)).almost_equal(LVector3d(0.1, 0.2, 0.35))
 
     def test_are_children_visibles_no_children(self):
         """Test children visibility when there are no children."""

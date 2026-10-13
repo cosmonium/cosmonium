@@ -318,7 +318,6 @@ class SpherePatch(PatchBase):
         )
         bounding_volume = PatchBoundingBox(points)
         centre = geometry.UVPatchPoint(axes / scale, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
-        centre += centre.normalized() * mean_height
         v_perimeter = (
             EllipseCircumRamanujan2ndApprox(sqrt(centre[0] * centre[0] + centre[1] * centre[1]), axes[2] / scale)
             / nb_rings
@@ -333,6 +332,8 @@ class SpherePatch(PatchBase):
         self.quadtree_node = QuadTreeNode(
             self, self.lod, self.density, centre, length, offset_vector, self.offset, bounding_volume
         )
+        self.quadtree_node.set_normal(LVector3d(centre.normalized()))
+        self.quadtree_node.set_height_range(min_height, max_height)
 
     def update_heights(self, axes, min_height, max_height):
         scale = max(*axes)
@@ -340,6 +341,7 @@ class SpherePatch(PatchBase):
             axes / scale, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
         )
         self.quadtree_node.bounds.set_points(points)
+        self.quadtree_node.set_height_range(min_height, max_height)
 
     def str_id(self):
         return "%d - %d %d" % (self.lod, self.x, self.y)
@@ -482,6 +484,11 @@ class SquarePatchBase(PatchBase):
             self.offset if self.offset is not None else 0.0,
             bounding_volume,
         )
+        self.quadtree_node.set_normal(LVector3d(centre.normalized()))
+        self.quadtree_node.set_height_range(min_height, max_height)
+
+    def update_heights(self, axes, min_height, max_height):
+        self.quadtree_node.set_height_range(min_height, max_height)
 
     def face_offset_vector(self, axes):
         return None

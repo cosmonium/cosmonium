@@ -44,7 +44,10 @@ QuadTreeNode::QuadTreeNode(PyObject *patch, unsigned int lod, unsigned int densi
     distance(0.0),
     instance_ready(false),
     apparent_size(0.0),
-    patch_in_view(false)
+    patch_in_view(false),
+    normal(0.0),
+    min_height(0.0),
+    max_height(0.0)
 {
   Py_INCREF(patch);
 }
@@ -84,6 +87,26 @@ QuadTreeNode::remove_children(void)
   children_offset.clear();
 }
 
+void
+QuadTreeNode::set_normal(LVector3d normal)
+{
+  this->normal = normal;
+}
+
+void
+QuadTreeNode::set_height_range(double min_height, double max_height)
+{
+  this->min_height = min_height;
+  this->max_height = max_height;
+}
+
+LPoint3d
+QuadTreeNode::get_closest_point(LPoint3d model_camera_pos)
+{
+  double height = (min_height + max_height) * 0.5;
+  return centre + normal * height;
+}
+
 bool
 QuadTreeNode::can_merge_children(void)
 {
@@ -113,7 +136,8 @@ QuadTreeNode::check_visibility(CullingFrustumBase *culling_frustum, LPoint2d loc
       distance = altitude;
   } else {
       within_patch = false;
-      distance = std::max(std::abs(altitude), (centre - model_camera_pos).length() - length * 0.7071067811865476);
+      LPoint3d closest_point = get_closest_point(model_camera_pos);
+      distance = std::max(std::fabs(altitude), (closest_point - model_camera_pos).length() - length * 0.7071067811865476);
   }
   patch_in_view = culling_frustum->is_patch_in_view(this);
   visible = within_patch || patch_in_view;

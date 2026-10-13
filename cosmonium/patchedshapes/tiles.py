@@ -63,10 +63,13 @@ class Tile(PatchBase):
         points = geometry.PatchBoundingPoints(self.x0, self.y0, self.size, 1.0, min_height, max_height)
         bounding_volume = PatchBoundingBox(points)
         self.quadtree_node = QuadTreeNode(self, self.lod, self.density, centre, self.size, normal, 0.0, bounding_volume)
+        self.quadtree_node.set_normal(normal)
+        self.quadtree_node.set_height_range(min_height, max_height)
 
     def update_heights(self, _axes, min_height, max_height):
         points = geometry.PatchBoundingPoints(self.x0, self.y0, self.size, 1.0, min_height, max_height)
         self.quadtree_node.bounds.set_points(points)
+        self.quadtree_node.set_height_range(min_height, max_height)
 
     def str_id(self):
         return "%d - %g %g" % (self.lod, self.x / self.size, self.y / self.size)

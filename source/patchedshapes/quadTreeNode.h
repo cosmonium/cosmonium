@@ -41,6 +41,12 @@ PUBLISHED:
 
   void set_instance_ready(bool instance_ready);
 
+  void set_normal(LVector3d normal);
+
+  void set_height_range(double min_height, double max_height);
+
+  LPoint3d get_closest_point(LPoint3d model_camera_pos);
+
   void add_child(QuadTreeNode *child);
 
   void remove_children(void);
@@ -75,6 +81,9 @@ PUBLISHED:
   bool instance_ready;
   double apparent_size;
   bool patch_in_view;
+  LVector3d normal;
+  double min_height;
+  double max_height;
 
 public:
   PyObject *patch;

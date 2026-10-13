@@ -18,6 +18,8 @@
 #
 
 
+from panda3d.core import LVector3d
+
 from ...pstats import pstat
 
 
@@ -41,6 +43,20 @@ class QuadTreeNode:
         self.instance_ready = False
         self.apparent_size = None
         self.patch_in_view = False
+        self.normal = LVector3d()
+        self.min_height = 0.0
+        self.max_height = 0.0
+
+    def set_normal(self, normal):
+        self.normal = normal
+
+    def set_height_range(self, min_height, max_height):
+        self.min_height = min_height
+        self.max_height = max_height
+
+    def get_closest_point(self, model_camera_pos):
+        height = (self.min_height + self.max_height) * 0.5
+        return self.centre + self.normal * height
 
     def set_shown(self, shown):
         self.shown = shown
@@ -79,8 +95,9 @@ class QuadTreeNode:
             self.distance = altitude
         else:
             within_patch = False
+            closest_point = self.get_closest_point(model_camera_pos)
             self.distance = max(
-                abs(altitude), (self.centre - model_camera_pos).length() - self.length * 0.7071067811865476
+                abs(altitude), (closest_point - model_camera_pos).length() - self.length * 0.7071067811865476
             )
         self.patch_in_view = culling_frustum.is_patch_in_view(self)
         self.visible = within_patch or self.patch_in_view
