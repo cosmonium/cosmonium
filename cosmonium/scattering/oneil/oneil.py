@@ -916,7 +916,7 @@ class ONeilLookupTableRenderStage(ProcessStage):
         texture_config = TextureConfiguration(
             wrap_u=Texture.WM_clamp, wrap_v=Texture.WM_clamp, minfilter=Texture.FT_linear, magfilter=Texture.FT_linear
         )
-        target.add_color_target((32, 32, 32, 0), srgb_colors=False, to_ram=False, config=texture_config)
+        target.add_color_target((32, 32, 32, 32), srgb_colors=False, to_ram=False, config=texture_config)
         target.create(pipeline)
         target.set_shader(self.create_shader())
 
