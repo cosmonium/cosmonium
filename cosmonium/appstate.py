@@ -90,13 +90,13 @@ class AppState(object):
         cosmonium.time.running = self.running
 
         if self.selected is not None:
-            cosmonium.select_body(self.selected)
+            cosmonium.select_body(self.selected.body)
         if self.follow is not None:
-            cosmonium.follow_body(self.follow)
+            cosmonium.follow_body(self.follow.body)
         if self.sync is not None:
-            cosmonium.sync_body(self.sync)
+            cosmonium.sync_body(self.sync.body)
         if self.track is not None:
-            cosmonium.track_body(self.track)
+            cosmonium.track_body(self.track.body)
 
         # Update the universe with the new time reference and selection
         cosmonium.main_update_task(None)
@@ -105,9 +105,9 @@ class AppState(object):
             cosmonium.ship.anchor.set_absolute_reference_point(self.global_position)
         else:
             if self.sync is not None:
-                cosmonium.ship.anchor.set_absolute_reference_point(self.sync.anchor.get_absolute_reference_point())
+                cosmonium.ship.anchor.set_absolute_reference_point(self.sync.get_absolute_reference_point())
             elif self.follow:
-                cosmonium.ship.anchor.set_absolute_reference_point(self.follow.anchor.get_absolute_reference_point())
+                cosmonium.ship.anchor.set_absolute_reference_point(self.follow.get_absolute_reference_point())
             else:
                 cosmonium.ship.anchor.set_absolute_reference_point(LPoint3d())
         if self.absolute:
