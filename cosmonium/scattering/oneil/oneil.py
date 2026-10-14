@@ -131,6 +131,8 @@ class ONeilSimpleScattering(ONeilScatteringBase):
 
     def get_user_parameters(self):
         group = ScatteringBase.get_user_parameters(self)
+        if not settings.use_pbr:
+            group.add_parameter(AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]))
         group.add_parameters(
             AutoUserParameter(
                 'Rayleigh coef',
@@ -151,11 +153,13 @@ class ONeilSimpleScattering(ONeilScatteringBase):
                 value_range_0=1e-6,
             ),
             AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
-            AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
-            AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
-            AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
-            AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
         )
+        if not settings.use_pbr:
+            group.add_parameters(
+                AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+                AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
+            )
         return group
 
 
@@ -288,6 +292,8 @@ class ONeilScattering(ONeilScatteringBase):
 
     def get_user_parameters(self):
         group = ScatteringBase.get_user_parameters(self)
+        if not settings.use_pbr:
+            group.add_parameter(AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]))
         group.add_parameters(
             UserParameter(
                 'Rayleigh scale depth',
@@ -333,12 +339,14 @@ class ONeilScattering(ONeilScatteringBase):
                 value_range_0=1e-6,
             ),
             AutoUserParameter('Phase asymmetry', 'G', self, AutoUserParameter.TYPE_FLOAT, [-1.0, 1.0]),
-            AutoUserParameter('Source power', 'ESun', self, AutoUserParameter.TYPE_FLOAT, [0, 100]),
             AutoUserParameter('Samples', 'samples', self, AutoUserParameter.TYPE_INT, [0, 64]),
-            AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
-            AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
-            AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
         )
+        if not settings.use_pbr:
+            group.add_parameters(
+                AutoUserParameter('Exposure', 'exposure', self, AutoUserParameter.TYPE_FLOAT, [0, 10]),
+                AutoUserParameter('HDR', 'hdr', self, AutoUserParameter.TYPE_BOOL),
+                AutoUserParameter('Atmosphere HDR', 'atm_hdr', self, AutoUserParameter.TYPE_BOOL),
+            )
         return group
 
 
@@ -363,7 +371,8 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
         self.calc_in_fragment = calc_in_fragment
         self.normalize = normalize
         self.displacement = displacement
-        self.hdr = hdr
+        # The PBR pipeline does the tone mapping of the whole scene, the HDR after effect must never be applied
+        self.hdr = hdr and not settings.use_pbr
         self.hdr_after_effect = None
         self.inside = False
         if calc_in_fragment:
@@ -389,7 +398,7 @@ class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface
         self.inside = inside
 
     def set_hdr(self, hdr):
-        self.hdr = hdr
+        self.hdr = hdr and not settings.use_pbr
 
     def set_extinction_only(self, extinction_only):
         self.extinction_only = extinction_only
