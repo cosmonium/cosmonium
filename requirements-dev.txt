@@ -9,7 +9,7 @@ setuptools == 84.0.0
 
 # Code quality tools
 
-black == 26.5.1
+black == 26.10.1
 
 flake8 == 7.4.1
 
