@@ -11,7 +11,9 @@ MarkupSafe == 3.0.4
 
 mistune == 3.4.0
 
-numpy==2.2.6
+numpy == 2.5.4 ; python_version >= "3.12"
+numpy == 2.4.6 ; python_version >= "3.11" and python_version < "3.12"
+numpy == 2.2.6 ; python_version < "3.11"
 
 platformdirs == 4.14.2 ; python_version >= "3.11"
 platformdirs == 4.12.4 ; python_version < "3.11"
