@@ -332,7 +332,9 @@ class SpherePatch(PatchBase):
         self.quadtree_node = QuadTreeNode(
             self, self.lod, self.density, centre, length, offset_vector, self.offset, bounding_volume
         )
-        self.quadtree_node.set_normal(LVector3d(centre.normalized()))
+        self.quadtree_node.set_normal(
+            LVector3d(geometry.UVPatchNormal(axes / scale, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1))
+        )
         self.quadtree_node.set_height_range(min_height, max_height)
 
     def update_heights(self, axes, min_height, max_height):
@@ -483,7 +485,7 @@ class SquarePatchBase(PatchBase):
             self.offset if self.offset is not None else 0.0,
             bounding_volume,
         )
-        self.quadtree_node.set_normal(LVector3d(centre.normalized()))
+        self.quadtree_node.set_normal(orientation.xform(self.create_normal(rotated_axes / scale)))
         self.quadtree_node.set_height_range(min_height, max_height)
 
     def rotated_axes(self, axes):
@@ -509,6 +511,9 @@ class SquarePatchBase(PatchBase):
         return PatchBoundingBox(self.create_bounding_points(axes, min_height, max_height))
 
     def create_centre(self, axes):
+        return None
+
+    def create_normal(self, axes):
         return None
 
     def create_patch_instance(self, x, y):
@@ -561,6 +566,9 @@ class NormalizedSquarePatch(SquarePatchBase):
     def create_centre(self, axes):
         return geometry.NormalizedSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
 
+    def create_normal(self, axes):
+        return geometry.NormalizedSquarePatchNormal(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
+
 
 class NormalizedSquarePatchLayer(GeometryPatchLayer):
 
@@ -602,6 +610,9 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
 
     def create_centre(self, axes):
         return geometry.SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
+
+    def create_normal(self, axes):
+        return geometry.SquaredDistanceSquarePatchNormal(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
 
 
 class SquaredDistanceSquarePatchLayer(GeometryPatchLayer):
