@@ -466,8 +466,7 @@ class SquarePatchBase(PatchBase):
         scale = max(*axes)
         orientation = self.rotations[self.face]
         orientation_mat = self.rotations_mat[self.face]
-        rotated_axes = orientation.conjugate().xform(axes)
-        rotated_axes = LVector3d(abs(rotated_axes[0]), abs(rotated_axes[1]), abs(rotated_axes[2]))
+        rotated_axes = self.rotated_axes(axes)
         bounding_volume = self.create_bounding_volume(rotated_axes / scale, min_height, max_height)
         bounding_volume.xform(orientation_mat)
         centre = self.create_centre(rotated_axes / scale)
@@ -487,14 +486,27 @@ class SquarePatchBase(PatchBase):
         self.quadtree_node.set_normal(LVector3d(centre.normalized()))
         self.quadtree_node.set_height_range(min_height, max_height)
 
+    def rotated_axes(self, axes):
+        orientation = self.rotations[self.face]
+        rotated_axes = orientation.conjugate().xform(axes)
+        return LVector3d(abs(rotated_axes[0]), abs(rotated_axes[1]), abs(rotated_axes[2]))
+
     def update_heights(self, axes, min_height, max_height):
+        scale = max(*axes)
+        points = self.create_bounding_points(self.rotated_axes(axes) / scale, min_height, max_height)
+        bounds = self.quadtree_node.bounds
+        bounds.set_points(points)
+        bounds.xform(self.rotations_mat[self.face])
         self.quadtree_node.set_height_range(min_height, max_height)
 
     def face_offset_vector(self, axes):
         return None
 
-    def create_bounding_volume(self, axes, min_height, max_height):
+    def create_bounding_points(self, axes, min_height, max_height):
         return None
+
+    def create_bounding_volume(self, axes, min_height, max_height):
+        return PatchBoundingBox(self.create_bounding_points(axes, min_height, max_height))
 
     def create_centre(self, axes):
         return None
@@ -541,12 +553,10 @@ class NormalizedSquarePatch(SquarePatchBase):
     def face_offset_vector(self, axes):
         return geometry.NormalizedSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, axes, min_height, max_height):
-        points = geometry.NormalizedSquarePatchBoundingPoints(
+    def create_bounding_points(self, axes, min_height, max_height):
+        return geometry.NormalizedSquarePatchBoundingPoints(
             axes, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
         )
-        bounding_volume = PatchBoundingBox(points)
-        return bounding_volume
 
     def create_centre(self, axes):
         return geometry.NormalizedSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
@@ -585,12 +595,10 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
     def face_offset_vector(self, axes):
         return geometry.SquaredDistanceSquarePatchOffsetVector(axes, self.x0, self.y0, self.x1, self.y1)
 
-    def create_bounding_volume(self, axes, min_height, max_height):
-        points = geometry.SquaredDistanceSquarePatchBoundingPoints(
+    def create_bounding_points(self, axes, min_height, max_height):
+        return geometry.SquaredDistanceSquarePatchBoundingPoints(
             axes, min_height, max_height, self.x0, self.y0, self.x1, self.y1, offset=self.offset
         )
-        bounding_volume = PatchBoundingBox(points)
-        return bounding_volume
 
     def create_centre(self, axes):
         return geometry.SquaredDistanceSquarePatchPoint(axes, 0.5, 0.5, self.x0, self.y0, self.x1, self.y1)
