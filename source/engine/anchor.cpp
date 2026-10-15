@@ -254,6 +254,12 @@ AnchorBase::is_emissive(void) const
   return (content & AnchorClass::Emissive) != 0;
 }
 
+std::string
+AnchorBase::get_label_text(void) const
+{
+  return get_name();
+}
+
 bool
 AnchorBase::has_system(void) const
 {

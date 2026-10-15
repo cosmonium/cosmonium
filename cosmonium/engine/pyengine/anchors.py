@@ -137,6 +137,10 @@ class AnchorBase(ABC):
         """Return True when the object emits its own light."""
         return (self.content & self.Emissive) != 0
 
+    def get_label_text(self) -> str:
+        """Return the text to use for the object label."""
+        return self.get_name()
+
     def get_names(self) -> ObjectNames:
         """Get the ObjectNames collection for this anchor.
 
@@ -1363,6 +1367,12 @@ class SystemAnchor(StellarAnchor):
         if self.primary is not None:
             return self.primary.is_emissive()
         return False
+
+    def get_label_text(self) -> str:
+        """Return the label text of the primary body, if any."""
+        if self.primary is not None:
+            return self.primary.get_label_text()
+        return AnchorBase.get_label_text(self)
 
     def get_fullname(self, separator: str = '/') -> str:
         """Get the full hierarchical name of this system anchor.

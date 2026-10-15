@@ -51,6 +51,7 @@ PUBLISHED:
   virtual bool is_system(void) const;
   virtual std::string get_fullname(const std::string &separator = "/") const;
   virtual bool is_emissive(void) const;
+  virtual std::string get_label_text(void) const;
 
   virtual SystemAnchor *get_or_create_system(void);
 

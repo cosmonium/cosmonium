@@ -223,7 +223,7 @@ class StellarObject:
         return settings.label_size
 
     def get_label_text(self):
-        return self.get_name()
+        return self.anchor.get_label_text()
 
     def get_orbit_color(self):
         return bodyClasses.get_orbit_color(self.body_class)

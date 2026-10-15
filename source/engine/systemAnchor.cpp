@@ -75,6 +75,15 @@ SystemAnchor::is_emissive(void) const
   return false;
 }
 
+std::string
+SystemAnchor::get_label_text(void) const
+{
+  if (_primary != nullptr) {
+    return _primary->get_label_text();
+  }
+  return AnchorBase::get_label_text();
+}
+
 SystemAnchor *
 SystemAnchor::get_or_create_system(void)
 {

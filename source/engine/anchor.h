@@ -118,6 +118,10 @@ PUBLISHED:
   // delegate to its primary.
   virtual bool is_emissive(void) const;
 
+  // Text to use for the object label. Overridden by SystemAnchor to delegate to
+  // its primary.
+  virtual std::string get_label_text(void) const;
+
   // Name management methods
   std::string get_name(void) const;
   ObjectNames *get_names(void);

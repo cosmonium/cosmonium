@@ -110,11 +110,6 @@ class StellarSystem(StellarObject):
     def remove_child(self, child):
         self.remove_child_fast(child)
 
-    def get_label_text(self):
-        if self.primary is not None:
-            return self.primary.get_label_text()
-        return StellarObject.get_label_text(self)
-
     def get_components(self):
         if self.primary is not None:
             return self.primary.get_components()
