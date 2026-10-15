@@ -74,6 +74,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
   bounding_radius(0.0),
+  body_class(""),
   oid(-1),
   oid_color(0),
   _height_under(0.0),
@@ -127,6 +128,7 @@ AnchorBase::AnchorBase(unsigned int anchor_class, PyObject *ref_object, LColor p
   _local_position(0.0),
   _orientation(LQuaterniond::ident_quat()),
   bounding_radius(0.0),
+  body_class(""),
   oid(-1),
   oid_color(0),
   _height_under(0.0),
@@ -208,6 +210,18 @@ AnchorBase::set_body(PyObject *ref_object)
   Py_DECREF(this->ref_object);
   this->ref_object = ref_object;
   Py_INCREF(this->ref_object);
+}
+
+std::string
+AnchorBase::get_body_class(void) const
+{
+  return body_class;
+}
+
+void
+AnchorBase::set_body_class(const std::string &body_class)
+{
+  this->body_class = body_class;
 }
 
 int

@@ -100,6 +100,11 @@ PUBLISHED:
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
 
+  // Body class, used by the annotations to retrieve the display settings
+  std::string get_body_class(void) const;
+  void set_body_class(const std::string &body_class);
+  MAKE_PROPERTY(body_class, get_body_class, set_body_class);
+
   // Object id, used for color picking and for the global objects database
   int get_oid(void) const;
   void set_oid(int oid);
@@ -233,6 +238,8 @@ PUBLISHED:
 
 protected:
   double bounding_radius;
+  // Static properties of the referenced object
+  std::string body_class;
   int oid;
   LColor oid_color;
   // Name management data

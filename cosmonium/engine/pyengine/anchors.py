@@ -99,6 +99,8 @@ class AnchorBase(ABC):
             self.object_names.add_name(ObjectNames.parse_name(names, reflective))
 
         self.description = ''
+        # Static properties of the referenced object
+        self.body_class = ''
         self.oid = -1
         self.oid_color = None
         # Scene anchor (set by StellarObject or SceneWorld)
@@ -1353,6 +1355,7 @@ class SystemAnchor(StellarAnchor):
         if primary is not None:
             primary.set_system(self)
             # The system is displayed with the settings of its primary body
+            self.body_class = primary.body_class
             self.point_color = primary.point_color
 
     def is_emissive(self) -> bool:

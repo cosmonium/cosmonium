@@ -76,8 +76,8 @@ class StellarSystem(StellarObject):
             self.primary = None
         if primary is not None:
             self.primary = primary
+            # The anchor propagates the body class and the point color of the primary
             self.anchor.set_primary(primary.anchor)
-            self.body_class = primary.body_class
 
     def find_child_by_name(self, name):
         return self.anchor.find_child_by_name(name)

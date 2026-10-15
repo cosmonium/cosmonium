@@ -59,7 +59,6 @@ class StellarObject:
         body_class=None,
         point_color=None,
     ):
-        self.body_class = body_class
         if point_color is None:
             point_color = LColor(1.0, 1.0, 1.0, 1.0)
         point_color = srgb_to_linear(point_color)
@@ -67,6 +66,7 @@ class StellarObject:
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         # else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, frame, point_color, names)
+        self.anchor.body_class = body_class if body_class is not None else ''
         self.anchor.scene_anchor = SceneAnchor(
             self.get_ascii_name() + '-scene-anchor',
             self.anchor,
@@ -101,6 +101,14 @@ class StellarObject:
     @property
     def oid_color(self):
         return self.anchor.oid_color
+
+    @property
+    def body_class(self):
+        return self.anchor.body_class
+
+    @body_class.setter
+    def body_class(self, body_class):
+        self.anchor.body_class = body_class if body_class is not None else ''
 
     def get_names(self):
         return self.anchor.get_names()
@@ -157,7 +165,7 @@ class StellarObject:
 
     def check_settings(self):
         self.components.check_settings()
-        if self.body_class is None:
+        if not self.body_class:
             print("No class for", self.get_name())
             return
         self.set_shown(bodyClasses.get_show(self.body_class))
