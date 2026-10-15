@@ -37,7 +37,6 @@ class StellarObject:
     has_rotation_axis = False
     has_reference_axis = False
     has_orbit = True
-    has_halo = False
     has_resolved_halo = False
     virtual_object = False
     spread_object = False

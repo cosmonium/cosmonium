@@ -44,7 +44,6 @@ class StellarSystem(StellarObject):
     ):
         StellarObject.__init__(self, names, orbit, rotation, frame, body_class, point_color)
         self.primary = None
-        self.has_halo = False
         self.anchor.star_system = star_system
         self.set_primary(primary)
 
@@ -95,9 +94,6 @@ class StellarSystem(StellarObject):
             child.parent.remove_child_fast(child)
         self.anchor.add_child(child.anchor)
         child.set_parent(self)
-        # TODO: This is a quick workaround until stars of a system are properly managed
-        if child.is_emissive():
-            self.has_halo = True
 
     def add_child_star_fast(self, child):
         self.add_child_fast(child)
@@ -185,7 +181,6 @@ class Barycenter(StellarSystem):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('body_class', 'star')
         StellarSystem.__init__(self, *args, **kwargs)
-        self.has_halo = True
 
     def is_emissive(self):
         return True

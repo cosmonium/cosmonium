@@ -66,7 +66,6 @@ class Galaxy(OctreeSystem):
     background = True
     has_rotation_axis = False
     has_reference_axis = False
-    has_halo = True
     has_resolved_halo = False
     support_offset_body_center = False
     virtual_object = False

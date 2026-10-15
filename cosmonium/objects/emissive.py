@@ -26,7 +26,6 @@ from .stellarbody import StellarBody
 
 class EmissiveBody(StellarBody):
     anchor_class = StellarAnchor.Emissive
-    has_halo = True
     has_resolved_halo = True
 
     def __init__(self, *args, **kwargs):
