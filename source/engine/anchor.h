@@ -72,6 +72,12 @@ PUBLISHED:
     OctreeSystem = 8
   };
 
+  // Static properties of the object the anchor refers to.
+  enum ObjectFlags {
+    VirtualObject           = 1 << 0,
+    Background              = 1 << 1
+  };
+
 public:
   AnchorBase(
       unsigned int anchor_class,
@@ -99,6 +105,22 @@ PUBLISHED:
   LColor get_point_color(void) const;
   void set_point_color(LColor color);
   MAKE_PROPERTY(point_color, get_point_color, set_point_color);
+
+  // Object flags management
+  unsigned int get_object_flags(void) const;
+  void set_object_flags(unsigned int flags);
+  MAKE_PROPERTY(object_flags, get_object_flags, set_object_flags);
+
+  INLINE bool get_flag(unsigned int flag) const;
+  INLINE void set_flag(unsigned int flag, bool value);
+
+  INLINE bool get_virtual_object(void) const;
+  INLINE void set_virtual_object(bool value);
+  MAKE_PROPERTY(virtual_object, get_virtual_object, set_virtual_object);
+
+  INLINE bool get_background(void) const;
+  INLINE void set_background(bool value);
+  MAKE_PROPERTY(background, get_background, set_background);
 
   // Body class, used by the annotations to retrieve the display settings
   std::string get_body_class(void) const;
@@ -243,6 +265,7 @@ PUBLISHED:
 protected:
   double bounding_radius;
   // Static properties of the referenced object
+  unsigned int object_flags;
   std::string body_class;
   int oid;
   LColor oid_color;

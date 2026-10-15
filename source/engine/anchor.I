@@ -22,6 +22,52 @@
 #include "astro.h"
 
 
+bool
+AnchorBase::get_flag(unsigned int flag) const
+{
+  return (object_flags & flag) != 0;
+}
+
+
+void
+AnchorBase::set_flag(unsigned int flag, bool value)
+{
+  if (value) {
+    object_flags |= flag;
+  } else {
+    object_flags &= ~flag;
+  }
+}
+
+
+bool
+AnchorBase::get_virtual_object(void) const
+{
+  return get_flag(VirtualObject);
+}
+
+
+void
+AnchorBase::set_virtual_object(bool value)
+{
+  set_flag(VirtualObject, value);
+}
+
+
+bool
+AnchorBase::get_background(void) const
+{
+  return get_flag(Background);
+}
+
+
+void
+AnchorBase::set_background(bool value)
+{
+  set_flag(Background, value);
+}
+
+
 double
 AnchorBase::get_albedo(void) const
 {

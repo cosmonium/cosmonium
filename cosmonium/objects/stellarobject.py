@@ -66,6 +66,7 @@ class StellarObject:
         #    self.anchor = FixedStellarAnchor(self, orbit, rotation, point_color)
         # else:
         self.anchor = self.create_anchor(self.anchor_class, orbit, rotation, frame, point_color, names)
+        self.init_anchor_properties(self.anchor)
         self.anchor.body_class = body_class if body_class is not None else ''
         self.anchor.scene_anchor = SceneAnchor(
             self.get_ascii_name() + '-scene-anchor',
@@ -93,6 +94,17 @@ class StellarObject:
 
         self.components = CompositeObject(self.get_ascii_name())
         self.components.set_scene_anchor(self.anchor.scene_anchor)
+
+    @classmethod
+    def init_anchor_properties(cls, anchor):
+        """Copy the static properties of the class onto the anchor.
+
+        These properties used to be read from the Python object by the engine and
+        the annotations; they are stored on the anchor so that an object that is
+        not resolved does not need its Python counterpart.
+        """
+        anchor.virtual_object = cls.virtual_object
+        anchor.background = cls.background
 
     @property
     def oid(self):

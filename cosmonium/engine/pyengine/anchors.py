@@ -63,6 +63,10 @@ class AnchorBase(ABC):
     System: int = 4
     OctreeAnchor: int = 8
 
+    # Static properties of the object the anchor refers to.
+    VirtualObject: int = 1 << 0
+    Background: int = 1 << 1
+
     def __init__(
         self,
         anchor_class: int,
@@ -100,6 +104,7 @@ class AnchorBase(ABC):
 
         self.description = ''
         # Static properties of the referenced object
+        self.object_flags = 0
         self.body_class = ''
         self.oid = -1
         self.oid_color = None
@@ -132,6 +137,37 @@ class AnchorBase(ABC):
         self.z_distance = 0.0
         # If this anchor is the primary body of a stellar system, this will point to the system anchor
         self.system: SystemAnchor | None = None
+
+    def get_flag(self, flag: int) -> bool:
+        """Return the value of the given object flag."""
+        return (self.object_flags & flag) != 0
+
+    def set_flag(self, flag: int, value: bool) -> None:
+        """Set or clear the given object flag."""
+        if value:
+            self.object_flags |= flag
+        else:
+            self.object_flags &= ~flag
+
+    @property
+    def virtual_object(self) -> bool:
+        """Return True when the object is a virtual object."""
+        return (self.object_flags & self.VirtualObject) != 0
+
+    @virtual_object.setter
+    def virtual_object(self, value: bool) -> None:
+        """Set or clear the virtual object flag."""
+        self.set_flag(self.VirtualObject, value)
+
+    @property
+    def background(self) -> bool:
+        """Return True when the object is a background object."""
+        return (self.object_flags & self.Background) != 0
+
+    @background.setter
+    def background(self, value: bool) -> None:
+        """Set or clear the background object flag."""
+        self.set_flag(self.Background, value)
 
     def is_emissive(self) -> bool:
         """Return True when the object emits its own light."""
