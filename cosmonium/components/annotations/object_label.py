@@ -43,9 +43,16 @@ class ObjectLabel(VisibleObject):
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 
     def __init__(self, name, label_source):
+        """Create a label for the given source."""
         VisibleObject.__init__(self, name)
         self.fade = 1.0
         self.label_source = label_source
+
+    def get_label_color(self):
+        return bodyClasses.get_label_color(self.label_source.body_class)
+
+    def get_label_size(self):
+        return settings.label_size
 
     @classmethod
     def create_shader(cls):
@@ -63,7 +70,7 @@ class ObjectLabel(VisibleObject):
         cls.shader.create(None, cls.appearance)
 
     def check_settings(self):
-        if self.label_source.body_class is None:
+        if not self.label_source.body_class:
             logger.warning("No class for %s", self.label_source.get_name())
             return
         self.set_shown(bodyClasses.get_show_label(self.label_source.body_class))
@@ -85,7 +92,7 @@ class ObjectLabel(VisibleObject):
             self.label.set_font(self.font)
         name = bayer.decode_name(self.label_source.get_label_text())
         self.label.setText(name)
-        self.label.setTextColor(*srgb_to_linear(self.label_source.get_label_color()))
+        self.label.setTextColor(*srgb_to_linear(self.get_label_color()))
         cardMaker = CardMaker(self.label_source.get_ascii_name() + '-labelcard')
         cardMaker.setFrame(self.label.getFrameActual())
         cardMaker.setColor(0, 0, 0, 0)

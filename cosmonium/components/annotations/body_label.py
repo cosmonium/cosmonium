@@ -27,20 +27,23 @@ from .object_label import ObjectLabel
 
 
 class StellarBodyLabel(ObjectLabel):
+    """Label of a stellar object."""
+
     def create_instance(self):
         ObjectLabel.create_instance(self)
         if settings.color_picking and self.label_source.oid_color is not None:
             self.instance.set_shader_input("color_picking", self.label_source.oid_color)
 
     def check_visibility(self, frustum, pixel_size):
-        if hasattr(self.label_source, "primary") and self.label_source.anchor.resolved:
+        label_anchor = self.label_source
+        if label_anchor.is_system() and label_anchor.resolved:
             self.visible = False
             return
-        if self.label_source.anchor.get_system() is not None:
-            anchor = self.label_source.anchor.get_system()
+        if label_anchor.get_system() is not None:
+            anchor = label_anchor.get_system()
         else:
-            anchor = self.label_source.anchor
-        if self.label_source.anchor.visible and self.label_source.anchor.resolved:
+            anchor = label_anchor
+        if label_anchor.visible and label_anchor.resolved:
             self.visible = True
             self.fade = 1.0
         else:
@@ -51,19 +54,19 @@ class StellarBodyLabel(ObjectLabel):
         self.fade = clamp(self.fade, 0.0, 1.0)
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        body = self.label_source
-        if body.is_emissive() and (not body.anchor.resolved or body.background):
+        anchor = self.label_source
+        if anchor.is_emissive() and (not anchor.resolved or anchor.background):
             self.instance.set_pos(LPoint3())
             scale = abs(
-                self.context.observer.pixel_size * body.get_label_size() * body.anchor.z_distance * settings.ui_scale
+                self.context.observer.pixel_size * self.get_label_size() * anchor.z_distance * settings.ui_scale
             )
         else:
-            offset = body.get_bounding_radius()
+            offset = anchor.get_bounding_radius()
             position = -camera_rot.xform(LPoint3d(0, offset, 0))
-            z_coef = -body.anchor.vector_to_obs.dot(body.context.observer.anchor.camera_vector)
-            z_distance = (body.anchor.distance_to_obs - offset) * z_coef
+            z_coef = -anchor.vector_to_obs.dot(self.context.observer.anchor.camera_vector)
+            z_distance = (anchor.distance_to_obs - offset) * z_coef
             self.instance.set_pos(*position)
-            scale = abs(self.context.observer.pixel_size * body.get_label_size() * z_distance * settings.ui_scale)
+            scale = abs(self.context.observer.pixel_size * self.get_label_size() * z_distance * settings.ui_scale)
         self.look_at.set_pos(LVector3(*(camera_rot.xform(LVector3d.forward()))))
         self.label_instance.look_at(self.look_at, LVector3(), LVector3(*(camera_rot.xform(LVector3d.up()))))
         self.instance.set_color_scale(LColor(self.fade, self.fade, self.fade, 1.0))
@@ -75,10 +78,11 @@ class StellarBodyLabel(ObjectLabel):
 
 class FixedOrbitLabel(StellarBodyLabel):
     def check_visibility(self, frustum, pixel_size):
-        if self.label_source.virtual_object and self.label_source.is_system() and self.label_source.anchor.resolved:
+        anchor = self.label_source
+        if anchor.virtual_object and anchor.is_system() and anchor.resolved:
             self.visible = False
             return
-        app_magnitude = radiance_to_mag(self.label_source.anchor._point_radiance)
+        app_magnitude = radiance_to_mag(anchor._point_radiance)
         self.visible = app_magnitude < settings.label_lowest_app_magnitude
         self.fade = 0.2 + (settings.label_lowest_app_magnitude - app_magnitude) / (
             settings.label_lowest_app_magnitude - settings.max_app_magnitude

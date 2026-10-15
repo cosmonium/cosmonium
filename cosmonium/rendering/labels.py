@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2025 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,44 +23,46 @@ from ..components.annotations.body_label import FixedOrbitLabel, StellarBodyLabe
 
 
 class Labels:
+    """Registry of the labels of the visible objects."""
+
     def __init__(self):
         self.labeled_objects = dict()
         self.labels = []
 
-    def add_label(self, named_object):
-        if not named_object.anchor.has_orbit() or isinstance(named_object.anchor.orbit, FixedPosition):
-            label = FixedOrbitLabel(named_object.get_ascii_name() + '-label', named_object)
+    def add_label(self, anchor):
+        if not anchor.has_orbit() or isinstance(anchor.orbit, FixedPosition):
+            label = FixedOrbitLabel(anchor.get_ascii_name() + '-label', anchor)
         else:
-            label = StellarBodyLabel(named_object.get_ascii_name() + '-label', named_object)
-        label.set_scene_anchor(named_object.scene_anchor)
+            label = StellarBodyLabel(anchor.get_ascii_name() + '-label', anchor)
+        label.set_scene_anchor(anchor.scene_anchor)
         label.check_settings()
         self.labels.append(label)
-        self.labeled_objects[named_object] = label
+        self.labeled_objects[anchor] = label
 
-    def remove_label(self, named_object):
+    def remove_label(self, anchor):
         try:
-            label = self.labeled_objects[named_object]
-            del self.labeled_objects[named_object]
+            label = self.labeled_objects[anchor]
+            del self.labeled_objects[anchor]
             self.labels.remove(label)
             label.remove_instance()
         except KeyError:
             pass
 
-    def get_label(self, named_object):
-        return self.labeled_objects.get(named_object)
+    def get_label(self, anchor):
+        return self.labeled_objects.get(anchor)
 
-    def show_label(self, named_object):
-        label = self.labeled_objects.get(named_object)
+    def show_label(self, anchor):
+        label = self.labeled_objects.get(anchor)
         if label is not None:
             label.show()
 
-    def hide_label(self, named_object):
-        label = self.labeled_objects.get(named_object)
+    def hide_label(self, anchor):
+        label = self.labeled_objects.get(anchor)
         if label is not None:
             label.hide()
 
-    def toggle_label(self, named_object):
-        label = self.labeled_objects.get(named_object)
+    def toggle_label(self, anchor):
+        label = self.labeled_objects.get(anchor)
         if label is not None:
             label.toggle_shown()
 
