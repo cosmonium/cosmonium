@@ -18,8 +18,6 @@
 #
 
 
-import re
-
 from panda3d.core import LColor, LVector3d
 
 from ..astro.frame import AbsoluteReferenceFrame
@@ -235,7 +233,6 @@ class SceneWorld:
     background = False
     support_offset_body_center = False
     stellar_object = False
-    to_alphanum = re.compile('[^a-zA-Z0-9]')
 
     def __init__(self):
         self.anchor = None
@@ -277,10 +274,9 @@ class SceneWorld:
         return ''
 
     def get_ascii_name(self):
-        name = self.to_alphanum.sub('x', self.get_c_name())
-        if not name[0].isalpha():
-            name = 'x' + name
-        return name
+        if self.anchor:
+            return self.anchor.get_ascii_name()
+        return 'x'
 
     def get_fullname(self, separator='/'):
         if self.anchor:

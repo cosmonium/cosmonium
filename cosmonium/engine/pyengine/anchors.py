@@ -27,6 +27,7 @@ determination, and observer-relative calculations.
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from math import pi, sqrt
 from typing import TYPE_CHECKING
@@ -40,6 +41,8 @@ from ...astro.frame import AbsoluteReferenceFrame
 from ...mathutil.quaternion import relative_rotation
 from ..octree import OctreeNode
 from .objectname import ObjectNames
+
+_to_alphanum = re.compile('[^a-zA-Z0-9]')
 
 if TYPE_CHECKING:
     from ...astro.frame import ReferenceFrame
@@ -257,6 +260,17 @@ class AnchorBase(ABC):
             The C-name identifier.
         """
         return self.object_names.get_c_name()
+
+    def get_ascii_name(self) -> str:
+        """Get an identifier usable as a Panda3D node name.
+
+        Any character that is not alphanumeric is replaced by ``x`` and the name
+        is prefixed when it does not start with a letter.
+        """
+        name = _to_alphanum.sub('x', self.get_c_name())
+        if not name or not name[0].isalpha():
+            name = 'x' + name
+        return name
 
     def get_description(self) -> str:
         """Get the description of this anchor.

@@ -18,8 +18,6 @@
 #
 
 
-import re
-
 from panda3d.core import LColor, LVector3d
 
 from .. import settings
@@ -50,7 +48,6 @@ class StellarObject:
     nb_obs = 0
     nb_visibility = 0
     nb_instance = 0
-    to_alphanum = re.compile('[^a-zA-Z0-9]')
 
     def __init__(
         self,
@@ -141,10 +138,7 @@ class StellarObject:
         return self.anchor.get_c_name()
 
     def get_ascii_name(self):
-        name = self.to_alphanum.sub('x', self.get_c_name())
-        if not name[0].isalpha():
-            name = 'x' + name
-        return name
+        return self.anchor.get_ascii_name()
 
     def get_description(self):
         return self.anchor.get_description()

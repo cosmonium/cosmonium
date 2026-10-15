@@ -158,6 +158,7 @@ PUBLISHED:
   unsigned int get_num_source_names(void) const;
   std::string get_source_name_at(unsigned int index) const;
   std::string get_c_name(void) const;
+  std::string get_ascii_name(void) const;
   std::string get_description(void) const;
   void set_description(const std::string &description);
   bool _is_named(const std::string &name_up) const;

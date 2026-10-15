@@ -17,9 +17,11 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cctype>
 #include "anchor.h"
 #include "py_panda.h"
 #include "systemAnchor.h"
+
 
 TypeHandle AnchorTreeBase::_type_handle;
 
@@ -398,6 +400,28 @@ std::string
 AnchorBase::get_c_name(void) const
 {
   return object_names.get_c_name();
+}
+
+std::string
+AnchorBase::get_ascii_name(void) const
+{
+  // Build an identifier usable as a Panda3D node name: any character that is
+  // not alphanumeric is replaced by 'x', and the name is prefixed if it does
+  // not start with a letter.
+  // Note: this works on bytes, so a non-ASCII character of an UTF-8 name is
+  // replaced by as many 'x' as it has bytes. The result is only used to name
+  // nodes, never as a lookup key.
+  std::string name = get_c_name();
+  for (size_t i = 0; i < name.size(); ++i) {
+    unsigned char c = (unsigned char) name[i];
+    if (!std::isalnum(c)) {
+      name[i] = 'x';
+    }
+  }
+  if (name.empty() || !std::isalpha((unsigned char) name[0])) {
+    name = "x" + name;
+  }
+  return name;
 }
 
 std::string
