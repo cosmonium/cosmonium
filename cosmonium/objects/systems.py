@@ -132,6 +132,8 @@ class StellarSystem(StellarObject):
 
 
 class OctreeSystem(StellarSystem):
+    emits_light = True
+
     def __init__(
         self,
         names,
@@ -168,14 +170,10 @@ class OctreeSystem(StellarSystem):
     def rebuild(self):
         self.anchor.rebuild()
 
-    def is_emissive(self):
-        return True
-
 
 class Barycenter(StellarSystem):
+    emits_light = True
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('body_class', 'star')
         StellarSystem.__init__(self, *args, **kwargs)
-
-    def is_emissive(self):
-        return True

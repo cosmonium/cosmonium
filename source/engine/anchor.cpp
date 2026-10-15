@@ -265,7 +265,7 @@ AnchorBase::set_oid_color(LColor oid_color)
 bool
 AnchorBase::is_emissive(void) const
 {
-  return (content & AnchorClass::Emissive) != 0;
+  return get_flag(EmitsLight) || (content & AnchorClass::Emissive) != 0;
 }
 
 std::string

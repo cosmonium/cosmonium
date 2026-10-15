@@ -68,6 +68,20 @@ AnchorBase::set_background(bool value)
 }
 
 
+bool
+AnchorBase::get_emits_light(void) const
+{
+  return get_flag(EmitsLight);
+}
+
+
+void
+AnchorBase::set_emits_light(bool value)
+{
+  set_flag(EmitsLight, value);
+}
+
+
 double
 AnchorBase::get_albedo(void) const
 {

@@ -75,7 +75,9 @@ PUBLISHED:
   // Static properties of the object the anchor refers to.
   enum ObjectFlags {
     VirtualObject           = 1 << 0,
-    Background              = 1 << 1
+    Background              = 1 << 1,
+    // Set when the object emits light irrespective of its anchor class
+    EmitsLight              = 1 << 2
   };
 
 public:
@@ -122,6 +124,10 @@ PUBLISHED:
   INLINE void set_background(bool value);
   MAKE_PROPERTY(background, get_background, set_background);
 
+  INLINE bool get_emits_light(void) const;
+  INLINE void set_emits_light(bool value);
+  MAKE_PROPERTY(emits_light, get_emits_light, set_emits_light);
+
   // Body class, used by the annotations to retrieve the display settings
   std::string get_body_class(void) const;
   void set_body_class(const std::string &body_class);
@@ -136,7 +142,8 @@ PUBLISHED:
   void set_oid_color(LColor oid_color);
   MAKE_PROPERTY(oid_color, get_oid_color, set_oid_color);
 
-  // True when the object emits its own light. Overridden by SystemAnchor to
+  // True when the object emits its own light, either because of its anchor
+  // class or because the EmitsLight flag is set. Overridden by SystemAnchor to
   // delegate to its primary.
   virtual bool is_emissive(void) const;
 

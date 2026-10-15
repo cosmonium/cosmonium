@@ -66,6 +66,8 @@ class AnchorBase(ABC):
     # Static properties of the object the anchor refers to.
     VirtualObject: int = 1 << 0
     Background: int = 1 << 1
+    # Set when the object emits light irrespective of its anchor class.
+    EmitsLight: int = 1 << 2
 
     def __init__(
         self,
@@ -169,9 +171,22 @@ class AnchorBase(ABC):
         """Set or clear the background object flag."""
         self.set_flag(self.Background, value)
 
+    @property
+    def emits_light(self) -> bool:
+        """Return True when the object emits light irrespective of its anchor class."""
+        return (self.object_flags & self.EmitsLight) != 0
+
+    @emits_light.setter
+    def emits_light(self, value: bool) -> None:
+        """Set or clear the emits light flag."""
+        self.set_flag(self.EmitsLight, value)
+
     def is_emissive(self) -> bool:
-        """Return True when the object emits its own light."""
-        return (self.content & self.Emissive) != 0
+        """Return True when the object emits its own light.
+
+        Either because of its anchor class or because the EmitsLight flag is set.
+        """
+        return self.get_flag(self.EmitsLight) or (self.content & self.Emissive) != 0
 
     def get_label_text(self) -> str:
         """Return the text to use for the object label."""
@@ -1399,7 +1414,13 @@ class SystemAnchor(StellarAnchor):
             self.point_color = primary.point_color
 
     def is_emissive(self) -> bool:
-        """Return True when the primary body of the system emits its own light."""
+        """Return True when the system emits its own light.
+
+        A system emits light when its primary does; a system without a primary,
+        like a barycenter or a galaxy, declares it with the EmitsLight flag.
+        """
+        if self.get_flag(self.EmitsLight):
+            return True
         if self.primary is not None:
             return self.primary.is_emissive()
         return False

@@ -44,6 +44,8 @@ class StellarObject:
     allow_scattering = False
     background = False
     stellar_object = True
+    # Set by the objects that emit light irrespective of their anchor class
+    emits_light = False
     nb_update = 0
     nb_obs = 0
     nb_visibility = 0
@@ -105,6 +107,7 @@ class StellarObject:
         """
         anchor.virtual_object = cls.virtual_object
         anchor.background = cls.background
+        anchor.emits_light = cls.emits_light
 
     @property
     def oid(self):

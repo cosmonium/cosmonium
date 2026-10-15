@@ -69,6 +69,11 @@ SystemAnchor::get_fullname(const std::string &separator) const
 bool
 SystemAnchor::is_emissive(void) const
 {
+  // A system emits light when its primary does; a system without a primary,
+  // like a barycenter or a galaxy, declares it with the EmitsLight flag.
+  if (get_flag(EmitsLight)) {
+    return true;
+  }
   if (_primary != nullptr) {
     return _primary->is_emissive();
   }
