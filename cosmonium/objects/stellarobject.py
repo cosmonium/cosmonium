@@ -207,7 +207,7 @@ class StellarObject:
         self.selected = selected
 
     def is_emissive(self):
-        return False
+        return self.anchor.is_emissive()
 
     def get_label_color(self):
         return bodyClasses.get_label_color(self.body_class)

@@ -66,6 +66,15 @@ SystemAnchor::get_fullname(const std::string &separator) const
   return _build_fullname(name, separator);
 }
 
+bool
+SystemAnchor::is_emissive(void) const
+{
+  if (_primary != nullptr) {
+    return _primary->is_emissive();
+  }
+  return false;
+}
+
 SystemAnchor *
 SystemAnchor::get_or_create_system(void)
 {

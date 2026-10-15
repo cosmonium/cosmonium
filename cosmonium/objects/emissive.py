@@ -35,8 +35,5 @@ class EmissiveBody(StellarBody):
         # TODO: This should be done in create_anchor
         self.anchor._intrinsic_luminosity = abs_mag_to_lum(abs_magnitude) * units.L0
 
-    def is_emissive(self):
-        return True
-
     def get_phase(self):
         return 1

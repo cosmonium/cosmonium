@@ -114,11 +114,6 @@ class StellarSystem(StellarObject):
     def remove_child(self, child):
         self.remove_child_fast(child)
 
-    def is_emissive(self):
-        if self.primary is not None:
-            return self.primary.is_emissive()
-        return False
-
     def get_label_text(self):
         if self.primary is not None:
             return self.primary.get_label_text()

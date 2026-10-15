@@ -235,6 +235,12 @@ AnchorBase::set_oid_color(LColor oid_color)
 }
 
 bool
+AnchorBase::is_emissive(void) const
+{
+  return (content & AnchorClass::Emissive) != 0;
+}
+
+bool
 AnchorBase::has_system(void) const
 {
   return _system != nullptr;

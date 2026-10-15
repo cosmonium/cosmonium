@@ -32,9 +32,6 @@ class ReflectiveBody(StellarBody):
         # TODO: This should be done in create_anchor
         self.anchor._albedo = self.albedo
 
-    def is_emissive(self):
-        return False
-
     def get_phase(self):
         # TODO: This should not be managed here
         if self.lights is None or len(self.lights.lights) == 0:

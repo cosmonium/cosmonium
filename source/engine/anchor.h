@@ -109,6 +109,10 @@ PUBLISHED:
   void set_oid_color(LColor oid_color);
   MAKE_PROPERTY(oid_color, get_oid_color, set_oid_color);
 
+  // True when the object emits its own light. Overridden by SystemAnchor to
+  // delegate to its primary.
+  virtual bool is_emissive(void) const;
+
   // Name management methods
   std::string get_name(void) const;
   ObjectNames *get_names(void);

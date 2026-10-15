@@ -44,9 +44,6 @@ class StellarRings(StellarObject):
         self.anchor._height_under = self.rings_object.outer_radius
         self.anchor.set_bounding_radius(self.get_bounding_radius())
 
-    def is_emissive(self):
-        return False
-
     def get_phase(self):
         return 1.0
 

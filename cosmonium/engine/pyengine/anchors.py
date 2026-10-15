@@ -131,6 +131,10 @@ class AnchorBase(ABC):
         # If this anchor is the primary body of a stellar system, this will point to the system anchor
         self.system: SystemAnchor | None = None
 
+    def is_emissive(self) -> bool:
+        """Return True when the object emits its own light."""
+        return (self.content & self.Emissive) != 0
+
     def get_names(self) -> ObjectNames:
         """Get the ObjectNames collection for this anchor.
 
@@ -1350,6 +1354,12 @@ class SystemAnchor(StellarAnchor):
             primary.set_system(self)
             # The system is displayed with the settings of its primary body
             self.point_color = primary.point_color
+
+    def is_emissive(self) -> bool:
+        """Return True when the primary body of the system emits its own light."""
+        if self.primary is not None:
+            return self.primary.is_emissive()
+        return False
 
     def get_fullname(self, separator: str = '/') -> str:
         """Get the full hierarchical name of this system anchor.

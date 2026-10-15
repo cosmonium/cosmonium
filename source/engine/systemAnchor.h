@@ -50,6 +50,7 @@ PUBLISHED:
   virtual void rebuild(void);
   virtual bool is_system(void) const;
   virtual std::string get_fullname(const std::string &separator = "/") const;
+  virtual bool is_emissive(void) const;
 
   virtual SystemAnchor *get_or_create_system(void);
 
