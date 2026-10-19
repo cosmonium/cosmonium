@@ -22,39 +22,40 @@ from ..components.annotations.orbit import Orbit
 
 
 class Orbits:
+    """Registry of the visible orbits.
+
+    An orbit is only drawn for the children of a resolved system.
+    """
+
     def __init__(self):
         self.orbiting_objects = dict()
 
-    def add_orbit(self, stellar_object):
-        if (
-            stellar_object not in self.orbiting_objects
-            and stellar_object.anchor.has_orbit()
-            and stellar_object.anchor.orbit.is_dynamic()
-        ):
-            orbit_object = Orbit(stellar_object)
+    def add_orbit(self, anchor):
+        if anchor not in self.orbiting_objects and anchor.has_orbit() and anchor.orbit.is_dynamic():
+            orbit_object = Orbit(anchor)
             orbit_object.check_settings()
-            self.orbiting_objects[stellar_object] = orbit_object
+            self.orbiting_objects[anchor] = orbit_object
 
-    def remove_orbit(self, stellar_object):
-        if stellar_object not in self.orbiting_objects:
+    def remove_orbit(self, anchor):
+        if anchor not in self.orbiting_objects:
             return
-        orbit_object = self.orbiting_objects.pop(stellar_object)
+        orbit_object = self.orbiting_objects.pop(anchor)
         orbit_object.remove_instance()
 
-    def set_selected(self, stellar_object, selected):
-        if not stellar_object.anchor.has_system():
-            orbit_object = self.orbiting_objects.get(stellar_object)
+    def set_selected(self, anchor, selected):
+        if not anchor.has_system():
+            orbit_object = self.orbiting_objects.get(anchor)
             if orbit_object is not None:
                 orbit_object.set_selected(selected)
         else:
-            self.set_selected(stellar_object.anchor.system.body, selected)
+            self.set_selected(anchor.system, selected)
 
-    def add_system_orbits(self, system):
-        for child in system.children:
+    def add_system_orbits(self, system_anchor):
+        for child in system_anchor.get_children():
             self.add_orbit(child)
 
-    def remove_system_orbits(self, system):
-        for child in system.children:
+    def remove_system_orbits(self, system_anchor):
+        for child in system_anchor.get_children():
             self.remove_orbit(child)
 
     def check_settings(self):

@@ -50,11 +50,11 @@ class Orbit(VisibleObject):
     shader = None
     default_camera_mask = VisibleObject.AnnotationCameraFlag
 
-    def __init__(self, body):
-        VisibleObject.__init__(self, body.get_ascii_name() + '-orbit')
-        self.body = body
+    def __init__(self, anchor):
+        VisibleObject.__init__(self, anchor.get_ascii_name() + '-orbit')
+        self.anchor = anchor
         self.nbOfPoints = 360
-        self.orbit = self.find_orbit(self.body)
+        self.orbit = self.find_orbit(self.anchor)
         self.color = None
         self.fade = 0.0
         if not self.orbit:
@@ -62,8 +62,8 @@ class Orbit(VisibleObject):
             self.visible = False
 
     def get_oid_color(self):
-        if self.body is not None:
-            return self.body.oid_color
+        if self.anchor is not None:
+            return self.anchor.oid_color
         else:
             return LColor()
 
@@ -85,32 +85,33 @@ class Orbit(VisibleObject):
         cls.shader.create(None, cls.appearance)
 
     def check_settings(self):
-        if self.body.body_class is None:
-            print("No class for", self.body.get_name())
+        if self.anchor.body_class is None:
+            print("No class for", self.anchor.get_name())
             return
-        self.set_shown(settings.show_orbits and bodyClasses.get_show_orbit(self.body.body_class))
+        self.set_shown(settings.show_orbits and bodyClasses.get_show_orbit(self.anchor.body_class))
 
-    def find_orbit(self, body):
-        if body is not None:
-            if not isinstance(body.anchor.orbit, FixedPosition):
-                return body.anchor.orbit
+    def find_orbit(self, anchor):
+        if anchor is not None:
+            if not isinstance(anchor.orbit, FixedPosition):
+                return anchor.orbit
             else:
-                return None, None
+                return None
         else:
-            return None, None
+            return None
 
     def set_selected(self, selected):
         if selected:
             self.color = self.selected_color
         else:
-            self.color = self.body.get_orbit_color()
+            # TODO: Orbit color is owned by body
+            self.color = self.anchor.body.get_orbit_color()
         if self.instance:
             self.instance.setColor(srgb_to_linear(self.color * self.fade))
 
     def create_instance(self):
         self.vertexData = GeomVertexData('vertexData', GeomVertexFormat.getV3(), Geom.UHStatic)
         self.vertexWriter = GeomVertexWriter(self.vertexData, 'vertex')
-        delta = self.body.parent.anchor.get_local_position()
+        delta = self.anchor.parent.get_local_position()
         if self.orbit.is_periodic():
             epoch = self.context.time.time_full - self.orbit.period / 2
             step = self.orbit.period / (self.nbOfPoints - 1)
@@ -131,7 +132,7 @@ class Orbit(VisibleObject):
             self.lines.addVertex(0)
         self.geom = Geom(self.vertexData)
         self.geom.addPrimitive(self.lines)
-        self.node = GeomNode(self.body.get_ascii_name() + '-orbit')
+        self.node = GeomNode(self.anchor.get_ascii_name() + '-orbit')
         self.node.addGeom(self.geom)
         self.instance = NodePath(self.node)
         self.instance.setCollideMask(GeomNode.getDefaultCollideMask())
@@ -144,12 +145,13 @@ class Orbit(VisibleObject):
             self.instance.set_transparency(True)
         else:
             self.instance.setRenderModeThickness(settings.orbit_thickness)
-        self.instance.node().setPythonTag('owner', self.body)
-        if settings.color_picking and self.body.oid_color is not None:
-            self.instance.set_shader_input("color_picking", self.body.oid_color)
-        self.instance.reparentTo(self.body.parent.scene_anchor.unshifted_instance)
+        self.instance.node().setPythonTag('owner', self.anchor)
+        if settings.color_picking and self.anchor.oid_color is not None:
+            self.instance.set_shader_input("color_picking", self.anchor.oid_color)
+        self.instance.reparentTo(self.anchor.parent.scene_anchor.unshifted_instance)
         if self.color is None:
-            self.color = self.body.get_orbit_color()
+            # TODO: Orbit color is owned by body
+            self.color = self.anchor.body.get_orbit_color()
         self.instance.setColor(srgb_to_linear(self.color * self.fade))
         self.instance_ready = True
         if self.shader is None:
@@ -167,7 +169,7 @@ class Orbit(VisibleObject):
         vdata = geom.modify_vertex_data()
         vwriter = GeomVertexRewriter(vdata, InternalName.get_vertex())
         # TODO: refactor with above code !!!
-        delta = self.body.parent.anchor.get_local_position()
+        delta = self.anchor.parent.get_local_position()
         if self.orbit.is_periodic():
             epoch = self.context.time.time_full - self.orbit.period
             step = self.orbit.period / (self.nbOfPoints - 1)
@@ -182,12 +184,13 @@ class Orbit(VisibleObject):
 
     def check_visibility(self, frustum, pixel_size):
         if (
-            self.body.parent.anchor.visible
-            and self.body.parent.scene_anchor.instance is not None
-            and self.body.shown
+            self.anchor.parent.visible
+            and self.anchor.parent.scene_anchor.instance is not None
+            # TODO: shown flag is owned by body
+            and self.anchor.body.shown
             and self.orbit
         ):
-            distance_to_obs = self.body.anchor.distance_to_obs
+            distance_to_obs = self.anchor.distance_to_obs
             if distance_to_obs > 0.0:
                 size = self.orbit.get_bounding_radius() / (distance_to_obs * pixel_size)
             else:

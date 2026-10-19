@@ -875,12 +875,12 @@ class Cosmonium(CosmoniumBase):
         if self.selected is not None:
             print("Deselect", self.selected.get_name())
             self.selected.set_selected(False)
-            self.orbits.set_selected(self.selected, False)
+            self.orbits.set_selected(self.selected.anchor, False)
         if body is not None:
             print("Select", body.get_name())
             self.update_extra(body.anchor)
             body.set_selected(True)
-            self.orbits.set_selected(body, True)
+            self.orbits.set_selected(body.anchor, True)
         self.selected = body
         if self.fly:
             # Disable fly mode when changing body
@@ -1483,23 +1483,23 @@ class Cosmonium(CosmoniumBase):
                 newly_visible.body.on_resolved(scene_manager)
                 self.axes.add_axis(newly_visible.body)
                 self.halos.add_halo(newly_visible.body)
-                if newly_visible.body.is_system():
-                    self.orbits.add_system_orbits(newly_visible.body)
+                if newly_visible.is_system():
+                    self.orbits.add_system_orbits(newly_visible)
         for newly_resolved in self.becoming_resolved:
-            # print("NEW RESOLVED", newly_resolved.body.get_name())
+            # print("NEW RESOLVED", newly_resolved.get_name())
             newly_resolved.body.on_resolved(scene_manager)
             if newly_resolved.body.stellar_object:
                 self.axes.add_axis(newly_resolved.body)
                 self.halos.add_halo(newly_resolved.body)
-                if newly_resolved.body.is_system():
-                    self.orbits.add_system_orbits(newly_resolved.body)
+                if newly_resolved.is_system():
+                    self.orbits.add_system_orbits(newly_resolved)
         for old_resolved in self.no_longer_resolved:
-            # print("OLD RESOLVED", old_resolved.body.get_name())
+            # print("OLD RESOLVED", old_resolved.get_name())
             old_resolved.body.on_point(scene_manager)
             self.axes.remove_axis(old_resolved.body)
             self.halos.remove_halo(old_resolved.body)
-            if old_resolved.body.is_system():
-                self.orbits.remove_system_orbits(old_resolved.body)
+            if old_resolved.is_system():
+                self.orbits.remove_system_orbits(old_resolved)
         for old_visible in self.no_longer_visibles:
             # print("OLD VISIBLE", old_visible.get_name())
             self.labels.remove_label(old_visible)
@@ -1508,8 +1508,8 @@ class Cosmonium(CosmoniumBase):
                 old_visible.body.on_point(scene_manager)
                 self.axes.remove_axis(old_visible.body)
                 self.halos.remove_halo(old_visible.body)
-                if old_visible.body.is_system():
-                    self.orbits.remove_system_orbits(old_visible.body)
+                if old_visible.is_system():
+                    self.orbits.remove_system_orbits(old_visible)
         for old_focused in self.old_focused_objects:
             old_focused.body.set_focused(False)
         self.old_focused_objects = set()
