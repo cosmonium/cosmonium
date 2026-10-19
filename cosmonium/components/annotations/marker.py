@@ -33,6 +33,8 @@ class ObjectMarker(VisibleObject):
     symbol (diamond, circle, square, etc.) centered on the object, maintaining
     a constant pixel size regardless of distance.  An optional text label can
     accompany the symbol (Not implemented yet).
+
+    Everything the marker needs is read from the anchor of the object.
     """
 
     default_camera_mask = VisibleObject.AnnotationCameraFlag
@@ -43,7 +45,7 @@ class ObjectMarker(VisibleObject):
 
         Args:
             name: Unique name for this marker.
-            marker_source: The StellarObject (or compatible object) being marked.
+            marker_source: The anchor of the object being marked.
             color: RGBA marker color as an LColor (in sRGB space, will be converted to linear).
             size: Nominal marker radius in pixels.
             symbol: One of the MarkerShape enum values.
@@ -85,14 +87,14 @@ class ObjectMarker(VisibleObject):
         self.look_at = self.instance.attachNewNode("dummy")
 
     def check_visibility(self, frustum, pixel_size):
-        self.visible = self.marker_source.anchor.visible or self.marker_source.anchor.resolved
+        self.visible = self.marker_source.visible or self.marker_source.resolved
 
     def update_instance(self, scene_manager, camera_pos, camera_rot):
-        body = self.marker_source
-        offset = body.get_bounding_radius()
+        anchor = self.marker_source
+        offset = anchor.get_bounding_radius()
         position = -camera_rot.xform(LPoint3d(0, offset, 0))
-        z_coef = -body.anchor.vector_to_obs.dot(body.context.observer.anchor.camera_vector)
-        z_distance = (body.anchor.distance_to_obs - offset) * z_coef
+        z_coef = -anchor.vector_to_obs.dot(self.context.observer.anchor.camera_vector)
+        z_distance = (anchor.distance_to_obs - offset) * z_coef
         self.instance.set_pos(*position)
         scale = abs(self.context.observer.pixel_size * self.size * z_distance * settings.ui_scale)
         if scale < 1e-7:

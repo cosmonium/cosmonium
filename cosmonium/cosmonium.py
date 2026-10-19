@@ -1055,11 +1055,13 @@ class Cosmonium(CosmoniumBase):
 
     def mark_selected(self, color=None, size=None, symbol=None, label='', occludable=True):
         if self.selected is not None:
-            self.markers.mark(self.selected, color=color, size=size, symbol=symbol, label=label, occludable=occludable)
+            self.markers.mark(
+                self.selected.anchor, color=color, size=size, symbol=symbol, label=label, occludable=occludable
+            )
 
     def unmark_selected(self):
         if self.selected is not None:
-            self.markers.unmark(self.selected)
+            self.markers.unmark(self.selected.anchor)
 
     def unmark_all(self):
         self.markers.unmark_all()
@@ -1476,7 +1478,7 @@ class Cosmonium(CosmoniumBase):
         for newly_visible in self.becoming_visibles:
             # print("NEW VISIBLE", newly_visible.get_name())
             self.labels.add_label(newly_visible)
-            self.markers.on_visible(newly_visible.body)
+            self.markers.on_visible(newly_visible)
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
                 self.axes.add_axis(newly_visible.body)
@@ -1501,7 +1503,7 @@ class Cosmonium(CosmoniumBase):
         for old_visible in self.no_longer_visibles:
             # print("OLD VISIBLE", old_visible.get_name())
             self.labels.remove_label(old_visible)
-            self.markers.on_invisible(old_visible.body)
+            self.markers.on_invisible(old_visible)
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
                 self.axes.remove_axis(old_visible.body)

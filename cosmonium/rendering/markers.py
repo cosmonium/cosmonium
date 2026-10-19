@@ -52,6 +52,9 @@ class Markers:
     across visibility changes: the visual instance is created or destroyed as
     the object enters/leaves the visible set, but the marker configuration is
     retained until explicitly removed.
+
+    The registry is keyed by anchor and the markers only read anchor data, so a
+    marked object does not need its Python object.
     """
 
     DEFAULT_COLOR = LColor(0.0, 1.0, 0.0, 0.9)
@@ -59,29 +62,29 @@ class Markers:
     DEFAULT_SYMBOL = MarkerShape.DIAMOND
 
     def __init__(self):
-        # body -> MarkerData (persistent marker configuration)
+        # anchor -> MarkerData (persistent marker configuration)
         self.marker_data = {}
-        # body -> ObjectMarker (active visual instance, only while body is visible)
+        # anchor -> ObjectMarker (active visual instance, only while the object is visible)
         self.active_markers = {}
         # flat list of active ObjectMarker instances for update iteration
         self.markers = []
 
-    def is_marked(self, body):
-        """Return True if body has a marker configured.
+    def is_marked(self, anchor):
+        """Return True if the object has a marker configured.
 
         Args:
-            body: The StellarObject to check.
+            anchor: The anchor of the object to check.
 
         Returns:
-            True if the body has a marker configured, False otherwise.
+            True if the object has a marker configured, False otherwise.
         """
-        return body in self.marker_data
+        return anchor in self.marker_data
 
-    def mark(self, body, color=None, size=None, symbol=None, label=None, occludable=False):
-        """Set a marker on body, replacing any existing one.
+    def mark(self, anchor, color=None, size=None, symbol=None, label=None, occludable=False):
+        """Set a marker on the object, replacing any existing one.
 
         Args:
-            body: The StellarObject to mark.
+            anchor: The anchor of the object to mark.
             color: RGBA color as an LColor (or 4-tuple). Defaults to green.
             size: Marker radius in pixels. Defaults to 10.
             symbol: A MarkerShape enum value. Defaults to DIAMOND.
@@ -98,71 +101,71 @@ class Markers:
             color = LColor(*color)
 
         # Replace any existing active instance so the new settings take effect immediately.
-        if body in self.active_markers:
-            self._destroy_instance(body)
+        if anchor in self.active_markers:
+            self._destroy_instance(anchor)
 
-        self.marker_data[body] = MarkerData(color, size, symbol, label, occludable)
+        self.marker_data[anchor] = MarkerData(color, size, symbol, label, occludable)
 
-        # If the body already has a scene_anchor (i.e. it is currently visible),
+        # If the anchor already has a scene_anchor (i.e. it is currently visible),
         # create the visual instance right away.
-        if body.scene_anchor is not None and (body.anchor.visible or body.anchor.resolved):
-            self._create_instance(body)
+        if anchor.scene_anchor is not None and (anchor.visible or anchor.resolved):
+            self._create_instance(anchor)
 
-    def unmark(self, body):
-        """Remove the marker from body.
+    def unmark(self, anchor):
+        """Remove the marker from the object.
 
         Args:
-            body: The StellarObject to unmark.
+            anchor: The anchor of the object to unmark.
         """
-        self._destroy_instance(body)
-        self.marker_data.pop(body, None)
+        self._destroy_instance(anchor)
+        self.marker_data.pop(anchor, None)
 
     def unmark_all(self):
         """Remove all markers."""
-        for body in list(self.active_markers.keys()):
-            self._destroy_instance(body)
+        for anchor in list(self.active_markers.keys()):
+            self._destroy_instance(anchor)
         self.marker_data.clear()
 
-    def toggle_mark(self, body, color=None, size=None, symbol=None, label=None, occludable=True):
-        """Toggle the marker on body: remove it if already marked, else add it.
+    def toggle_mark(self, anchor, color=None, size=None, symbol=None, label=None, occludable=True):
+        """Toggle the marker on the object: remove it if already marked, else add it.
 
         Args:
-            body: The StellarObject to toggle.
+            anchor: The anchor of the object to toggle.
             color: Marker color as an LColor (or 4-tuple). Defaults to green.
             size: Marker radius in pixels. Defaults to 10.
             symbol: A MarkerShape enum value. Defaults to DIAMOND.
             label: Optional text label shown alongside the marker symbol.
             occludable: When False the marker renders on top of all geometry.
         """
-        if self.is_marked(body):
-            self.unmark(body)
+        if self.is_marked(anchor):
+            self.unmark(anchor)
         else:
-            self.mark(body, color=color, size=size, symbol=symbol, label=label, occludable=occludable)
+            self.mark(anchor, color=color, size=size, symbol=symbol, label=label, occludable=occludable)
 
     # ------------------------------------------------------------------
     # Visibility lifecycle hooks called from the main engine update loop.
     # ------------------------------------------------------------------
 
-    def on_visible(self, body):
-        """Called when body enters the visible set.
+    def on_visible(self, anchor):
+        """Called when the object enters the visible set.
 
-        Creates the marker visual instance if the body is configured to be marked.
+        Creates the marker visual instance if the object is configured to be marked.
 
         Args:
-            body: The StellarObject that became visible.
+            anchor: The anchor that became visible.
         """
-        if body in self.marker_data and body not in self.active_markers:
-            self._create_instance(body)
+        if anchor in self.marker_data and anchor not in self.active_markers:
+            self._create_instance(anchor)
 
-    def on_invisible(self, body):
-        """Called when body leaves the visible set.
+    def on_invisible(self, anchor):
+        """Called when the object leaves the visible set.
 
         Destroys the active marker instance while retaining the marker configuration.
 
         Args:
-            body: The StellarObject that became invisible.
+            anchor: The anchor that became invisible.
         """
-        self._destroy_instance(body)
+        self._destroy_instance(anchor)
 
     # ------------------------------------------------------------------
     # Per-frame update delegated to the active marker instances.
@@ -213,23 +216,23 @@ class Markers:
     # Internal helpers.
     # ------------------------------------------------------------------
 
-    def _create_instance(self, body):
-        data = self.marker_data[body]
+    def _create_instance(self, anchor):
+        data = self.marker_data[anchor]
         marker = ObjectMarker(
-            body.get_ascii_name() + '-marker',
-            body,
+            anchor.get_ascii_name() + '-marker',
+            anchor,
             data.color,
             data.size,
             data.symbol,
             data.label,
             data.occludable,
         )
-        marker.set_scene_anchor(body.scene_anchor)
-        self.active_markers[body] = marker
+        marker.set_scene_anchor(anchor.scene_anchor)
+        self.active_markers[anchor] = marker
         self.markers.append(marker)
 
-    def _destroy_instance(self, body):
-        marker = self.active_markers.pop(body, None)
+    def _destroy_instance(self, anchor):
+        marker = self.active_markers.pop(anchor, None)
         if marker is not None:
             self.markers.remove(marker)
             marker.remove_instance()
