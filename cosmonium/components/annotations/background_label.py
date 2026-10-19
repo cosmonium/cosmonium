@@ -27,6 +27,9 @@ from .object_label import ObjectLabel
 class BackgroundLabel(ObjectLabel):
     color_picking = False
 
+    def get_label_size(self):
+        return settings.constellations_label_size
+
     def create_instance(self):
         ObjectLabel.create_instance(self)
         self.instance.setBin('background', self.label_source.background_level)
@@ -50,9 +53,7 @@ class BackgroundLabel(ObjectLabel):
             vector = self.rel_position / distance
             z_coef = vector.dot(self.context.observer.anchor.camera_vector)
             z_distance = distance * z_coef
-            scale = abs(
-                self.context.observer.pixel_size * self.label_source.get_label_size() * z_distance * settings.ui_scale
-            )
+            scale = abs(self.context.observer.pixel_size * self.get_label_size() * z_distance * settings.ui_scale)
         else:
             scale = 0.0
         if scale < 1e-7:

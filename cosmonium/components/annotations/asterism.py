@@ -187,9 +187,3 @@ class NamedAsterism(CompositeObject):
 
     def get_label_text(self):
         return self.get_name()
-
-    def get_label_color(self):
-        return bodyClasses.get_label_color(self.body_class)
-
-    def get_label_size(self):
-        return settings.constellations_label_size
