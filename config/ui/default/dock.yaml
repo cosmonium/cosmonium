@@ -100,7 +100,7 @@ dock:
             class: icon
             code: F01D8  # mdi-dots-horizontal
             tooltip: More actions on selected
-            menu: menu-select
+            menu: menu-object
             enabled: 'engine.selected'
       - type: layout
         orientation: vertical
@@ -218,5 +218,5 @@ dock:
           - type: button
             class: icon
             code: F0208  # mdi-eye
-            menu: menu-render
+            menu: menu-view
             tooltip: Display options
