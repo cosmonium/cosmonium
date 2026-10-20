@@ -1,5 +1,6 @@
 dock:
 
+  # Top: application menu, search and window tools
   - anchor: top
     orientation: horizontal
     padding: 6px 10px
@@ -9,69 +10,121 @@ dock:
         id: dock-title
         text: COSMONIUM
         menu: app-menu
+        tooltip: Application menu
       - type: search
         placeholder: Search…
         width: 26
       - type: spacer
         grow: 1
-      - type: button
-        class: icon
-        code: F02FD
-        event: gui-show-info
-        enabled: 'engine.selected'
-        tooltip: Object info
+      - type: layout
+        orientation: horizontal
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F0100  # mdi-camera
+            event: save-screenshot
+            tooltip: Save a screenshot (F10)
+          - type: button
+            class: icon
+            code: F0293  # mdi-fullscreen
+            event: toggle-fullscreen
+            tooltip: Toggle fullscreen (Alt+Enter)
       - type: button
         class: icon
         code: F0493  # mdi-cog
         event: gui-show-preferences
-        tooltip: Preferences
-      - type: button
-        class: icon
-        code: F0293  # mdi-fullscreen
-        event: toggle-fullscreen
-        tooltip: Toggle fullscreen
+        tooltip: Preferences (Ctrl+,)
       - type: button
         class: icon
         code: F0625  # mdi-help-circle-outline
-        tooltip: User guide
+        tooltip: User guide (?)
         event: gui-show-help
 
+  # Right: navigation
   - anchor: right
     orientation: vertical
     padding: 10px 6px
-    gap: 10px
+    gap: 8px
     widgets:
+      # Info on the selected object, disabled when nothing is selected
       - type: button
         class: icon
-        code: F02F2  # mdi-image-filter-center-focus-weak
-        tooltip: Center selected
-        event: center-selected
-      - type: button
-        class: icon
-        code: F01A4  # mdi-crosshairs-gps
-        tooltip: Track selected
-        event: track-selected
-        checked: 'engine.track'
-      - type: button
-        class: icon
-        code: F001D  # mdi-airplane
-        tooltip: Follow selected
-        event: follow-selected
-        checked: 'engine.follow'
-      - type: button
-        class: icon
-        code: F0018  # mdi-orbit
-        tooltip: Orbit selected
-        event: sync-selected
-        checked: 'engine.sync'
-      - type: spacer
-        size: [0, 6]
+        code: F02FD  # mdi-information-outline
+        event: gui-show-info
+        enabled: 'engine.selected'
+        tooltip: Object info (Ctrl+I)
+      # Actions on the selected object, disabled when nothing is selected
+      - type: layout
+        orientation: vertical
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F14DF  # mdi-rocket-launch-outline
+            tooltip: Go to selected (G)
+            event: goto-selected
+            enabled: 'engine.selected'
+          - type: button
+            class: icon
+            code: F02F2  # mdi-image-filter-center-focus-weak
+            tooltip: Center selected (C)
+            event: center-selected
+            enabled: 'engine.selected'
+          - type: button
+            class: icon
+            code: F01A4  # mdi-crosshairs-gps
+            tooltip: Track selected (T)
+            event: track-selected
+            checked: 'engine.track'
+            enabled: 'engine.selected'
+          - type: button
+            class: icon
+            code: F001D  # mdi-airplane
+            tooltip: Follow selected (F)
+            event: follow-selected
+            checked: 'engine.follow'
+            enabled: 'engine.selected'
+          - type: button
+            class: icon
+            code: F0018  # mdi-orbit
+            tooltip: Orbit selected (Y)
+            event: sync-selected
+            checked: 'engine.sync'
+            enabled: 'engine.selected'
+          - type: button
+            class: icon
+            code: F01D8  # mdi-dots-horizontal
+            tooltip: More actions on selected
+            menu: menu-select
+            enabled: 'engine.selected'
+      - type: layout
+        orientation: vertical
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F06ED  # mdi-magnify-plus-outline
+            tooltip: Zoom in (+)
+            event: zoom-in
+          - type: button
+            class: icon
+            code: F06EC  # mdi-magnify-minus-outline
+            tooltip: Zoom out (-)
+            event: zoom-out
       - type: button
         class: icon
         code: F02DC  # mdi-home
-        tooltip: Go to home
+        tooltip: Go to home (Alt+H)
         event: select-home
 
+  # Bottom: time controls and display options
   - anchor: bottom
     orientation: horizontal
     padding: 6px 10px
@@ -87,30 +140,30 @@ dock:
             class: icon
             code: F0F86  # mdi-speedometer-slow
             event: slow-time-2
-            tooltip: Decelerate time
+            tooltip: Decelerate time (Page Down)
           - type: button
             class: icon
             code: F03E4  # mdi-pause
             code_checked: F040A  # mdi-play
             checked: 'not time.is_running'
             event: toggle-freeze-time
-            tooltip: Play / pause time
+            tooltip: Play / pause time (Space)
           - type: button
             class: icon
             code: F0F85  # mdi-speedometer-medium
             event: set-real-time
-            tooltip: Real time
+            tooltip: Real time (!)
           - type: button
             class: icon
             code: F04C5  # mdi-speedometer
             event: accelerate-time-2
-            tooltip: Accelerate time
+            tooltip: Accelerate time (Page Up)
           - type: button
             class: icon
             code: F04E1  # mdi-swap
             checked: 'time.is_inverted'
             event: invert-time
-            tooltip: Invert time
+            tooltip: Invert time (R)
       - type: layout
         orientation: vertical
         padding: 2px
@@ -131,9 +184,39 @@ dock:
             class: icon
             code: F0150  # mdi-clock-outline
             event: set-current-date
-            tooltip: Jump to current time
+            tooltip: Jump to current time (N)
           - type: button
             class: icon
             code: F0E18  # mdi-calendar-month-outline
             event: gui-show-time-editor
             tooltip: Open time editor
+      # Quick toggles for the most common annotations, the full list is in the display menu
+      - type: layout
+        orientation: horizontal
+        class: group
+        padding: 2px
+        gap: 2px
+        widgets:
+          - type: button
+            class: icon
+            code: F0EA1  # mdi-ellipse-outline
+            event: toggle-orbits
+            checked: 'settings.show_orbits'
+            tooltip: Show / hide orbits (O)
+          - type: button
+            class: icon
+            code: F0E93  # mdi-chart-timeline-variant
+            event: toggle-asterisms
+            checked: 'settings.show_asterisms'
+            tooltip: Show / hide constellations (A)
+          - type: button
+            class: icon
+            code: F02C1  # mdi-grid
+            event: toggle-equatorial-grid
+            checked: 'settings.show_equatorial_grid'
+            tooltip: Show / hide the equatorial grid (E)
+          - type: button
+            class: icon
+            code: F0208  # mdi-eye
+            menu: menu-render
+            tooltip: Display options

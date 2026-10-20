@@ -357,6 +357,12 @@
   text-color: var(text-primary)
 
 - element: button
+  state: disabled
+  parent:
+    class: dock
+  text-color: var(text-disabled)
+
+- element: button
   state: active
   parent:
     class: dock
