@@ -1406,14 +1406,14 @@ class Cosmonium(CosmoniumBase):
             if anchor.content & StellarAnchor.Reflective == 0:
                 continue
             for light_source in self.global_light_sources:
-                # print("TEST", reflective.body.get_name())
+                # print("TEST", anchor.get_name())
                 traverser = FindShadowCastersTraverser(
-                    anchor, light_source.body.anchor.get_local_position(), light_source.get_bounding_radius()
+                    anchor, light_source.get_local_position(), light_source.get_bounding_radius()
                 )
                 self.nearest_system.anchor.traverse(traverser)
                 occluders = traverser.get_collected()
                 self.shadows[anchor] = occluders
-                # print("SHADOWS", list(map(lambda x: x.body.get_name(), traverser.get_collected())))
+                # print("SHADOWS", list(map(lambda x: x.get_name(), traverser.get_collected())))
                 self.shadow_casters.update(occluders)
 
     @pstat
