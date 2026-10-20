@@ -1657,7 +1657,7 @@ class Cosmonium(CosmoniumBase):
         for visible in self.visibles:
             body_distance = visible.distance_to_obs - visible._height_under
             if body_distance < distance:
-                nearest_body = visible.body
+                nearest_body = visible
                 distance = body_distance
         if nearest_body is not None:
             if self.nearest_body != nearest_body:
