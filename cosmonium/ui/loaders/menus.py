@@ -74,20 +74,29 @@ class MenuLoader(BaseComponentLoader):
 
         # Parse enabled condition
         if entry_config.enabled is not None:
-            enabled = self.expression_parser.compile_expression(entry_config.enabled, self.gui.global_vars.globals)
+            enabled_expression = self.expression_parser.compile_expression(
+                entry_config.enabled, self.gui.global_vars.globals
+            )
+            enabled = lambda: bool(enabled_expression())
         else:
             enabled = true_expression
 
         # Parse visible condition
         if entry_config.visible is not None:
-            visible = self.expression_parser.compile_expression(entry_config.visible, self.gui.global_vars.globals)
+            visible_expression = self.expression_parser.compile_expression(
+                entry_config.visible, self.gui.global_vars.globals
+            )
+            visible = lambda: bool(visible_expression())
         else:
             visible = true_expression
 
         if entry_config.event is not None:
             # Event menu entry
             if entry_config.checked is not None:
-                checked = self.expression_parser.compile_expression(entry_config.checked, self.gui.global_vars.globals)
+                checked_expression = self.expression_parser.compile_expression(
+                    entry_config.checked, self.gui.global_vars.globals
+                )
+                checked = lambda: bool(checked_expression())
             else:
                 checked = zero_expression
             menu = EventMenuEntry(
