@@ -15,8 +15,8 @@ pydocstyle == 6.3.0
 
 mypy == 2.3.1
 
-pre-commit == 4.6.2
-
+pre-commit == 4.7.0 ; python_version >= "3.11"
+pre-commit == 4.6.2 ; python_version < "3.11"
 
 # Test tools
 
