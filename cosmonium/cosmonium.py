@@ -1482,7 +1482,7 @@ class Cosmonium(CosmoniumBase):
             if newly_visible.resolved:
                 newly_visible.body.on_resolved(scene_manager)
                 self.axes.add_axis(newly_visible.body)
-                self.halos.add_halo(newly_visible.body)
+                self.halos.add_halo(newly_visible)
                 if newly_visible.is_system():
                     self.orbits.add_system_orbits(newly_visible)
         for newly_resolved in self.becoming_resolved:
@@ -1490,14 +1490,14 @@ class Cosmonium(CosmoniumBase):
             newly_resolved.body.on_resolved(scene_manager)
             if newly_resolved.body.stellar_object:
                 self.axes.add_axis(newly_resolved.body)
-                self.halos.add_halo(newly_resolved.body)
+                self.halos.add_halo(newly_resolved)
                 if newly_resolved.is_system():
                     self.orbits.add_system_orbits(newly_resolved)
         for old_resolved in self.no_longer_resolved:
             # print("OLD RESOLVED", old_resolved.get_name())
             old_resolved.body.on_point(scene_manager)
             self.axes.remove_axis(old_resolved.body)
-            self.halos.remove_halo(old_resolved.body)
+            self.halos.remove_halo(old_resolved)
             if old_resolved.is_system():
                 self.orbits.remove_system_orbits(old_resolved)
         for old_visible in self.no_longer_visibles:
@@ -1507,7 +1507,7 @@ class Cosmonium(CosmoniumBase):
             if old_visible.resolved:
                 old_visible.body.on_point(scene_manager)
                 self.axes.remove_axis(old_visible.body)
-                self.halos.remove_halo(old_visible.body)
+                self.halos.remove_halo(old_visible)
                 if old_visible.is_system():
                     self.orbits.remove_system_orbits(old_visible)
         for old_focused in self.old_focused_objects:

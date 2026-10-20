@@ -23,21 +23,24 @@ from ..components.elements.halo import Halo
 
 
 class Halos:
+    """Registry of the halos of the resolved objects."""
+
     def __init__(self):
         self.halo_objects = dict()
 
-    def add_halo(self, stellar_object):
-        if stellar_object not in self.halo_objects and not settings.use_pbr and stellar_object.has_resolved_halo:
+    def add_halo(self, anchor):
+        if anchor not in self.halo_objects and not settings.use_pbr and anchor.body.has_resolved_halo:
+            stellar_object = anchor.body
             halo = Halo(stellar_object)
-            halo.set_scene_anchor(stellar_object.scene_anchor)
+            halo.set_scene_anchor(anchor.scene_anchor)
             halo.set_parent(stellar_object)
             halo.check_settings()
-            self.halo_objects[stellar_object] = halo
+            self.halo_objects[anchor] = halo
 
-    def remove_halo(self, stellar_object):
-        if stellar_object not in self.halo_objects:
+    def remove_halo(self, anchor):
+        if anchor not in self.halo_objects:
             return
-        halo = self.halo_objects.pop(stellar_object)
+        halo = self.halo_objects.pop(anchor)
         halo.remove_instance()
 
     def check_settings(self):
