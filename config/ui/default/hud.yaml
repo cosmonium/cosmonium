@@ -1,0 +1,84 @@
+hud:
+
+  # Name(s) of the selected object
+  - anchor: top-left
+    id: title
+    type: text-list
+    size: 1
+    entries:
+      - condition: 'engine.selected'
+        text: '{selected.list_of_names}'
+
+  # Details of the selected object
+  - anchor: top-left
+    type: text-list
+    entries:
+      - condition: 'engine.selected'
+        entries:
+          # Distance when far away, altitude when close to the object
+          - title: 'Distance'
+            condition: 'selected.is_virtual_object or selected.distance_to_obs > 10 * selected.apparent_radius'
+            text: '{scales.length(selected.distance_to_obs)}'
+          - condition: 'not selected.is_virtual_object and selected.distance_to_obs <= 10 * selected.apparent_radius'
+            entries:
+              - condition: 'selected.has_not_flat_surface'
+                title: 'Altitude'
+                text: '{scales.length(selected.altitude)} (ground: {scales.length(selected.ground_distance)})'
+              - condition: 'not selected.has_not_flat_surface'
+                title: 'Altitude'
+                text: '{scales.length(selected.altitude)}'
+          - condition: 'not selected.is_virtual_object and selected.is_stellar'
+            entries:
+              - title: 'Radius'
+                text: '{scales.length(selected.apparent_radius)} ({scales.radius(selected.apparent_radius, "x")})'
+              - title: 'Magnitude'
+                text: '{selected.app_magnitude:.2f} (absolute {selected.abs_magnitude:.2f})'
+              - condition: 'selected.is_emissive'
+                entries:
+                  - title: 'Luminosity'
+                    text: '{(selected.intrinsic_luminosity / units.L0):.2f}x Sun'
+                  - condition: 'selected.is_star'
+                    title: 'Type'
+                    text: '{selected.spectral_type} ({selected.temperature} K)'
+              - condition: 'not selected.is_emissive'
+                title: 'Phase'
+                text: '{selected.phase:.2f}°'
+          - condition: 'selected.is_virtual_object and selected.is_stellar'
+            title: 'Magnitude'
+            text: '{selected.app_magnitude:.2f} (absolute {selected.abs_magnitude:.2f})'
+
+  # Performance counter
+  - anchor: top-right
+    type: text-list
+    entries:
+      - condition: 'settings.display_render_info == "fps"'
+        text: '{clock.average_frame_rate:.1f} fps'
+      - condition: 'settings.display_render_info == "ms"'
+        text: '{(clock.frame_duration * 1000):.1f} ms'
+
+  # Speed of the camera
+  - anchor: bottom-left
+    type: text-list
+    entries:
+      - title: 'Speed'
+        text: '{scales.speed(nav.speed)}'
+
+  # State of the camera
+  - anchor: bottom-right
+    type: text-list
+    entries:
+      - condition: 'camera.zoom != 1'
+        title: 'Zoom'
+        text: '{camera.zoom:g}x'
+      - title: 'Field of view'
+        text: '{scales.degrees(camera.vfov)}'
+      - condition: 'engine.fly'
+        text: 'Flying over {engine.selected.get_name()}'
+      - condition: 'engine.sync'
+        text: 'Orbiting {engine.sync.get_name()}'
+      - condition: 'engine.follow'
+        text: 'Following {engine.follow.get_name()}'
+      - condition: 'engine.track'
+        text: 'Tracking {engine.track.get_name()}'
+      - condition: 'autopilot.running'
+        text: 'Travelling ({int(autopilot.time_to_destination)} s)'
