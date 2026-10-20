@@ -1729,8 +1729,8 @@ class Cosmonium(CosmoniumBase):
         self.find_local_lights()
 
         if self.trigger_check_settings:
-            for visible in self.visibles:
-                visible.body.check_settings()
+            for resolved in self.resolved:
+                resolved.body.check_settings()
             self.worlds.check_settings()
             self.labels.check_settings()
             self.axes.check_settings()
