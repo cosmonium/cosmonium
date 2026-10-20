@@ -23,32 +23,35 @@ from ..components.annotations.rotation_axis import RotationAxis
 
 
 class Axes:
+    """Registry of the axes of the resolved objects."""
+
     def __init__(self):
         self.axes = dict()
 
-    def add_axis(self, stellar_object):
+    def add_axis(self, anchor):
+        stellar_object = anchor.body
         if not stellar_object.stellar_object:
             return
         axis = []
         if stellar_object.has_rotation_axis:
             rotation_axis = RotationAxis(stellar_object)
-            rotation_axis.set_scene_anchor(stellar_object.scene_anchor)
+            rotation_axis.set_scene_anchor(anchor.scene_anchor)
             rotation_axis.set_parent(stellar_object)
             rotation_axis.check_settings()
             axis.append(rotation_axis)
         if stellar_object.has_reference_axis:
             reference_axes = ReferenceAxes(stellar_object)
-            reference_axes.set_scene_anchor(stellar_object.scene_anchor)
+            reference_axes.set_scene_anchor(anchor.scene_anchor)
             reference_axes.set_parent(stellar_object)
             reference_axes.check_settings()
             axis.append(reference_axes)
         if axis:
-            self.axes[stellar_object] = axis
+            self.axes[anchor] = axis
 
-    def remove_axis(self, stellar_object):
-        if stellar_object not in self.axes:
+    def remove_axis(self, anchor):
+        if anchor not in self.axes:
             return
-        for axis in self.axes.pop(stellar_object):
+        for axis in self.axes.pop(anchor):
             axis.remove_instance()
 
     def check_settings(self):
