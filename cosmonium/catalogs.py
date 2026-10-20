@@ -315,13 +315,6 @@ class GlobalObjectsDB:
         else:
             return None
 
-    def get_oid_body(self, oid: int) -> Optional[StellarObject]:
-        """Get the StellarObject of the anchor registered under the given oid.
-        Returns None if no anchor is found for the given oid.
-        """
-        anchor = self.get_oid(oid)
-        return anchor.body if anchor is not None else None
-
     def remove(self, anchor: AnchorBase) -> None:
         """
         Remove an anchor from the database.
