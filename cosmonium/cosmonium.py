@@ -1440,16 +1440,17 @@ class Cosmonium(CosmoniumBase):
                 continue
             if not anchor.body.allow_scattering:
                 continue
-            primary = anchor.parent.body.primary
-            if primary is None:
+            primary_anchor = anchor.parent.primary
+            if primary_anchor is None:
                 continue
             # TODO: We should not do an explicit test like this here
-            if primary.anchor.content & StellarAnchor.System != 0:
+            if primary_anchor.content & StellarAnchor.System != 0:
                 continue
+            primary = primary_anchor.body
             if (
                 primary.atmosphere is not None
                 and primary.init_components
-                and (anchor.get_local_position() - primary.anchor.get_local_position()).length()
+                and (anchor.get_local_position() - primary_anchor.get_local_position()).length()
                 < primary.atmosphere.radius
             ):
                 primary.atmosphere.add_shape_object(anchor.body.surface)
