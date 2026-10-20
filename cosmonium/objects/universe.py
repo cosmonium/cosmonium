@@ -54,6 +54,9 @@ class Universe(OctreeSystem):
             root = objectsDB.get(parts[0])
             if root is not None:
                 if len(parts) > 1:
+                    # The children of a body are in the system it is the primary of
+                    if not root.is_system() and root.get_system() is not None:
+                        root = root.get_system()
                     return root.find_by_path(parts[1:], separator)
                 else:
                     return root
