@@ -47,18 +47,18 @@ def body_path(parent):
     return path
 
 
-def find_body(path):
-    body = objectsDB.get_body(path[0])
-    if not body:
+def find_anchor(path):
+    anchor = objectsDB.get(path[0])
+    if not anchor:
         logger.warning("Body '%s' not found", path[0])
         return None
     if len(path) > 1:
-        if not body.is_system() and body.anchor.get_system() is not None:
-            body = body.anchor.get_system().body
-        anchor = body.anchor.find_by_path(path[1:])
-        if anchor:
-            body = anchor.body
-    return body
+        if not anchor.is_system() and anchor.get_system() is not None:
+            anchor = anchor.get_system()
+        child = anchor.find_by_path(path[1:])
+        if child:
+            anchor = child
+    return anchor
 
 
 def instanciate_custom_orbit(data, parent_anchor):
@@ -172,10 +172,8 @@ def instanciate_frame(universe, data, parent_anchor, global_coord):
                 else:
                     global_coord = True
                 path = body_path(name)
-                frame_center = find_body(path)
-                if frame_center is not None:
-                    frame_center = frame_center.anchor
-                else:
+                frame_center = find_anchor(path)
+                if frame_center is None:
                     logger.warning("Frame center '%s' not found", name)
             else:
                 logger.warning("Frame parameter '%s' not supported", key)

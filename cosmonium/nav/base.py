@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from ..camera.base import CameraController, CameraHolder
     from ..controllers.base import MovementController
-    from ..objects.stellarobject import StellarObject
+    from ..engine.anchors import AnchorBase
 
 
 class NavigationController(ABC):
@@ -54,14 +54,14 @@ class NavigationController(ABC):
         self.camera_controller = camera_controller
         self.controller = controller
 
-    def set_target(self, target: StellarObject) -> None:
+    def set_target(self, target: AnchorBase) -> None:
         """Set the navigation target (e.g. a celestial body for surface walk).
 
         The base implementation is a no-op. Subclasses that require a target
         (i.e. require_target returns True) must override this method.
 
         Args:
-            target: The target scene object.
+            target: The anchor of the target object.
         """
 
     @abstractmethod

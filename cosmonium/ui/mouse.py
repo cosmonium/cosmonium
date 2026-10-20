@@ -80,8 +80,7 @@ class Mouse(DirectObject):
             pq = self.base.scene_manager.pick_scene(mpos)
             if pq.get_num_entries() > 0:
                 np = pq.get_entry(0).get_into_node_path().find_net_python_tag('owner')
-                owner = np.get_python_tag('owner')
-                over = owner
+                over = np.get_python_tag('owner')
                 np = pq.get_entry(0).get_into_node_path().find_net_python_tag('patch')
                 if np is not None:
                     self.patch = np.get_python_tag('patch')
@@ -103,7 +102,7 @@ class Mouse(DirectObject):
                 texture_peeker.lookup(value, x, y)
                 oid = color_to_int(value)
                 if oid != 0:
-                    over = objectsDB.get_oid_body(oid)
+                    over = objectsDB.get_oid(oid)
                     if over is None:
                         print("Unknown oid", oid, value)
         return over
@@ -116,9 +115,9 @@ class Mouse(DirectObject):
         over_ray = self.find_over_ray()
         over = over_color
         if over_ray is not None:
-            if over is None or over.anchor.distance_to_obs > over_ray.anchor.distance_to_obs:
+            if over is None or over.distance_to_obs > over_ray.distance_to_obs:
                 over = over_ray
-        if hasattr(over, "primary") and over.primary is not None:
+        if over is not None and over.is_system() and over.primary is not None:
             over = over.primary
         return over
 

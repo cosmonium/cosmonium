@@ -95,7 +95,6 @@ from .foundation import BaseObject
 from .lights import GlobalLight, LightSources
 from .nav import ControlNav, FreeNav, WalkNav
 from .objects.stellarobject import StellarObject
-from .objects.systems import StellarSystem
 from .objects.universe import Universe
 from .opengl import OpenGLConfig
 from .parsers.catalogsparser import load_catalogs
@@ -468,9 +467,7 @@ class Cosmonium(CosmoniumBase):
         # self.universe.octree.print_summary()
         # self.universe.octree.print_stats()
 
-        anchor = self.universe.find_by_path(self.app_config.default_home)
-        if anchor:
-            self.home = anchor.body
+        self.home = self.universe.find_by_path(self.app_config.default_home)
         if self.home is None:
             print("Could not find home object", self.app_config.default_home)
         self.splash.set_text("Done")
@@ -704,7 +701,7 @@ class Cosmonium(CosmoniumBase):
                 self.app_config.default_target = _("Earth")
             anchor = self.universe.find_by_path(self.app_config.default_target)
             if anchor:
-                self.select_body(anchor.body)
+                self.select_anchor(anchor)
                 self.autopilot.navigation.go_to_front(duration=0.0)
             self.gui.update_info(_("Welcome to Cosmonium!"))
 
@@ -869,25 +866,23 @@ class Cosmonium(CosmoniumBase):
         else:
             self.reset_all()
 
-    def select_body(self, body):
-        if self.selected == body:
+    def select_anchor(self, anchor):
+        if self.selected == anchor:
             return
         if self.selected is not None:
             print("Deselect", self.selected.get_name())
-            self.selected.set_selected(False)
-            self.orbits.set_selected(self.selected.anchor, False)
-        if body is not None:
-            print("Select", body.get_name())
-            self.update_extra(body.anchor)
-            body.set_selected(True)
-            self.orbits.set_selected(body.anchor, True)
-        self.selected = body
+            self.orbits.set_selected(self.selected, False)
+        if anchor is not None:
+            print("Select", anchor.get_name())
+            self.update_extra(anchor)
+            self.orbits.set_selected(anchor, True)
+        self.selected = anchor
         if self.fly:
             # Disable fly mode when changing body
             self.toggle_fly_mode()
 
     def select_home(self):
-        self.select_body(self.home)
+        self.select_anchor(self.home)
 
     def reset_nav(self):
         print("Reset nav")
@@ -909,11 +904,11 @@ class Cosmonium(CosmoniumBase):
         self.camera_controller.center_on_object(target, duration, cmd, proportional)
 
     def select_or_center(self):
-        body = self.mouse.get_over()
-        if body is not None and self.gui.cosmonium.selected == body:
-            self.center_on_object(body)
+        anchor = self.mouse.get_over()
+        if anchor is not None and self.selected == anchor:
+            self.center_on_object(anchor)
             return
-        self.select_body(body)
+        self.select_anchor(anchor)
 
     def run_script(self, sequence):
         if self.current_sequence is not None:
@@ -1055,13 +1050,11 @@ class Cosmonium(CosmoniumBase):
 
     def mark_selected(self, color=None, size=None, symbol=None, label='', occludable=True):
         if self.selected is not None:
-            self.markers.mark(
-                self.selected.anchor, color=color, size=size, symbol=symbol, label=label, occludable=occludable
-            )
+            self.markers.mark(self.selected, color=color, size=size, symbol=symbol, label=label, occludable=occludable)
 
     def unmark_selected(self):
         if self.selected is not None:
-            self.markers.unmark(self.selected.anchor)
+            self.markers.unmark(self.selected)
 
     def unmark_all(self):
         self.markers.unmark_all()
@@ -1084,29 +1077,29 @@ class Cosmonium(CosmoniumBase):
     def select_planet(self, name):
         order = int(name)
         to_select = None
-        if self.nearest_system is not None:
-            if isinstance(self.nearest_system, StellarSystem) and self.nearest_system.primary is not None:
+        nearest_system = self.nearest_system
+        if nearest_system is not None:
+            if nearest_system.is_system() and nearest_system.primary is not None:
                 if order > 0:
-                    to_select = self.nearest_system.find_nth_child(order)
+                    to_select = nearest_system.find_nth_child(order)
                 else:
-                    to_select = self.nearest_system.anchor
-            elif isinstance(self.nearest_system, StellarSystem):
+                    to_select = nearest_system
+            elif nearest_system.is_system():
                 if order > 0:
                     order -= 1
-                    to_select = self.nearest_system.find_nth_child(order)
+                    to_select = nearest_system.find_nth_child(order)
                 else:
-                    to_select = self.nearest_system.anchor
+                    to_select = nearest_system
             else:
                 if order == 0:
-                    to_select = self.nearest_system.anchor
+                    to_select = nearest_system
         if to_select is not None:
-            to_select = to_select.body
-            if isinstance(to_select, StellarSystem) and to_select.primary is not None:
+            if to_select.is_system() and to_select.primary is not None:
                 to_select = to_select.primary
-            self.select_body(to_select)
+            self.select_anchor(to_select)
 
     def go_home(self):
-        self.select_body(self.home)
+        self.select_anchor(self.home)
 
     def set_ambient(self, ambient):
         settings.global_ambient = clamp(ambient, 0.0, 1.0)
@@ -1124,21 +1117,21 @@ class Cosmonium(CosmoniumBase):
         self.set_ambient(settings.global_ambient + ambient_incr)
 
     def follow_selected(self):
-        self.follow_body(self.selected)
+        self.follow_anchor(self.selected)
 
-    def follow_body(self, body):
-        self.follow = body
+    def follow_anchor(self, anchor):
+        self.follow = anchor
         self.sync = None
         if self.follow is not None:
-            print("Follow", self.follow.get_name())
-            if body.anchor.has_orbit():
-                self.ship.anchor.set_frame(OrbitReferenceFrame(body.anchor))
-                self.update_extra(self.follow.anchor)
-                self.observer.set_frame(OrbitReferenceFrame(body.anchor))
+            print("Follow", anchor.get_name())
+            if anchor.has_orbit():
+                self.ship.anchor.set_frame(OrbitReferenceFrame(anchor))
+                self.update_extra(anchor)
+                self.observer.set_frame(OrbitReferenceFrame(anchor))
             else:
-                self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
-                self.update_extra(self.follow.anchor)
-                self.observer.set_frame(AnchorReferenceFrame(body.anchor))
+                self.ship.anchor.set_frame(AnchorReferenceFrame(anchor))
+                self.update_extra(anchor)
+                self.observer.set_frame(AnchorReferenceFrame(anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -1147,21 +1140,21 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def sync_selected(self):
-        self.sync_body(self.selected)
+        self.sync_anchor(self.selected)
 
-    def sync_body(self, body):
-        self.sync = body
+    def sync_anchor(self, anchor):
+        self.sync = anchor
         self.follow = None
         if self.sync is not None:
-            print("Sync", self.sync.get_name())
-            if body.anchor.has_rotation():
-                self.ship.anchor.set_frame(SynchroneReferenceFrame(body.anchor))
-                self.update_extra(self.sync.anchor)
-                self.observer.set_frame(SynchroneReferenceFrame(body.anchor))
+            print("Sync", anchor.get_name())
+            if anchor.has_rotation():
+                self.ship.anchor.set_frame(SynchroneReferenceFrame(anchor))
+                self.update_extra(anchor)
+                self.observer.set_frame(SynchroneReferenceFrame(anchor))
             else:
-                self.ship.anchor.set_frame(AnchorReferenceFrame(body.anchor))
-                self.update_extra(self.sync.anchor)
-                self.observer.set_frame(AnchorReferenceFrame(body.anchor))
+                self.ship.anchor.set_frame(AnchorReferenceFrame(anchor))
+                self.update_extra(anchor)
+                self.observer.set_frame(AnchorReferenceFrame(anchor))
         else:
             self.ship.anchor.set_frame(AbsoluteReferenceFrame())
             self.observer.set_frame(AbsoluteReferenceFrame())
@@ -1170,14 +1163,14 @@ class Cosmonium(CosmoniumBase):
             self.toggle_fly_mode()
 
     def track_selected(self):
-        self.track_body(self.selected)
+        self.track_anchor(self.selected)
 
-    def track_body(self, body):
-        if body is not None:
+    def track_anchor(self, anchor):
+        if anchor is not None:
             for camera_controller in self.camera_controllers:
                 if camera_controller.camera_mode == CameraController.TRACK:
-                    print("Track", body.get_name())
-                    self.track = body
+                    print("Track", anchor.get_name())
+                    self.track = anchor
                     self.set_camera_controller(camera_controller)
                     break
             else:
@@ -1188,16 +1181,16 @@ class Cosmonium(CosmoniumBase):
 
     def toggle_track_selected(self):
         if self.track is not None:
-            self.track_body(None)
+            self.track_anchor(None)
         elif self.selected is not None:
-            self.track_body(self.selected)
+            self.track_anchor(self.selected)
 
     def control_selected(self):
         if self.selected is None:
             return
         print("Can not take control")
         return
-        mover = SurfaceMovementController(self.selected)
+        mover = SurfaceMovementController(self.selected.body)
         print("Take control")
         self.fly = True
         self.follow = None
@@ -1205,8 +1198,8 @@ class Cosmonium(CosmoniumBase):
         self.set_nav(self.nav_controllers[self.CONTROL_NAV], controller=mover)
 
     def set_surface(self, body, surface_name):
-        if body is None:
-            body = self.selected
+        if body is None and self.selected is not None:
+            body = self.selected.body
         if body is not None:
             surface = body.find_surface(surface_name)
             if surface is not None:
@@ -1312,12 +1305,13 @@ class Cosmonium(CosmoniumBase):
             anchor.update_observer(self.observer.anchor, self.update_id)
             anchor.update_id = self.update_id
 
-    def add_focused_object(self, body):
-        if body is not None:
-            self.focused_objects.add(body.anchor)
-            body.set_focused(True)
+    def add_focused_object(self, anchor):
+        if anchor is not None:
+            self.focused_objects.add(anchor)
+            # A focused object keeps its surface even when not resolved
+            anchor.body.set_focused(True)
             try:
-                self.old_focused_objects.remove(body.anchor)
+                self.old_focused_objects.remove(anchor)
             except KeyError:
                 pass
 
@@ -1396,7 +1390,7 @@ class Cosmonium(CosmoniumBase):
     def find_shadows(self):
         self.shadow_casters = set()
         self.shadows = {}
-        if self.nearest_system is None or not self.nearest_system.anchor.resolved:
+        if self.nearest_system is None or not self.nearest_system.resolved:
             return
         if len(self.global_light_sources) == 0:
             return
@@ -1410,7 +1404,7 @@ class Cosmonium(CosmoniumBase):
                 traverser = FindShadowCastersTraverser(
                     anchor, light_source.get_local_position(), light_source.get_bounding_radius()
                 )
-                self.nearest_system.anchor.traverse(traverser)
+                self.nearest_system.traverse(traverser)
                 occluders = traverser.get_collected()
                 self.shadows[anchor] = occluders
                 # print("SHADOWS", list(map(lambda x: x.get_name(), traverser.get_collected())))
@@ -1627,15 +1621,12 @@ class Cosmonium(CosmoniumBase):
     def find_nearest_system(self):
         # First iter over the visible object to have a first closest system
         if self.nearest_system is not None:
-            nearest_system = self.nearest_system.anchor
-            distance = self.nearest_system.anchor.distance_to_obs
+            distance = self.nearest_system.distance_to_obs
         else:
-            nearest_system = None
             distance = float('inf')
-        traverser = FindClosestSystemTraverser(self.observer.anchor, nearest_system, distance)
+        traverser = FindClosestSystemTraverser(self.observer.anchor, self.nearest_system, distance)
         self.universe.anchor.traverse(traverser)
-        nearest_system = traverser.closest_system.body if traverser.closest_system is not None else None
-        return nearest_system
+        return traverser.closest_system
 
     def update_nearest_system(self, nearest_system):
         if nearest_system != self.nearest_system:
@@ -1643,9 +1634,9 @@ class Cosmonium(CosmoniumBase):
                 print("New nearest system:", nearest_system.get_name())
                 self.autopilot.stash_position()
                 self.nav.stash_position()
-                self.ship.anchor.set_absolute_reference_point(nearest_system.anchor.get_absolute_reference_point())
+                self.ship.anchor.set_absolute_reference_point(nearest_system.get_absolute_reference_point())
                 self.camera_controller.update(self.time.time_full, 0)
-                self.observer.change_global(nearest_system.anchor.get_absolute_reference_point())
+                self.observer.change_global(nearest_system.get_absolute_reference_point())
                 self.autopilot.pop_position()
                 self.nav.pop_position()
             else:

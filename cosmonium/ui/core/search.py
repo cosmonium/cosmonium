@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 from direct.task.TaskManagerGlobal import taskMgr
 
 if TYPE_CHECKING:
-    from ...objects.stellarobject import StellarObject
+    from ...engine.anchors import AnchorBase
     from ..gui import Gui
 
 
@@ -45,7 +45,7 @@ class NameSearchController:
         self.max_results = max_results
         # List of objects matching the current query, as (name, object) tuples,
         # name being the display name of the object.
-        self.current_list: List[Tuple[str, StellarObject]] = []
+        self.current_list: List[Tuple[str, AnchorBase]] = []
         # Text of the last query that was actually resolved (after debouncing), matching current_list.
         self.current_query: str = ''
         # Current selection index in the current_list, or None if no selection is made.
@@ -97,8 +97,8 @@ class NameSearchController:
         self.current_selection = new_selection
         self.on_suggestions_updated()
 
-    def resolve(self, text: str) -> Optional[StellarObject]:
-        """Return the body to select: either the highlighted suggestion, or an exact-name lookup."""
+    def resolve(self, text: str) -> Optional[AnchorBase]:
+        """Return the anchor to select: either the highlighted suggestion, or an exact-name lookup."""
         if self.current_selection is not None:
             if self.current_selection < len(self.current_list):
                 return self.current_list[self.current_selection][1]

@@ -33,7 +33,7 @@ from .interactive import InteractiveNavigationController
 if TYPE_CHECKING:
     from direct.showbase import DirectObject
 
-    from ..objects.stellarobject import StellarObject
+    from ..engine.anchors import AnchorBase
 
 
 class FreeNav(InteractiveNavigationController):
@@ -184,13 +184,13 @@ class FreeNav(InteractiveNavigationController):
 
         self.remove_wheel_events(event_ctrl)
 
-    def select_target(self) -> StellarObject | None:
+    def select_target(self) -> AnchorBase | None:
         """Return the best available navigation target.
 
         Priority: followed body > synchronised body > selected body > None.
 
         Returns:
-            The current target object, or None if none is available.
+            The anchor of the current target object, or None if none is available.
         """
         if self.base.follow is not None:
             return self.base.follow
@@ -238,10 +238,8 @@ class FreeNav(InteractiveNavigationController):
             else:
                 # Scale angular speed so that orbit remains manageable at any
                 # distance from the body.
-                arc_length = pi * target.get_apparent_radius()
-                apparent_size = arc_length / (
-                    (target.anchor.distance_to_obs - target.anchor._height_under) * self.camera.pixel_size
-                )
+                arc_length = pi * target.body.get_apparent_radius()
+                apparent_size = arc_length / ((target.distance_to_obs - target._height_under) * self.camera.pixel_size)
                 if apparent_size != 0.0:
                     self.orbit_angle_x = min(pi, pi / 2 / apparent_size * self.camera.height)
                     self.orbit_angle_y = min(pi, pi / 2 / apparent_size * self.camera.width)
@@ -317,8 +315,8 @@ class FreeNav(InteractiveNavigationController):
             target = self.select_target()
             if target is not None:
                 self.keyboard_track = True
-                arc_length = pi * target.get_apparent_radius()
-                apparent_size = arc_length / (target.anchor.distance_to_obs - target.anchor._height_under)
+                arc_length = pi * target.body.get_apparent_radius()
+                apparent_size = arc_length / (target.distance_to_obs - target._height_under)
                 if apparent_size != 0:
                     self.orbit_coef = min(pi, pi / 2 / apparent_size)
                 else:
@@ -408,10 +406,12 @@ class FreeNav(InteractiveNavigationController):
         if target is None:
             return
         local_position = self.controller.anchor.calc_absolute_relative_position_to(
-            target.anchor.get_absolute_reference_point()
+            target.get_absolute_reference_point()
         )
-        tangent, binormal, normal = target.get_tangent_plane_under(local_position)
-        surface_point = target.get_point_under(local_position)
+        # The surface queries need the body
+        body = target.body
+        tangent, binormal, normal = body.get_tangent_plane_under(local_position)
+        surface_point = body.get_point_under(local_position)
         direction = local_position - surface_point
         altitude = direction.dot(normal)
         if altitude > 0:

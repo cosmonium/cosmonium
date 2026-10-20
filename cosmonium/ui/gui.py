@@ -199,15 +199,14 @@ class Gui:
         self.cosmonium.save_settings()
         self.cosmonium.load_and_run_script(path)
 
-    def select_object(self, body):
-        self.cosmonium.select_body(body)
+    def select_anchor(self, anchor):
+        self.cosmonium.select_anchor(anchor)
 
     def get_object(self, name):
-        result = objectsDB.get_body(name)
-        return result
+        return objectsDB.get(name)
 
     def list_objects(self, prefix):
-        result = [(name, anchor.body) for name, anchor in objectsDB.startswith(prefix)]
+        result = objectsDB.startswith(prefix)
         result.sort(key=lambda x: x[0])
         return result
 

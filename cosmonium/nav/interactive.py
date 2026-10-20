@@ -32,7 +32,7 @@ from .base import NavigationController
 if TYPE_CHECKING:
     from direct.showbase import DirectObject
 
-    from ..objects.stellarobject import StellarObject
+    from ..engine.anchors import AnchorBase
 
 logger = logging.getLogger("nav")
 
@@ -117,7 +117,7 @@ class InteractiveNavigationController(NavigationController):
         """Convert orbit_center back to frame-local coordinates after an anchor switch."""
         self.orbit_center = self.controller.anchor.calc_frame_position_of_absolute(self.orbit_center)
 
-    def create_orbit_params(self, target: StellarObject, surface: bool = False) -> None:
+    def create_orbit_params(self, target: AnchorBase, surface: bool = False) -> None:
         """Initialise orbit state around *target* for a subsequent do_orbit call.
 
         Orbiting a body involves both the scene object and the camera controller:
@@ -125,14 +125,14 @@ class InteractiveNavigationController(NavigationController):
         the reference frame moves.
 
         Args:
-            target: The celestial body (or other anchor-bearing object) to orbit.
+            target: The anchor of the object to orbit.
             surface: When True the pivot is placed on the body's surface
                 directly below the observer rather than at the body centre.
         """
-        center = target.anchor.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
+        center = target.calc_absolute_relative_position_to(self.controller.get_absolute_reference_point())
         if surface:
             # Place the orbit pivot at the surface of the body beneath the observer.
-            center += target.anchor.vector_to_obs * target.anchor._height_under
+            center += target.vector_to_obs * target._height_under
         self.orbit_center = self.controller.anchor.calc_frame_position_of_local(center)
         self.orbit_start = self.controller.get_frame_position() - self.orbit_center
         if self.controller.orbit_rot_camera:

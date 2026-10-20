@@ -22,20 +22,20 @@ from ...objects.queries import get_ancestors, get_orbiting_bodies
 from ...objects.stellarbody import StellarBody
 
 
-def create_orbiting_bodies_menu(engine, body):
+def create_orbiting_bodies_menu(engine, anchor):
     subitems = []
-    for child in get_orbiting_bodies(body):
-        subitems.append([child.get_name(), 0, engine.select_body, child])
+    for child in get_orbiting_bodies(anchor):
+        subitems.append([child.get_name(), 0, engine.select_anchor, child])
     return subitems
 
 
-def create_orbits_menu(engine, body):
+def create_orbits_menu(engine, anchor):
     subitems = []
-    if body is not None:
+    if anchor is not None:
         # get_ancestors() is root-first; this menu lists nearest ancestor
         # first ("go up one level" at the top), hence the reverse.
-        for ancestor in reversed(get_ancestors(body)):
-            subitems.append([ancestor.get_name(), 0, engine.select_body, ancestor])
+        for ancestor in reversed(get_ancestors(anchor)):
+            subitems.append([ancestor.get_name(), 0, engine.select_anchor, ancestor])
     return subitems
 
 
@@ -63,8 +63,10 @@ def create_select_ship_menu(engine):
     return subitems
 
 
-def create_surfaces_menu(body):
+def create_surfaces_menu(anchor):
     subitems = []
+    # The surfaces are only known by the body of the object
+    body = anchor.body if anchor is not None else None
     if isinstance(body, StellarBody) and len(body.surfaces) > 1:
         for surface in body.surfaces:
             name = surface.get_name()

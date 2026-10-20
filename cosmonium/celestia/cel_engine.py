@@ -46,7 +46,7 @@ from ..astro.frame import (
 from ..bodyclass import bodyClasses
 from ..mathutil.quaternion import quaternion_from_axis_angle, quaternion_from_euler
 from .bigfix import Bigfix
-from .celestia_utils import body_path, find_body
+from .celestia_utils import body_path, find_anchor
 
 logger = logging.getLogger('cel')
 
@@ -55,9 +55,7 @@ def create_frame(coordsys, ref_name):
     ref = None
     if ref_name is not None and ref_name != "":
         path = body_path(ref_name)
-        body = find_body(path)
-        if body is not None:
-            ref = body.anchor
+        ref = find_anchor(path)
     coordsys = coordsys.lower()
     if coordsys == "observer":
         return None
@@ -494,9 +492,9 @@ def select(command_name, sequence, base, parameters):
     """
     path_name = str(parameters.get('object', ''))
     path = body_path(path_name)
-    body = find_body(path)
-    if body:
-        sequence.append(Func(base.select_body, body))
+    anchor = find_anchor(path)
+    if anchor:
+        sequence.append(Func(base.select_anchor, anchor))
     else:
         logger.warning("Path '%s' not found", path_name)
 

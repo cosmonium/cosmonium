@@ -73,22 +73,20 @@ class ContinuousAutoPilot:
             rate: Zoom rate (positive = move away, negative = move closer).
         """
         target = self.autopilot.ui.selected
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
-        min_distance = target.get_apparent_radius()
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
+        min_distance = target.body.get_apparent_radius()
         natural_distance = settings.goto_natural_distance_multiplier * min_distance
         relative_pos = self.autopilot.controller.get_local_position() - center
 
         # If already inside the minimum distance, halve it to avoid
         # locking the camera in place.
-        if target.anchor.distance_to_obs < min_distance:
-            min_distance = target.anchor.distance_to_obs * 0.5
+        if target.distance_to_obs < min_distance:
+            min_distance = target.distance_to_obs * 0.5
 
-        if target.anchor.distance_to_obs >= min_distance and natural_distance != 0:
-            r = (target.anchor.distance_to_obs - min_distance) / natural_distance
+        if target.distance_to_obs >= min_distance and natural_distance != 0:
+            r = (target.distance_to_obs - min_distance) / natural_distance
             new_distance = min_distance + natural_distance * exp(log(r) + rate * delta)
-            new_pos = relative_pos * (new_distance / target.anchor.distance_to_obs)
+            new_pos = relative_pos * (new_distance / target.distance_to_obs)
             self.autopilot.controller.set_local_position(center + new_pos)
 
     def change_distance(self, rate: float, duration: Optional[float] = None) -> None:
@@ -120,9 +118,7 @@ class ContinuousAutoPilot:
             rate: Angular velocity in radians per second.
         """
         target = self.autopilot.ui.selected
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
         center = self.autopilot.controller.anchor.calc_frame_position_of_local(center)
         relative_pos = self.autopilot.controller.get_frame_position() - center
         rot = LQuaterniond()

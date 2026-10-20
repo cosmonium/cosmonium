@@ -32,104 +32,112 @@ from ...objects.star import Star
 
 
 class ObjectProvider(ABC):
+    """Expose the properties of an object to the UI templates."""
 
+    @property
     @abstractmethod
-    def _object(self): ...
+    def _anchor(self): ...
+
+    @property
+    def _body(self):
+        return self._anchor.body
 
     @property
     def abs_magnitude(self):
-        return self._object.get_abs_magnitude()
+        return self._anchor.get_absolute_magnitude()
 
     @property
     def app_magnitude(self):
-        return self._object.get_app_magnitude()
+        return self._anchor.get_apparent_magnitude()
 
     @property
     def apparent_radius(self):
-        return self._object.get_apparent_radius()
+        return self._body.get_apparent_radius()
 
     @property
     def distance_to_obs(self):
-        return self._object.anchor.distance_to_obs
+        return self._anchor.distance_to_obs
 
     @property
     def friendly_name(self):
-        return self._object.get_name()
+        return self._anchor.get_name()
 
     @property
     def ground_distance(self):
         camera_position = builtins.base.observer.get_local_position()
-        surface_point = self._object.get_point_under(camera_position)
-        tangent, binormal, normal = self._object.get_tangent_plane_under(camera_position)
+        surface_point = self._body.get_point_under(camera_position)
+        tangent, binormal, normal = self._body.get_tangent_plane_under(camera_position)
         direction = camera_position - surface_point
         distance = direction.dot(normal)
         return distance
 
     @property
     def altitude(self):
-        if self._object.surface is not None and not self._object.surface.is_flat():
+        body = self._body
+        if body.surface is not None and not body.surface.is_flat():
             camera_position = builtins.base.observer.get_local_position()
-            alt_under = self._object.get_alt_under(camera_position)
+            alt_under = body.get_alt_under(camera_position)
             altitude = self.ground_distance + alt_under
         else:
-            altitude = self._object.anchor.distance_to_obs - self._object.get_apparent_radius()
+            altitude = self._anchor.distance_to_obs - body.get_apparent_radius()
         return altitude
 
     @property
     def has_not_flat_surface(self):
-        return self._object.surface is not None and not self._object.surface.is_flat()
+        body = self._body
+        return body.surface is not None and not body.surface.is_flat()
 
     @property
     def intrinsic_luminosity(self):
-        return self._object.anchor._intrinsic_luminosity
+        return self._anchor._intrinsic_luminosity
 
     @property
     def is_emissive(self):
-        return self._object.is_emissive()
+        return self._anchor.is_emissive()
 
     @property
     def is_star(self):
-        return isinstance(self._object, Star)
+        return isinstance(self._body, Star)
 
     @property
     def is_stellar(self):
-        return self._object.anchor.is_stellar()
+        return self._anchor.is_stellar()
 
     @property
     def is_virtual_object(self):
-        return self._object.virtual_object
+        return self._anchor.virtual_object
 
     @property
     def list_of_names(self):
-        return utils.join_names(self._object.get_names().get_decoded_names())
+        return utils.join_names(self._anchor.get_names().get_decoded_names())
 
     @property
     def phase(self):
-        return (1 - self._object.get_phase()) * 180
+        return (1 - self._body.get_phase()) * 180
 
     @property
     def spectral_type(self):
-        return self._object.spectral_type.get_text()
+        return self._body.spectral_type.get_text()
 
     @property
     def temperature(self):
-        return self._object.temperature
+        return self._body.temperature
 
     @property
     def is_periodic_orbit(self):
-        return isinstance(self._object.anchor.orbit, EllipticalOrbit)
+        return isinstance(self._anchor.orbit, EllipticalOrbit)
 
     @property
     def orbit_period(self):
-        return abs(self._object.anchor.orbit.get_period())
+        return abs(self._anchor.orbit.get_period())
 
     @property
     def is_uniform_rotation(self):
-        return isinstance(self._object.anchor.rotation, UniformRotation)
+        return isinstance(self._anchor.rotation, UniformRotation)
 
     @property
     def rotation_period(self):
-        return abs(self._object.anchor.rotation.get_period())
+        return abs(self._anchor.rotation.get_period())
 
 
 class AutopilotProvider:
@@ -280,7 +288,7 @@ class SelectedProvider(ObjectProvider):
         self.engine = engine
 
     @property
-    def _object(self):
+    def _anchor(self):
         if self.engine.selected is not None:
             return self.engine.selected
         else:

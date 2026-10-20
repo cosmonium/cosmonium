@@ -52,8 +52,8 @@ class Query(OverlayUIElement):
         self.offset = offset
 
     def do_query(self, text):
-        body = self.search.resolve(self.query.get())
-        self.parent.select_object(body)
+        target = self.search.resolve(self.query.get())
+        self.parent.select_anchor(target)
         self.close()
 
     def close(self):

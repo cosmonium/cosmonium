@@ -36,7 +36,7 @@ class Popup(UIElement):
     def create(self):
         # TODO: This should not be done here !
         if self.over is not None:
-            self.engine.select_body(self.over)
+            self.engine.select_anchor(self.over)
         items = self.menu_builder()
         popup_element = SKinUIElement('menu', id_="popup")
         style = self.skin.get_style(popup_element, ui_scale=self.scale)

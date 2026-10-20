@@ -34,14 +34,27 @@ from panda3d.core import LQuaterniond, LVector3d, lookAt
 
 from .. import settings
 from ..astro import units
-from ..objects.systems import StellarSystem
+from ..engine.anchors import SystemAnchor
 from ..utils import isclose
 
 if TYPE_CHECKING:
-    from ..objects.stellarobject import StellarObject
+    from ..engine.anchors import AnchorBase
     from .base import AutoPilotBase
 
 logger = logging.getLogger('autopilot')
+
+
+def get_distance_unit(target: AnchorBase) -> float:
+    """Return the size of *target* used as unit for the navigation distances.
+
+    This is the radius of the body of the object, which is not the bounding
+    radius of the anchor as the latter includes the rings, the atmosphere, ...
+    Objects without a surface, like the systems, fall back on the bounding radius.
+    """
+    distance_unit = target.body.get_apparent_radius()
+    if distance_unit == 0.0:
+        distance_unit = target.get_bounding_radius()
+    return distance_unit
 
 
 class NavigationAutoPilot:
@@ -63,7 +76,7 @@ class NavigationAutoPilot:
 
     def go_to(
         self,
-        target: StellarObject,
+        target: AnchorBase,
         duration: float,
         position,
         direction: LVector3d,
@@ -79,7 +92,7 @@ class NavigationAutoPilot:
         *direction* via Gram-Schmidt before being passed to ``lookAt``.
 
         Args:
-            target: The celestial object being navigated to (reserved for future
+            target: The anchor of the object being navigated to (reserved for future
                 use, e.g. keeping the object in view during the fly-to).
             duration: Animation duration in seconds.
             position: Target position in the local (anchor-relative) coordinate frame.
@@ -147,33 +160,30 @@ class NavigationAutoPilot:
             start_rotation = settings.goto_rotation_start
         if end_rotation is None:
             end_rotation = settings.goto_rotation_end
-        distance_unit = target.get_apparent_radius()
-        if distance_unit == 0.0:
-            distance_unit = target.get_bounding_radius()
+        distance_unit = get_distance_unit(target)
         logger.debug("Go to front %s", target.get_name())
         self.autopilot.ui.follow_selected()
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
         # Determine the position from which we are viewing the object (i.e. where the light comes from).
+        # The lights are only known by the body of the object.
+        lights = target.body.lights
+        if lights is not None and len(lights.lights) > 0:
+            own_light = lights.lights[0].source.anchor
+        else:
+            own_light = None
         light_position = None
         if star:
-            if target.lights is not None and len(target.lights.lights) > 0:
-                light_position = target.lights.lights[0].source
+            light_position = own_light
         else:
-            if (
-                target.parent is not None
-                and isinstance(target.parent, StellarSystem)
-                and target.parent.primary is not None
-            ):
-                if target.parent.primary == target:
-                    if target.lights is not None and len(target.lights.lights) > 0:
-                        light_position = target.lights.lights[0].source
+            parent = target.parent
+            if isinstance(parent, SystemAnchor) and parent.primary is not None:
+                if parent.primary == target:
+                    light_position = own_light
                 else:
-                    light_position = target.parent.primary
+                    light_position = parent.primary
         if light_position is not None:
             logger.debug("Looking from %s", light_position.get_name())
-            view_origin = light_position.anchor.calc_absolute_relative_position_to(
+            view_origin = light_position.calc_absolute_relative_position_to(
                 self.autopilot.controller.get_absolute_reference_point()
             )
         else:
@@ -217,14 +227,10 @@ class NavigationAutoPilot:
             start_rotation = settings.goto_rotation_start
         if end_rotation is None:
             end_rotation = settings.goto_rotation_end
-        distance_unit = target.get_apparent_radius()
-        if distance_unit == 0.0:
-            distance_unit = target.get_bounding_radius()
+        distance_unit = get_distance_unit(target)
         logger.debug("Go to %s", target.get_name())
         self.autopilot.ui.follow_selected()
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
         direction = center - self.autopilot.controller.get_local_position()
         direction.normalize()
         new_position = center - direction * distance * distance_unit
@@ -269,18 +275,14 @@ class NavigationAutoPilot:
             start_rotation = settings.goto_longlat_rotation_start
         if end_rotation is None:
             end_rotation = settings.goto_longlat_rotation_end
-        distance_unit = target.get_apparent_radius()
-        if distance_unit == 0.0:
-            distance_unit = target.get_bounding_radius()
+        distance_unit = get_distance_unit(target)
         logger.debug("Go to long-lat %s", target.get_name())
         self.autopilot.ui.follow_selected()
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
         # Compute the camera offset from the object centre in the object's
         # body-fixed frame, then rotate it into the world frame.
-        offset = target.surface.model.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
-        offset = target.anchor._orientation.xform(offset)
+        offset = target.body.surface.model.geodetic_to_cartesian(longitude, latitude, (distance - 1) * distance_unit)
+        offset = target._orientation.xform(offset)
         direction = -offset.normalized()
         self.go_to(target, duration, center + offset, direction, up, start_rotation, end_rotation)
 
@@ -302,21 +304,19 @@ class NavigationAutoPilot:
             duration = settings.slow_move
         logger.debug("Go to surface %s", target.get_name())
         self.autopilot.ui.sync_selected()
-        center = target.anchor.calc_absolute_relative_position_to(
-            self.autopilot.controller.get_absolute_reference_point()
-        )
+        center = target.calc_absolute_relative_position_to(self.autopilot.controller.get_absolute_reference_point())
         direction = self.autopilot.controller.get_local_position() - center
         new_orientation = LQuaterniond()
         lookAt(new_orientation, direction)
-        distance = target.get_height_under(self.autopilot.controller.get_local_position()) + altitude * units.m
+        distance = target.body.get_height_under(self.autopilot.controller.get_local_position()) + altitude * units.m
         new_position = center + new_orientation.xform(LVector3d(0, distance, 0))
         self.autopilot.move_and_rotate_to(new_position, new_orientation, duration=duration)
 
-    def go_pole(self, target: StellarObject, lat: float, duration: Optional[float], zoom: bool) -> None:
+    def go_pole(self, target: AnchorBase, lat: float, duration: Optional[float], zoom: bool) -> None:
         """Fly to the pole at *lat* radians latitude on the given object.
 
         Args:
-            target: The celestial object to fly to.
+            target: The anchor of the object to fly to.
             lat: Target latitude in radians (``+pi/2`` = north, ``-pi/2`` = south).
             duration: Animation duration. ``None`` uses ``settings.slow_move``.
             zoom: When ``True``, use ``settings.default_distance``; otherwise
@@ -325,10 +325,7 @@ class NavigationAutoPilot:
         if zoom:
             distance = settings.default_distance
         else:
-            distance_unit = target.get_apparent_radius()
-            if distance_unit == 0.0:
-                distance_unit = target.get_bounding_radius()
-            distance = target.anchor.distance_to_obs / distance_unit
+            distance = target.distance_to_obs / get_distance_unit(target)
         self.go_to_object_long_lat(0, lat, duration, distance)
 
     def go_north(self, duration: Optional[float] = None, zoom: bool = False) -> None:
@@ -343,7 +340,7 @@ class NavigationAutoPilot:
             return
         target = self.autopilot.ui.selected
         lat = pi / 2
-        if target.anchor.rotation.is_flipped():
+        if target.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
@@ -359,7 +356,7 @@ class NavigationAutoPilot:
             return
         target = self.autopilot.ui.selected
         lat = -pi / 2
-        if target.anchor.rotation.is_flipped():
+        if target.rotation.is_flipped():
             lat = -lat
         self.go_pole(target, lat, duration, zoom)
 
@@ -377,8 +374,5 @@ class NavigationAutoPilot:
         if zoom:
             distance = settings.default_distance
         else:
-            distance_unit = target.get_apparent_radius()
-            if distance_unit == 0.0:
-                distance_unit = target.get_bounding_radius()
-            distance = target.anchor.distance_to_obs / distance_unit
+            distance = target.distance_to_obs / get_distance_unit(target)
         self.go_to_object_long_lat(0, 0, duration, distance)

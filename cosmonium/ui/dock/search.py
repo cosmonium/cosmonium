@@ -107,16 +107,16 @@ class SearchDockWidget(DGuiDockWidget):
         return self.entry
 
     def do_query(self, text):
-        body = self.search.resolve(self.entry.get())
-        if body is not None:
-            builtins.base.gui.select_object(body)
+        anchor = self.search.resolve(self.entry.get())
+        if anchor is not None:
+            builtins.base.gui.select_anchor(anchor)
         self._reset_to_default()
 
     def escape(self, event):
         self._reset_to_default()
 
-    def select_result(self, body):
-        builtins.base.gui.select_object(body)
+    def select_result(self, anchor):
+        builtins.base.gui.select_anchor(anchor)
         self._reset_to_default()
 
     def _reset_to_default(self):

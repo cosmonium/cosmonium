@@ -34,7 +34,7 @@ from .interactive import InteractiveNavigationController
 if TYPE_CHECKING:
     from direct.showbase import DirectObject
 
-    from ..objects.stellarobject import StellarObject
+    from ..engine.anchors import AnchorBase
 
 
 class WalkNav(InteractiveNavigationController):
@@ -63,8 +63,13 @@ class WalkNav(InteractiveNavigationController):
 
     def __init__(self) -> None:
         InteractiveNavigationController.__init__(self)
-        self.body: Optional[StellarObject] = None
+        self.target: Optional[AnchorBase] = None
         self.speed_factor = 1.0
+
+    @property
+    def body(self):
+        """The body of the target, its surface geometry is needed to walk on it."""
+        return self.target.body if self.target is not None else None
 
     def get_name(self) -> str:
         """Return the human-readable name for this navigation mode.
@@ -90,13 +95,13 @@ class WalkNav(InteractiveNavigationController):
         """
         return True
 
-    def set_target(self, target: StellarObject) -> None:
+    def set_target(self, target: AnchorBase) -> None:
         """Set the surface body that the observer walks on.
 
         Args:
-            target: Celestial body or scene object with surface geometry.
+            target: Anchor of a celestial body or scene object with surface geometry.
         """
-        self.body = target
+        self.target = target
 
     def register_events(self, event_ctrl: DirectObject) -> None:
         """Register all keyboard and mouse events for surface-walk navigation."""

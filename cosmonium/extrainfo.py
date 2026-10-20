@@ -21,8 +21,6 @@
 import re
 from urllib import parse as urlquote
 
-from .objects.systems import StellarSystem
-
 starts_with_digit = re.compile(r"^\d")
 
 
@@ -30,7 +28,7 @@ class ExtraInfo(object):
     def __init__(self):
         pass
 
-    def get_url_for(self, body):
+    def get_url_for(self, anchor):
         return None
 
 
@@ -40,25 +38,25 @@ class WikipediaExtraInfo(object):
     def get_name(self):
         return "Wikipedia"
 
-    def get_url_for(self, body):
-        if isinstance(body, StellarSystem) and body.primary is not None:
-            body = body.primary
-        name = urlquote.quote(body.get_name())
-        if body.body_class in ['planet']:
+    def get_url_for(self, anchor):
+        if anchor.is_system() and anchor.primary is not None:
+            anchor = anchor.primary
+        name = urlquote.quote(anchor.get_name())
+        if anchor.body_class in ['planet']:
             return self.url_prefix + "%s_(planet)" % name
-        if body.body_class in ['dwarfplanet']:
+        if anchor.body_class in ['dwarfplanet']:
             if starts_with_digit.match(name):
                 return self.url_prefix + "%s" % name
             else:
                 return self.url_prefix + "%s_(dwarf_planet)" % name
-        if body.body_class in ['moon', 'dwarfmoon']:
+        if anchor.body_class in ['moon', 'dwarfmoon']:
             return self.url_prefix + "%s_(moon)" % name
-        if body.body_class in ['asteroid']:
+        if anchor.body_class in ['asteroid']:
             if starts_with_digit.match(name):
                 return self.url_prefix + "%s" % name
             else:
                 return self.url_prefix + "%s_(asteroid)" % name
-        if body.body_class in ['comet', 'interstellar']:
+        if anchor.body_class in ['comet', 'interstellar']:
             return self.url_prefix + "%s" % name
         return self.url_prefix + "%s" % name
 
@@ -69,11 +67,11 @@ class SimbadExtraInfo(object):
     def get_name(self):
         return "Simbad"
 
-    def get_url_for(self, body):
-        if isinstance(body, StellarSystem) and body.primary is not None:
-            body = body.primary
-        name = urlquote.quote(body.get_name())
-        if body.body_class in ['star']:
+    def get_url_for(self, anchor):
+        if anchor.is_system() and anchor.primary is not None:
+            anchor = anchor.primary
+        name = urlquote.quote(anchor.get_name())
+        if anchor.body_class in ['star']:
             return self.url_prefix + name
         return None
 
@@ -84,14 +82,14 @@ class MpcExtraInfo(object):
     def get_name(self):
         return "Minor Planet Center"
 
-    def get_url_for(self, body):
-        if isinstance(body, StellarSystem) and body.primary is not None:
-            body = body.primary
-        name = body.get_name()
+    def get_url_for(self, anchor):
+        if anchor.is_system() and anchor.primary is not None:
+            anchor = anchor.primary
+        name = anchor.get_name()
         if '/' in name:
             name = name.split('/')[0]
         name = urlquote.quote(name)
-        if body.body_class in ['dwarfplanet', 'asteroid', 'comet', 'interstellar']:
+        if anchor.body_class in ['dwarfplanet', 'asteroid', 'comet', 'interstellar']:
             return self.url_prefix + name
         return None
 

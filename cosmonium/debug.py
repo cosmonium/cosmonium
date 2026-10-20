@@ -91,9 +91,10 @@ class Debug:
         self.engine.trigger_check_settings = True
 
     def dump_object_stats(self):
-        selected = self.engine.selected
-        if selected is None:
+        if self.engine.selected is None:
             return
+        # The shapes are only known by the body of the object
+        selected = self.engine.selected.body
         if not isinstance(selected, StellarBody):
             return
         if selected.surface is not None:
@@ -108,9 +109,10 @@ class Debug:
                 shape.dump_stats()
 
     def dump_object_info(self):
-        selected = self.engine.selected
-        if selected is None:
+        if self.engine.selected is None:
             return
+        # The shapes are only known by the body of the object
+        selected = self.engine.selected.body
         if not isinstance(selected, StellarBody):
             return
         if selected.surface is not None:
@@ -125,9 +127,10 @@ class Debug:
                 shape.dump_tree()
 
     def dump_object_info_2(self):
-        selected = self.engine.selected
-        if selected is None:
+        if self.engine.selected is None:
             return
+        # The shapes are only known by the body of the object
+        selected = self.engine.selected.body
         if not isinstance(selected, StellarBody):
             return
         if selected.surface is not None:
@@ -163,7 +166,7 @@ class Debug:
     def print_info(self):
         scene_manager = self.engine.scene_manager
         observer = self.engine.observer
-        selected = self.engine.selected
+        selected = self.engine.selected.body if self.engine.selected is not None else None
         print("Global:")
         print("\tscale", scene_manager.scale)
         print("\tPlanes", observer.lens.get_near(), observer.lens.get_far())

@@ -90,13 +90,13 @@ class AppState(object):
         cosmonium.time.running = self.running
 
         if self.selected is not None:
-            cosmonium.select_body(self.selected.body)
+            cosmonium.select_anchor(self.selected)
         if self.follow is not None:
-            cosmonium.follow_body(self.follow.body)
+            cosmonium.follow_anchor(self.follow)
         if self.sync is not None:
-            cosmonium.sync_body(self.sync.body)
+            cosmonium.sync_anchor(self.sync)
         if self.track is not None:
-            cosmonium.track_body(self.track.body)
+            cosmonium.track_anchor(self.track)
 
         # Update the universe with the new time reference and selection
         cosmonium.main_update_task(None)

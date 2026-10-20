@@ -127,8 +127,8 @@ def _show_info_window():
     """Show the info window for selected object."""
     window_manager = WindowManager.instance()
     if not window_manager.get_window_by_id('info') and window_manager.gui.cosmonium.selected is not None:
-        # TODO: Retrieve properly selected object
-        window = InfoWindow(window_manager.gui.cosmonium.selected, parent=window_manager.gui)
+        # The window describes the components of the body
+        window = InfoWindow(window_manager.gui.cosmonium.selected.body, parent=window_manager.gui)
         window_manager.open_window(window, 'info')
 
 

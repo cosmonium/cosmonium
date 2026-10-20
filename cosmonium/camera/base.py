@@ -506,7 +506,7 @@ class BaseCameraController(EventsControllerBase):
             return
         if cmd:
             print("Center on", target.get_name())
-        center = target.anchor.calc_absolute_relative_position_to(self.reference_anchor.get_absolute_reference_point())
+        center = target.calc_absolute_relative_position_to(self.reference_anchor.get_absolute_reference_point())
         self.lookat(center, duration=duration, proportional=proportional)
 
     def update(self, time, dt):

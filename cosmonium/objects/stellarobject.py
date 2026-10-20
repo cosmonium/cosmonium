@@ -77,7 +77,6 @@ class StellarObject:
             spread_object=self.spread_object,
         )
         # Flags
-        self.selected = False
         self.focused = False
         # Scene parameters
         self.light_color = (1.0, 1.0, 1.0, 1.0)
@@ -218,9 +217,6 @@ class StellarObject:
 
     def set_focused(self, focused):
         self.focused = focused
-
-    def set_selected(self, selected):
-        self.selected = selected
 
     def is_emissive(self):
         return self.anchor.is_emissive()

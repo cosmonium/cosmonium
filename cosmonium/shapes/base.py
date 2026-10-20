@@ -116,8 +116,8 @@ class Shape:
     def apply_owner(self):
         if self.instance is not None:
             if self.use_collision_solid and self.collision_solid is not None:
-                self.collision_solid.setPythonTag('owner', self.owner)
-            self.instance.setPythonTag('owner', self.owner)
+                self.collision_solid.setPythonTag('owner', self.owner.anchor)
+            self.instance.setPythonTag('owner', self.owner.anchor)
 
     def update_lod(self, camera_pos, distance_to_obs, pixel_size, appearance):
         return [], []

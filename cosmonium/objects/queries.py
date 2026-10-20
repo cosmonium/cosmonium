@@ -18,37 +18,36 @@
 #
 
 
-"""Read-only queries over the stellar object tree.
+"""Read-only queries over the anchor tree.
 
-These are pure functions of the object graph (no engine/UI dependency),
+These are pure functions of the anchor graph (no engine/UI dependency),
 so they can be reused by any caller that needs to know "what orbits this
 body" - menus, HUD widgets, scripting, etc. - without depending on how
 that caller obtains or acts on the result.
 """
 
-from .systems import StellarSystem
-from .universe import Universe
+from ..engine.anchors import UniverseAnchor
 
 
-def get_ancestors(body):
-    """Return the ancestor chain of `body`, from the outermost system down
-    to (but not including) `body` itself, in root-to-leaf order.
+def get_ancestors(anchor):
+    """Return the ancestor chain of `anchor`, from the outermost system down
+    to (but not including) `anchor` itself, in root-to-leaf order.
 
     For an ancestor system with its own primary body (e.g. a planet's own
     moon system), the primary is returned in place of the system itself -
     same convention as get_orbiting_bodies.
 
     Args:
-        body: A StellarObject, or None.
+        anchor: The anchor of an object, or None.
 
     Returns:
-        List of StellarObject, possibly empty, root-first.
+        List of anchors, possibly empty, root-first.
     """
     ancestors = []
-    parent = body.parent if body is not None else None
-    while parent is not None and not isinstance(parent, Universe):
-        if isinstance(parent, StellarSystem) and parent.primary is not None:
-            if parent.primary != body:
+    parent = anchor.parent if anchor is not None else None
+    while parent is not None and not isinstance(parent, UniverseAnchor):
+        if parent.primary is not None:
+            if parent.primary != anchor:
                 ancestors.append(parent.primary)
         else:
             ancestors.append(parent)
@@ -57,37 +56,35 @@ def get_ancestors(body):
     return ancestors
 
 
-def get_orbiting_bodies(body):
-    """Return the bodies orbiting in the same system as `body`, sorted by orbit radius.
+def get_orbiting_bodies(anchor):
+    """Return the objects orbiting in the same system as `anchor`, sorted by orbit radius.
 
-    `body` itself is excluded from the result. For child systems with a
+    `anchor` itself is excluded from the result. For child systems with a
     primary body (e.g. a planet's own moon system), the primary is
     returned in place of the system itself, matching how such systems are
     presented elsewhere (selection, labels, ...).
 
     Args:
-        body: A StellarObject, or None.
+        anchor: The anchor of an object, or None.
 
     Returns:
-        List of StellarObject, possibly empty.
+        List of anchors, possibly empty.
     """
-    if isinstance(body, StellarSystem):
-        system = body
-    elif body is not None and body.anchor.has_system():
-        system = body.anchor.get_system().body
+    if anchor is None:
+        return []
+    if anchor.is_system():
+        system = anchor
+    elif anchor.has_system():
+        system = anchor.get_system()
     else:
-        system = None
-    if system is None:
         return []
 
-    children = [child for child in system.children if child != body]
-    if not children:
-        return []
-    children.sort(key=lambda child: child.anchor.orbit.get_bounding_radius() if child.anchor.has_orbit() else 0)
+    children = [child for child in system.get_children() if child != anchor]
+    children.sort(key=lambda child: child.orbit.get_bounding_radius() if child.has_orbit() else 0)
 
     result = []
     for child in children:
-        if isinstance(child, StellarSystem) and child.primary is not None:
+        if child.is_system() and child.primary is not None:
             result.append(child.primary)
         else:
             result.append(child)
