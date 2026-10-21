@@ -145,7 +145,6 @@ class Orbit(VisibleObject):
             self.instance.set_transparency(True)
         else:
             self.instance.setRenderModeThickness(settings.orbit_thickness)
-        self.instance.node().setPythonTag('owner', self.anchor)
         if settings.color_picking and self.anchor.oid_color is not None:
             self.instance.set_shader_input("color_picking", self.anchor.oid_color)
         self.instance.reparentTo(self.anchor.parent.scene_anchor.unshifted_instance)
