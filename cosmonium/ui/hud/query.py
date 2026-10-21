@@ -22,19 +22,23 @@ from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGui import DirectEntry
 from direct.gui.DirectLabel import DirectLabel
 from direct.gui.OnscreenText import OnscreenText
+from direct.showbase.DirectObject import DirectObject
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import KeyboardButton, TextNode
 
 from ...fonts import Font, fontsManager
 from ..core.search import NameSearchController
-from ..core.ui_element import OverlayUIElement
+from ..core.ui_element import DockedUIElement
 from ..skin import UIElement
 
 
-class Query(OverlayUIElement):
-    def __init__(self, id_, anchor, offset, query_delay, parent=None):
-        OverlayUIElement.__init__(self, id_, parent=parent)
+class Query(DockedUIElement, DirectObject):
+    """Find-object overlay: an entry, with suggestions, spanning the bottom of the window."""
+
+    def __init__(self, id_, location, query_delay, parent=None):
+        DockedUIElement.__init__(self, id_, location, parent=parent)
+        DirectObject.__init__(self)
         self.query_delay = query_delay
         self.background = None
         self.prefix = None
@@ -48,16 +52,24 @@ class Query(OverlayUIElement):
         self.max_columns = 4
         self.max_lines = 3
         self.max_elems = self.max_columns * self.max_lines
-        self.set_anchor(anchor)
-        self.offset = offset
+
+    @property
+    def gui(self):
+        return self.parent.gui
+
+    @property
+    def is_open(self):
+        return self.query is not None
 
     def do_query(self, text):
         target = self.search.resolve(self.query.get())
-        self.parent.select_anchor(target)
+        self.gui.select_anchor(target)
         self.close()
 
     def close(self):
-        self.parent.shortcuts.unbind_widget(self.query)
+        if not self.is_open:
+            return
+        self.gui.shortcuts.unbind_widget(self.query)
         self.background.destroy()
         self.background = None
         self.prefix.destroy()
@@ -125,8 +137,19 @@ class Query(OverlayUIElement):
         self.search.move_selection(increment)
 
     def create(self):
+        # Only register the event handler, the widget is created when opened.
+        self.accept('gui-search-object', self.open)
+
+    def destroy(self):
+        self.ignore_all()
+        self.close()
+        DockedUIElement.destroy(self)
+
+    def open(self):
+        if self.is_open:
+            return
         element = UIElement(None, id_=self.id_)
-        self.search = NameSearchController(self.parent, self.query_delay, self.update_suggestions)
+        self.search = NameSearchController(self.gui, self.query_delay, self.update_suggestions)
 
         background_element = UIElement('frame', parent=element)
         text_element = UIElement('onscreen-text', parent=element, class_='query-entry')
@@ -144,7 +167,7 @@ class Query(OverlayUIElement):
         self.suggestion_gaps = (line_height, line_height * 0.4)
         suggestion_height = line_height * (self.max_lines) * 1.5
         self.background = DirectFrame(
-            frameSize=(0, self.parent.width, query_height + suggestion_height, 0.0),
+            frameSize=(0, self.gui.width, query_height + suggestion_height, 0.0),
             parent=self.anchor,
             **self.skin.get_style(background_element),
         )
@@ -174,7 +197,7 @@ class Query(OverlayUIElement):
         self.query.accept(self.query.guiItem.getTypeEvent(), self.completion)
         self.query.accept(self.query.guiItem.getEraseEvent(), self.completion)
         # Enable application-wide shortcuts.
-        self.parent.shortcuts.bind_widget(self.query)
+        self.gui.shortcuts.bind_widget(self.query)
         self.suggestions_root = self.anchor.attach_new_node('query-suggestions')
         self.suggestions_root.set_pos(0, 0, suggestion_height - line_height * 0.5)
 

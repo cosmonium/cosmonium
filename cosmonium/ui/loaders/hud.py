@@ -30,9 +30,11 @@ from typing import TYPE_CHECKING, Any, List
 
 from panda3d.core import TextNode
 
+from ... import settings
 from ...parsers.yamlloader import YamlLoader
 from ..config.models import HUDWidgetConfig
 from ..hud.dynamictextblock import DynamicTextBlock, DynamicTextBlockEntries, DynamicTextBlockEntry
+from ..hud.query import Query
 from ..templates.expression import PythonExpressionParser
 from ..templates.fstring import FStringTemplateParser
 from .base import BaseComponentLoader
@@ -108,7 +110,21 @@ class HUDLoader(BaseComponentLoader):
             entries.append(entry)
         return entries
 
-    def load_hud_widget(self, data: Any) -> DynamicTextBlock:
+    def load_query_widget(self, data: Any) -> Query:
+        """
+        Load the find-object query widget from configuration data.
+
+        Args:
+            data: HUD widget configuration
+
+        Returns:
+            Query instance
+        """
+        if data.anchor != 'bottom-left':
+            raise ValueError(f"The query widget can only be anchored at 'bottom-left', not '{data.anchor}'")
+        return Query(data.id or 'query', data.anchor, settings.query_delay)
+
+    def load_hud_widget(self, data: Any) -> DynamicTextBlock | Query:
         """
         Load a HUD widget from configuration data.
 
@@ -116,8 +132,10 @@ class HUDLoader(BaseComponentLoader):
             data: HUD widget configuration
 
         Returns:
-            DynamicTextBlock instance
+            DynamicTextBlock instance, or Query instance for a query widget
         """
+        if data.type == 'query':
+            return self.load_query_widget(data)
 
         # Determine alignment and direction based on anchor position
         if data.anchor == 'top-left':

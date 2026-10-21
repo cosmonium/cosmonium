@@ -82,3 +82,7 @@ hud:
         text: 'Track {engine.track.get_name()}'
       - condition: 'autopilot.running'
         text: 'Travelling ({int(autopilot.time_to_destination)})'
+
+  - anchor: bottom-left
+    id: query
+    type: query

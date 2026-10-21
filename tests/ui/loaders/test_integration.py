@@ -47,6 +47,7 @@ from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.dock.search import SearchDockWidget
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
 from cosmonium.ui.loaders.dock import DockLoader
+from cosmonium.ui.hud.query import Query
 from cosmonium.ui.loaders.hud import HUDLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
 from cosmonium.ui.loaders.shortcuts import ShortcutsLoader
@@ -371,6 +372,51 @@ hud:
             hud = loader.load(filepath)
 
             assert hud[0].class_ == 'debug-hud'
+        finally:
+            os.unlink(filepath)
+
+    def test_load_hud_with_query(self, validator):
+        """The query widget is only created when it is listed in the HUD file."""
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+hud:
+  - anchor: top-left
+    type: text-list
+    entries:
+      - text: my-text
+
+  - anchor: bottom-left
+    type: query
+""")
+        try:
+            loader = HUDLoader(None, validator)
+            hud = loader.load(filepath)
+
+            assert len(hud) == 2
+            assert not isinstance(hud[0], Query)
+            assert isinstance(hud[1], Query)
+            assert hud[1].location == 'bottom-left'
+            assert hud[1].id_ == 'query'
+            assert not hud[1].is_open
+        finally:
+            os.unlink(filepath)
+
+    def test_load_hud_with_query_wrong_anchor(self, validator):
+        """The query spans the bottom of the window and can not be anchored elsewhere."""
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.yaml') as f:
+            filepath = f.name
+            f.write("""
+hud:
+  - anchor: top-left
+    type: query
+""")
+        try:
+            loader = HUDLoader(None, validator)
+            with pytest.raises(ValueError):
+                loader.load(filepath)
         finally:
             os.unlink(filepath)
 

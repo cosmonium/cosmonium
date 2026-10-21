@@ -28,7 +28,6 @@ from ..catalogs import objectsDB
 # TODO: should only be used by Cosmonium main class
 from ..parsers.configparser import configParser
 from .clipboard import create_clipboard
-from .hud.query import Query
 from .loaders.config import UIConfigLoader
 from .loaders.init import init_widget_loaders
 from .managers.anchor_layout_manager import AnchorLayout
@@ -107,9 +106,6 @@ class Gui:
         # Initialize overlay manager (replaces Huds)
         self.hud = OverlayManager(self, self.hud_config, self.dock_config)
         self.hud.set_auto_hide_docks(settings.auto_hide_docks)
-
-        # Initialize query object
-        self.query = Query('query', self.cosmonium.p2dBottomLeft, 0, settings.query_delay, parent=self)
 
         self.browser = Browser(parent=self)
 
@@ -209,9 +205,6 @@ class Gui:
         result = objectsDB.startswith(prefix)
         result.sort(key=lambda x: x[0])
         return result
-
-    def open_find_object(self):
-        self.query.create()
 
     def update_status(self):
         self.hud.update(self.global_vars.globals)

@@ -52,7 +52,6 @@ class EventsDispatcher(DirectObject):
         self.debug = debug
         self.accept('exit', self.engine.userExit)
         self.accept('escape-dispatch', self.engine.escape_dispatch)
-        self.accept('gui-search-object', self.gui.open_find_object)
         self.accept('cancel', self.engine.reset_all)
         self.accept('toggle-fullscreen', self.engine.toggle_fullscreen)
         self.accept('zoom-in', self.camera.zoom, [1.05])
