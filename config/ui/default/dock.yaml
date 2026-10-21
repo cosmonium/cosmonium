@@ -190,7 +190,8 @@ dock:
             code: F0E18  # mdi-calendar-month-outline
             event: gui-show-time-editor
             tooltip: Open time editor
-      # Quick toggles for the most common annotations, the full list is in the display menu
+      # Quick toggles for the most common annotations, right-click opens the menu of their variants.
+      # The full list is in the display menu.
       - type: layout
         orientation: horizontal
         class: group
@@ -199,22 +200,30 @@ dock:
         widgets:
           - type: button
             class: icon
+            code: F04FD  # mdi-tag-text-outline
+            menu: labels-submenu
+            tooltip: Labels
+          - type: button
+            class: icon
             code: F0EA1  # mdi-ellipse-outline
             event: toggle-orbits
+            context_menu: orbits-submenu
             checked: 'settings.show_orbits'
-            tooltip: Show / hide orbits (O)
+            tooltip: 'Show / hide orbits (O). Right-click: more'
           - type: button
             class: icon
             code: F0E93  # mdi-chart-timeline-variant
             event: toggle-asterisms
+            context_menu: guides-submenu
             checked: 'settings.show_asterisms'
-            tooltip: Show / hide constellations (A)
+            tooltip: 'Show / hide constellations (A). Right-click: more'
           - type: button
             class: icon
             code: F02C1  # mdi-grid
             event: toggle-equatorial-grid
+            context_menu: grids-submenu
             checked: 'settings.show_equatorial_grid'
-            tooltip: Show / hide the equatorial grid (E)
+            tooltip: 'Show / hide equatorial grid (E). Right-click: more'
           - type: button
             class: icon
             code: F0208  # mdi-eye

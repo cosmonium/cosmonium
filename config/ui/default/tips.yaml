@@ -15,6 +15,12 @@ tips:
       view on it, keep the camera locked on it, follow it as it moves, or
       orbit around it. The house icon takes you back home.
 
+  - title: Show or hide the sky
+    text: >
+      The icons at the bottom right toggle labels, orbits, constellations and
+      the grid. Right-click one to pick exactly which kinds of labels, orbits,
+      guides or grids to show. The eye icon opens all the display options.
+
   - title: Control the flow of time
     text: >
       The bar at the bottom plays, pauses, speeds up, slows down, or reverses
