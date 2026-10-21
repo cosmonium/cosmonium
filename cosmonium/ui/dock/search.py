@@ -27,6 +27,7 @@ from direct.gui.DirectEntry import DirectEntry
 from direct.gui.DirectFrame import DirectFrame
 from direct.gui.DirectGuiBase import DirectGuiWidget
 from direct.gui.DirectLabel import DirectLabel
+from direct.showbase.DirectObject import DirectObject
 from directguilayout.gui import Sizer
 from directguilayout.gui import Widget as SizerWidget
 from panda3d.core import MouseWatcherRegion, TextNode
@@ -41,13 +42,14 @@ if TYPE_CHECKING:
     from .dock import Dock
 
 
-class SearchDockWidget(DGuiDockWidget):
+class SearchDockWidget(DGuiDockWidget, DirectObject):
     """A dock widget with a name-entry box that shows a dropdown of the first matching objects."""
 
     element_type = 'entry'
 
     def __init__(self, placeholder: str = None, width: float = 12, max_results: int = 8, **kwargs):
         DGuiDockWidget.__init__(self, **kwargs)
+        DirectObject.__init__(self)
         self.placeholder = placeholder
         self.placeholder_text = None
         self.width = width
@@ -104,7 +106,14 @@ class SearchDockWidget(DGuiDockWidget):
         self.no_results_style = skin.get_style(no_results_element)
         self.panel = DirectFrame(parent=self.entry, **skin.get_style(panel_element))
         self.panel.hide()
+        self.accept('gui-search-object', self.focus)
         return self.entry
+
+    def focus(self) -> None:
+        """Give the keyboard focus to the entry, as if it had been clicked."""
+        if self.entry is None or (self.dock is not None and not self.dock.visible):
+            return
+        self.entry['focus'] = 1
 
     def do_query(self, text):
         anchor = self.search.resolve(self.entry.get())
