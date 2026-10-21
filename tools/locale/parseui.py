@@ -64,7 +64,8 @@ msgstr ""
             if entry is None:
                 continue
             title = entry.get('title')
-            self.add_entry(title)
+            if title is not None:
+                self.add_entry(title)
             entries = entry.get('entries')
             if entries is not None:
                 self.parse_submenu(entries)
