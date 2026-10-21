@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from direct.gui.DirectButton import DirectButton
 from direct.gui.DirectGui import DGG
 from direct.gui.DirectGuiBase import DirectGuiWidget
-from panda3d.core import LVector3, NodePath, TextNode
+from panda3d.core import LVector3, MouseButton, NodePath, TextNode
 
 from .base import DGuiDockWidget
 
@@ -43,6 +43,7 @@ class ButtonDockWidget(DGuiDockWidget):
         text: str,
         event: str,
         menu: str = None,
+        context_menu: str = None,
         is_icon: bool = False,
         rescale: bool = False,
         text_checked: str = None,
@@ -54,6 +55,7 @@ class ButtonDockWidget(DGuiDockWidget):
             text: The label of the button, or the icon glyph for an icon button
             event: The event sent when the button is clicked
             menu: The name of the popup menu opened when the button is clicked, instead of an event
+            context_menu: The name of the popup menu opened when the button is right-clicked
             is_icon: True when the label is a single icon glyph
             rescale: True to resize the button to fit its content
             kwargs: The layout parameters common to every dock widget, see `DockWidgetBase`
@@ -62,6 +64,7 @@ class ButtonDockWidget(DGuiDockWidget):
         self.text = text
         self.event = event
         self.menu = menu
+        self.context_menu = context_menu
         self.is_icon = is_icon
         self.rescale = rescale
         # Optional toggle-button behaviour activated when checked_condition is not None.
@@ -74,12 +77,15 @@ class ButtonDockWidget(DGuiDockWidget):
         self.is_checked = False
         self.dock = None
 
-    def _open_menu(self):
+    def _open_menu(self, name):
         # Keep the dock from auto-hiding while its pop-up menu, which extends outside the
         # dock's own bounds, is open.
         if self.dock is not None:
             self.dock.pin(self)
-        builtins.base.gui.open_named_menu(self.menu, on_close=self._on_menu_closed)
+        builtins.base.gui.open_named_menu(name, on_close=self._on_menu_closed)
+
+    def _open_context_menu(self, _event=None):
+        self._open_menu(self.context_menu)
 
     def _on_menu_closed(self):
         if self.dock is not None:
@@ -99,7 +105,7 @@ class ButtonDockWidget(DGuiDockWidget):
             scale = LVector3(1, 1, 1)
         if self.menu is not None:
             command = self._open_menu
-            extra_args = []
+            extra_args = [self.menu]
         else:
             command = messenger.send
             extra_args = [self.event]
@@ -122,6 +128,10 @@ class ButtonDockWidget(DGuiDockWidget):
             # We force a uniform square frame instead and _center_icon() below then centers the glyph in it.
             button_kwargs['frameSize'] = (0, font_size, -font_size, 0)
         button = DirectButton(**button_kwargs)
+        if self.context_menu is not None:
+            # Only the left button clicks a button by default
+            button.guiItem.addClickButton(MouseButton.three())
+            button.bind(DGG.B3CLICK, self._open_context_menu)
         if self.is_icon:
             self._center_icon(button, font_size)
         bounds = button.getBounds()

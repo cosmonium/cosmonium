@@ -115,6 +115,12 @@ class ButtonWidgetConfig(WidgetLayoutConfig):
     menu: Optional[str] = Field(
         None, description="Name of a popup menu to open when clicked (mutually exclusive with 'event')"
     )
+    context_menu: Optional[str] = Field(
+        None,
+        description=(
+            "Name of a popup menu to open when right-clicked, to reach the options related to the action of the button"
+        ),
+    )
     rescale: Optional[bool] = Field(False, description="Auto-resize button to fit content")
     tooltip: Optional[str] = Field(None, description="Tooltip text")
     checked: Optional[str] = Field(
@@ -142,6 +148,13 @@ class ButtonWidgetConfig(WidgetLayoutConfig):
         """A button cannot both send an event and open a menu."""
         if self.event is not None and self.menu is not None:
             raise ValueError("Button cannot have both 'event' and 'menu' fields")
+        return self
+
+    @model_validator(mode='after')
+    def validate_context_menu_without_menu(self):
+        """A button that already opens a menu when clicked has no use for a second one."""
+        if self.context_menu is not None and self.menu is not None:
+            raise ValueError("Button cannot have both 'menu' and 'context_menu' fields")
         return self
 
     @model_validator(mode='after')

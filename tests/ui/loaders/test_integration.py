@@ -25,14 +25,16 @@ This module contains integration tests that verify the loaders work
 with configuration files.
 """
 
+import builtins
 import os
 import tempfile
+from types import SimpleNamespace
 
 import pytest
 from panda3d.core import LColor, TextNode
 from pydantic import BaseModel, Field
 
-from cosmonium.parsers.validator import ConfigValidator
+from cosmonium.parsers.validator import ConfigValidationError, ConfigValidator
 from cosmonium.ui.config.models import (
     ButtonWidgetConfig,
     OptionMenuWidgetConfig,
@@ -40,6 +42,7 @@ from cosmonium.ui.config.models import (
     SpacerWidgetConfig,
     TextWidgetConfig,
 )
+from cosmonium.ui.dock.button import ButtonDockWidget
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.dock.search import SearchDockWidget
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
@@ -413,6 +416,48 @@ class TestWidgetLoaders:
         # Check that enabled condition does read the variable
         Settings.can_click = False
         assert widget.enabled_condition.execute(global_vars) is False
+
+    def test_button_widget_loader_context_menu(self, validator):
+        """A button can open a menu when right-clicked, unless it already opens one when clicked."""
+
+        loader = ButtonWidgetLoader()
+
+        data = {'type': 'button', 'text': 'Click me', 'event': 'test-event'}
+        widget = loader.decode(validator.validate_dict(data, ButtonWidgetConfig), global_vars={})
+        assert widget.context_menu is None
+
+        data['context_menu'] = 'a-menu'
+        widget = loader.decode(validator.validate_dict(data, ButtonWidgetConfig), global_vars={})
+        assert widget.context_menu == 'a-menu'
+        assert widget.event == 'test-event'
+
+        with pytest.raises(ConfigValidationError):
+            validator.validate_dict(
+                {'type': 'button', 'text': 'Menu', 'menu': 'a-menu', 'context_menu': 'b-menu'}, ButtonWidgetConfig
+            )
+
+    def test_button_context_menu_pins_dock(self, monkeypatch):
+        """The context menu is opened by name and keeps the dock visible until it is closed."""
+
+        opened = []
+        monkeypatch.setattr(
+            builtins,
+            'base',
+            SimpleNamespace(
+                gui=SimpleNamespace(open_named_menu=lambda name, on_close: opened.append((name, on_close)))
+            ),
+            raising=False,
+        )
+        pins = set()
+        button = ButtonDockWidget('A', 'toggle-orbits', context_menu='orbit-categories')
+        button.dock = SimpleNamespace(pin=pins.add, unpin=pins.discard)
+
+        button._open_context_menu()
+        assert [name for name, _ in opened] == ['orbit-categories']
+        assert pins == {button}
+
+        opened[0][1]()
+        assert pins == set()
 
     def test_option_menu_widget_loader(self, validator):
         """Test OptionMenuWidgetLoader."""

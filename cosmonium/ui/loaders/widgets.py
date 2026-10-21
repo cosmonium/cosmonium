@@ -150,6 +150,7 @@ class ButtonWidgetLoader(YamlModuleParser):
             text,
             data.event,
             menu=data.menu,
+            context_menu=data.context_menu,
             is_icon=is_icon,
             rescale=rescale,
             text_checked=text_checked,
