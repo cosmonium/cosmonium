@@ -67,7 +67,6 @@ class PointsSetShapeObject(VisibleObject):
     def configure_shape(self, shape):
         self.sprite.apply(shape.instance)
         shape.instance.setCollideMask(GeomNode.getDefaultCollideMask())
-        shape.instance.node().setPythonTag('owner', self)
         # TODO: This is wrong
         self.appearance.scan_model(shape.instance)
         self.appearance.apply(shape, shape.instance)
