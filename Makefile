@@ -140,13 +140,13 @@ update-data-mo:
 	@cd data/po && "$(MAKE)" update-mo
 
 update-ui-pot:
-	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-pot; cd ../../..; done
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-pot; cd ../../../..; done
 
 update-ui-po:
-	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-po; cd ../../..; done
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-po; cd ../../../..; done
 
 update-ui-mo:
-	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-mo; cd ../../..; done
+	for ui in $(UI_LIST); do cd config/ui/$$ui/po; "$(MAKE)" update-mo; cd ../../../..; done
 
 build-version:
 ifneq ($(VERSION),)
