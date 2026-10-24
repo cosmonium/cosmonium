@@ -406,19 +406,26 @@ std::string
 AnchorBase::get_ascii_name(void) const
 {
   // Build an identifier usable as a Panda3D node name: any character that is
-  // not alphanumeric is replaced by 'x', and the name is prefixed if it does
-  // not start with a letter.
-  // Note: this works on bytes, so a non-ASCII character of an UTF-8 name is
-  // replaced by as many 'x' as it has bytes. The result is only used to name
-  // nodes, never as a lookup key.
-  std::string name = get_c_name();
-  for (size_t i = 0; i < name.size(); ++i) {
-    unsigned char c = (unsigned char) name[i];
-    if (!std::isalnum(c)) {
-      name[i] = 'x';
+  // not an ASCII letter or digit is replaced by a single 'x', and the name is
+  // prefixed if it does not start with a letter.
+  // The name is UTF-8 encoded, so a non-ASCII character spans several bytes
+  // and must be replaced as a whole, otherwise a partial sequence could be
+  // left behind and the result would not be valid UTF-8.
+  const std::string source = get_c_name();
+  std::string name;
+  name.reserve(source.size() + 1);
+  for (const char ch : source) {
+    unsigned char c = (unsigned char) ch;
+    if (c < 0x80) {
+      bool alnum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+      name += alnum ? ch : 'x';
+    } else if ((c & 0xC0) != 0x80) {
+      // Lead byte (or invalid byte) of a multi-byte character: one 'x' for the
+      // whole character, its continuation bytes are skipped.
+      name += 'x';
     }
   }
-  if (name.empty() || !std::isalpha((unsigned char) name[0])) {
+  if (name.empty() || !((name[0] >= 'a' && name[0] <= 'z') || (name[0] >= 'A' && name[0] <= 'Z'))) {
     name = "x" + name;
   }
   return name;

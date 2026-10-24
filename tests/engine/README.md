@@ -20,3 +20,9 @@ Tests for the catalog indexing and global object database system:
 - **TestCatalogIndex**: Tests the `CatalogIndex` class, including adding/retrieving entries, case-insensitive lookups, prefix-based searches using bisect, handling empty prefixes, max results limits, and sorted order of results.
 - **TestNameIndex**: Tests the `NameIndex` class, including adding/retrieving names, case-insensitive searches, prefix matching, max results enforcement, and alphabetical sorting of results.
 - **TestGlobalObjectsDB**: Tests the `GlobalObjectsDB` class, including adding objects, routing names to appropriate indexes (catalog vs. general), prefix searches across catalogs and names, OID assignment, and retrieval by OID.
+
+### 3. Anchor Tests (`test_anchors.py`)
+
+Tests for the anchors:
+
+- **TestAsciiName**: Tests that `get_ascii_name()` always return a valid ASCII string.
