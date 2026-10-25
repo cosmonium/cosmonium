@@ -533,6 +533,8 @@ class SceneRegion:
     def create(self, rendering_passes, state, camera_holder, inverse_z, section_near, section_far, sort_index):
         self.rendering_passes = [rendering_pass.copy() for rendering_pass in rendering_passes]
         self.root.set_state(state)
+        # Used by the shaders to clip precisely the geometry crossing the boundaries of the region
+        self.root.set_shader_input("region_near_far", (self.near, self.far))
         fake_light = DirectionalLight('fake-light')
         fake_light.set_color((0, 0, 0, 0))
         fake_ambient_np = self.root.attach_new_node(fake_light)

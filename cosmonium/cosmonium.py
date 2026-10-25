@@ -145,6 +145,8 @@ class CosmoniumBase(ShowBase):
         self.lang_manager = LangManager()
         self.window_manager = WindowManager(self)
         self.common_state = NodePath("<state>")
+        # Overridden by the scene managers splitting the scene in depth regions
+        self.common_state.set_shader_input("region_near_far", (0.0, 0.0))
 
         main_dir = app_config.main_dir
         init_default_context(main_dir)

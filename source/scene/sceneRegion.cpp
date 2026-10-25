@@ -30,6 +30,7 @@
 #include "directionalLight.h"
 #include "displayRegion.h"
 #include "graphicsOutput.h"
+#include "internalName.h"
 #include "renderPass.h"
 #include "sceneAnchor.h"
 #include "sceneManager.h"
@@ -103,6 +104,8 @@ SceneRegion::create(std::vector<PT(RenderPass)> parent_rendering_passes,
     int sort_index)
 {
     root.set_state(state);
+    // Used by the shaders to clip precisely the geometry crossing the boundaries of the region
+    root.set_shader_input(InternalName::make("region_near_far"), LVecBase2(near_distance, far_distance));
     PT(DirectionalLight) directional_light = new DirectionalLight("fake-light");
     directional_light->set_color(LColor(0));
     NodePath fake_light = root.attach_new_node(directional_light);
