@@ -35,6 +35,7 @@ class OpenGLConfig:
     srgb_texture = False
     non_power_of_two_textures = False
     hardware_tessellation = False
+    geometry_shader = False
     hardware_instancing = False
     texture_array = False
     shader_buffer = False
@@ -140,6 +141,7 @@ class OpenGLConfig:
         cls.srgb_texture = settings.use_srgb and gsg.supports_texture_srgb
         cls.non_power_of_two_textures = not settings.force_power_of_two_textures and gsg.supports_tex_non_pow2
         cls.hardware_tessellation = settings.use_hardware_tessellation and gsg.supports_tessellation_shaders
+        cls.geometry_shader = gsg.supports_geometry_shaders
         cls.hardware_instancing = settings.use_hardware_instancing and gsg.supports_geometry_instancing
         cls.texture_array = settings.use_texture_array and gsg.supports_2d_texture_array
         cls.inverse_z = settings.use_inverse_z
@@ -162,6 +164,7 @@ class OpenGLConfig:
         print("sRGB textures:", cls.srgb_texture)
         print("Hardware instancing:", cls.hardware_instancing)
         print("Hardware tessellation:", cls.hardware_tessellation)
+        print("Geometry shader:", cls.geometry_shader)
         print("Inverse-Z buffer:", settings.use_inverse_z)
         print("Render to buffer:", cls.buffer_texture)
         print("Floating point buffer:", cls.floating_point_buffer)
