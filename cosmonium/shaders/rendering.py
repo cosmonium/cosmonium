@@ -129,10 +129,11 @@ class VertexShader(ShaderProgram):
             code.append("out vec3 v_tangent;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
             code.append("out vec3 v_relative_vector_to_obs;")
-        for i in range(self.config.nb_textures_coord):
-            code.append("out vec4 texcoord%i;" % i)
-        if not self.config.use_model_texcoord:
-            code.append("out vec4 texcoord0p;")
+        if self.config.forward_texcoords():
+            for i in range(self.config.nb_textures_coord):
+                code.append("out vec4 texcoord%i;" % i)
+            if not self.config.use_model_texcoord:
+                code.append("out vec4 texcoord0p;")
         self.vertex_control.vertex_outputs(code)
         self.point_control.vertex_outputs(code)
         for shadow in self.shadows:
@@ -229,10 +230,11 @@ class VertexShader(ShaderProgram):
             code.append("relative_vector_to_obs_tmp.y = dot(p3d_Binormal, vector_to_obs);")
             code.append("relative_vector_to_obs_tmp.z = dot(normal, vector_to_obs);")
             code.append("relative_vector_to_obs = normalize(relative_vector_to_obs_tmp);")
-        for i in range(self.config.nb_textures_coord):
-            code.append("texcoord%i = model_texcoord%i;" % (i, i))
-        if not self.config.use_model_texcoord:
-            code.append("texcoord0p = model_texcoord0p;")
+        if self.config.forward_texcoords():
+            for i in range(self.config.nb_textures_coord):
+                code.append("texcoord%i = model_texcoord%i;" % (i, i))
+            if not self.config.use_model_texcoord:
+                code.append("texcoord0p = model_texcoord0p;")
         if 'model_vertex' in self.config.vertex_requires:
             code.append("model_vertex = model_vertex4.xyz / model_vertex4.w;")
         if 'world_vertex' in self.config.vertex_requires:
@@ -393,10 +395,11 @@ class FragmentShader(ShaderProgram):
             code.append("in vec3 v_binormal;")
         if 'relative_vector_to_obs' in self.config.fragment_requires:
             code.append("in vec3 v_relative_vector_to_obs;")
-        for i in range(self.config.nb_textures_coord):
-            code.append("in vec4 texcoord%i;" % i)
-        if not self.config.use_model_texcoord:
-            code.append("in vec4 texcoord0p;")
+        if self.config.forward_texcoords():
+            for i in range(self.config.nb_textures_coord):
+                code.append("in vec4 texcoord%i;" % i)
+            if not self.config.use_model_texcoord:
+                code.append("in vec4 texcoord0p;")
         self.appearance.fragment_inputs(code)
         self.data_source.fragment_inputs(code)
         for shadow in self.shadows:
@@ -518,7 +521,7 @@ class FragmentShader(ShaderProgram):
                     )
                 else:
                     code.append("vec4 total_color = vec4(0.0, 0.0, 0.0, 1.0);")
-        if settings.shader_debug_coord:
+        if settings.shader_debug_coord and self.config.forward_texcoords():
             code.append("float line_width = %g;" % settings.shader_debug_coord_line_width)
             code.append(
                 "total_color = "
@@ -703,6 +706,11 @@ class RenderingShader(StructuredShader):
     def remove_after_effect(self, after_effect):
         self.after_effects.remove(after_effect)
         # As the list is referenced by the fragment shader no need to apply to fragment too...
+
+    def forward_texcoords(self):
+        # The geometry shader does not forward the texture coordinates to the fragment shader, the fragment
+        # inputs would be left unwritten, which is a link error with some drivers, even when they are unused.
+        return self.geometry_shader is None
 
     def create_shader_configuration(self, appearance):
         self.vertex_requires = set()
