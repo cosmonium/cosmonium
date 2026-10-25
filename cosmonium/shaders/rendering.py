@@ -422,6 +422,7 @@ class FragmentShader(ShaderProgram):
         for shadow in self.shadows:
             shadow.fragment_extra(code)
         self.lighting_model.fragment_extra(code)
+        self.geometry_control.fragment_extra(code)
         self.point_control.fragment_extra(code)
         for effect in self.after_effects:
             effect.fragment_extra(code)
@@ -456,6 +457,7 @@ class FragmentShader(ShaderProgram):
             code.append("vec3 tangent = normalize(v_tangent);")
             code.append("vec3 binormal = normalize(v_binormal);")
 
+        self.geometry_control.fragment_shader(code)
         self.point_control.fragment_shader_decl(code)
         self.appearance.fragment_shader_decl(code)
         self.data_source.fragment_shader_decl(code)
