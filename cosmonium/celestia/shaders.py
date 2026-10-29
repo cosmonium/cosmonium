@@ -63,8 +63,7 @@ class LunarLambertLightingModel(ShaderComponent, BRDFInterface):
         code.append("  vec3 contribution = vec3(0);")
         code.append("  if (vectors.n_dot_l > 0.0) {")
         code.append(
-            "  float diffuse_coef = "
-            "clamp(vectors.n_dot_l / (max(vectors.n_dot_v, 0.001) + vectors.n_dot_l), 0.0, 1.0);"
+            "  float diffuse_coef = clamp(vectors.n_dot_l / (max(vectors.n_dot_v, 0.001) + vectors.n_dot_l), 0.0, 1.0);"
         )
         code.append("    contribution += light_color * diffuse_coef * material.diffuse_color;")
         code.append("  }")
@@ -84,7 +83,7 @@ class LunarLambertLightingModel(ShaderComponent, BRDFInterface):
 
     def light_contribution(self, code, result, light_direction, light_color):
         code.append(
-            "    LunarLambertVectors vectors = " f"calc_lunar_lambert_vectors(eye_normal, obs_dir, {light_direction});"
+            f"    LunarLambertVectors vectors = calc_lunar_lambert_vectors(eye_normal, obs_dir, {light_direction});"
         )
         code.append(f"    {result} = lunar_lambert_brdf(material, vectors, {light_direction}, {light_color}.rgb);")
 
