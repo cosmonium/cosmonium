@@ -37,7 +37,6 @@ from .base import PhysicsBase
 
 
 class BulletPhysics(PhysicsBase):
-
     collision = True
     physics = True
     support_heightmap = True

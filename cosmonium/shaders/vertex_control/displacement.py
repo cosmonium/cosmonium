@@ -21,7 +21,6 @@ from .vertex_control import VertexControl
 
 
 class DisplacementVertexControl(VertexControl):
-
     vertex_provides = {'model_vertex'}  # 'model_normal
     vertex_requires = {'tangent'}
 

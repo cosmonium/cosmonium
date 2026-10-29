@@ -34,7 +34,6 @@ from ..textures import TextureConfiguration
 
 
 class TextureTarget:
-
     def __init__(self, to_ram, render_target, config, texture):
         self.texture = texture
         self.to_ram = to_ram
@@ -63,7 +62,6 @@ class TextureTarget:
 
 
 class RenderTarget:
-
     def __init__(self, name):
         self.name = name
         self.sort = 0
@@ -77,7 +75,6 @@ class RenderTarget:
 
 
 class TargetMixinBase:
-
     def __init__(self):
         self.target: GraphicsOutput = None
         self.win = None
@@ -101,7 +98,6 @@ class TargetMixinBase:
 
 
 class BufferMixin(TargetMixinBase):
-
     def __init__(self):
         TargetMixinBase.__init__(self)
         self.requested_size = (1, 1)
@@ -314,7 +310,6 @@ class BufferMixin(TargetMixinBase):
 
 
 class ScreenMixin(TargetMixinBase):
-
     def init(self, win, engine):
         TargetMixinBase.init(self, win, engine)
         self.target = win
@@ -329,7 +324,6 @@ class ScreenMixin(TargetMixinBase):
 
 
 class TargetShaderMixin:
-
     def __init__(self):
         self.root: NodePath = None
         self.camera = None
@@ -376,7 +370,6 @@ class TargetShaderMixin:
 
 
 class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
-
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         BufferMixin.__init__(self)
@@ -395,7 +388,6 @@ class ProcessTarget(RenderTarget, BufferMixin, TargetShaderMixin):
 
 
 class SceneTarget(RenderTarget, BufferMixin):
-
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         BufferMixin.__init__(self)
@@ -413,7 +405,6 @@ class SceneTarget(RenderTarget, BufferMixin):
 
 
 class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
-
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         TargetShaderMixin.__init__(self)
@@ -429,7 +420,6 @@ class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
 
 
 class PasstroughTarget(RenderTarget, ScreenMixin):
-
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         ScreenMixin.__init__(self)

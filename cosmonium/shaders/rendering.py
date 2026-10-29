@@ -34,7 +34,6 @@ from .vertex_input import DirectVertexInput
 
 
 class TessellationVertexShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'vertex')
 
@@ -46,7 +45,6 @@ class TessellationVertexShader(ShaderProgram):
 
 
 class VertexShader(ShaderProgram):
-
     def __init__(
         self,
         config,
@@ -272,7 +270,6 @@ class VertexShader(ShaderProgram):
 
 
 class TessellationShader(ShaderProgram):
-
     def __init__(self, config, tessellation_control):
         ShaderProgram.__init__(self, 'control')
         self.config = config
@@ -330,7 +327,6 @@ class GeometryShaderProgram(ShaderProgram):
 
 
 class FragmentShader(ShaderProgram):
-
     def __init__(
         self,
         config,
@@ -552,7 +548,6 @@ class FragmentShader(ShaderProgram):
 
 
 class RenderingShader(StructuredShader):
-
     def __init__(
         self,
         appearance=None,

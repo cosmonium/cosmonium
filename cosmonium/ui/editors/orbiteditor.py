@@ -23,7 +23,6 @@ from ...parameters import AutoUserParameter, ParametersGroup, ParametersList, Us
 
 
 class OrbitEditorBase:
-
     def __init__(self, orbit):
         self.orbit = orbit
 
@@ -36,7 +35,6 @@ class OrbitEditorBase:
 
 
 class EllipticalOrbitEditor(OrbitEditorBase):
-
     def get_user_parameters(self):
         parameters = ParametersList()
         parameters.add_parameters(

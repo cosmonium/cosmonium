@@ -22,7 +22,6 @@ from __future__ import annotations
 
 
 class ShaderComponent:
-
     vertex_requires = set()
     vertex_provides = set()
 

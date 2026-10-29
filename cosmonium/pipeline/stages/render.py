@@ -28,7 +28,6 @@ from ..target import PasstroughTarget, SceneTarget
 
 
 class RenderStage(RenderSceneStage):
-
     def __init__(self, name, camera_mask, colors, srgb=True, multisamples=0, inverse_z=False, create_mimap=False):
         RenderSceneStage.__init__(self, name, camera_mask)
         self.colors = colors

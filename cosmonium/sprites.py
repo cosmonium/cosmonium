@@ -28,13 +28,11 @@ from .utils import linear_to_srgb_channel
 
 
 class PointObject(object):
-
     def apply(self, instance):
         pass
 
 
 class SimplePoint(PointObject):
-
     def __init__(self, point_size=1):
         self.point_size = point_size
 
@@ -43,7 +41,6 @@ class SimplePoint(PointObject):
 
 
 class TexturePointSprite(PointObject):
-
     def __init__(self, filename):
         self.filename = filename
         self.texture = None
@@ -57,7 +54,6 @@ class TexturePointSprite(PointObject):
 
 
 class GenPointSprite(PointObject):
-
     def __init__(self, size=64):
         self.size = size
         self.half_size = size / 2.0
@@ -89,7 +85,6 @@ class GenPointSprite(PointObject):
 
 
 class RoundDiskPointSprite(GenPointSprite):
-
     def __init__(self, size=64, max_value=1.0):
         GenPointSprite.__init__(self, size)
         self.max_value = max_value
@@ -119,7 +114,6 @@ class RoundDiskPointSprite(GenPointSprite):
 
 
 class GaussianPointSprite(GenPointSprite):
-
     def __init__(self, size=64, fwhm=None, max_value=1.0):
         GenPointSprite.__init__(self, size)
         if fwhm is None:
@@ -149,7 +143,6 @@ class GaussianPointSprite(GenPointSprite):
 
 
 class ExpPointSprite(GenPointSprite):
-
     # Factor must be 1/256 squared as the value at the border is factor^0.5
     def __init__(self, size=64, factor=1.0 / (256 * 256), max_value=1.0):
         GenPointSprite.__init__(self, size)
@@ -178,7 +171,6 @@ class ExpPointSprite(GenPointSprite):
 
 
 class MergeSprite(GenPointSprite):
-
     def __init__(self, size, top, bottom):
         GenPointSprite.__init__(self, size)
         self.top = top

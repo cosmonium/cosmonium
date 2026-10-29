@@ -24,7 +24,6 @@ from .direct_widget_container import DirectWidgetContainer
 
 
 class TabbedFrameContainer(DirectWidgetContainer):
-
     def __init__(self, widget):
         super().__init__(widget)
         self.height_offset = self.frame['tab_frameSize'][3] * self.frame['tab_scale'][2]

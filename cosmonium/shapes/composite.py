@@ -24,7 +24,6 @@ from ..foundation import VisibleObject
 
 
 class CompositeShapeObject(VisibleObject):
-
     def __init__(self, name):
         VisibleObject.__init__(self, name)
         self.components = []

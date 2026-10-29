@@ -23,7 +23,6 @@ from .component import ShaderComponent
 
 
 class InstanceControl(ShaderComponent):
-
     def __init__(self, max_instances):
         ShaderComponent.__init__(self)
         self.max_instances = max_instances
@@ -36,13 +35,11 @@ class InstanceControl(ShaderComponent):
 
 
 class NoInstanceControl(InstanceControl):
-
     def __init__(self):
         InstanceControl.__init__(self, 0)
 
 
 class OffsetScaleInstanceControl(InstanceControl):
-
     vertex_requires = {'model_vertex'}
     vertex_provides = {'world_vertex'}
 

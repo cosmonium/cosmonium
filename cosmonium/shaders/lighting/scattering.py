@@ -22,7 +22,6 @@ from ..component import ShaderComponent
 
 
 class ScatteringInterface:
-
     def prepare_scattering_for(self, code, light_direction, eye_light_direction, light_color):
         raise NotImplementedError()
 
@@ -34,7 +33,6 @@ class ScatteringInterface:
 
 
 class NoScattering(ShaderComponent, ScatteringInterface):
-
     def prepare_scattering_for(self, code, light_direction, eye_light_direction, light_color):
         pass
 

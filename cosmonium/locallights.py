@@ -25,7 +25,6 @@ from .foundation import VisibleObject
 
 
 class LocalLight(VisibleObject):
-
     concrete_object = False
 
     def __init__(self, name, position, color, power, attenuation, max_distance, cast_shadows):
@@ -72,7 +71,6 @@ class LocalDirectionalLight(LocalLight):
 
 
 class LocalPointLight(LocalLight):
-
     def create_instance(self):
         self.light_node = PointLight(self.name)
         self.light_node.set_color(self._node_color)

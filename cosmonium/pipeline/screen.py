@@ -25,7 +25,6 @@ from .. import settings
 
 
 class Screen:
-
     def __init__(self, base, srgb, multisamples, stereoscopic):
         self.base = base
         self.srgb = srgb

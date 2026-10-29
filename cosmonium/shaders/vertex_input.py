@@ -21,7 +21,6 @@ from .component import ShaderComponent
 
 
 class VertexInput(ShaderComponent):
-
     def __init__(self):
         ShaderComponent.__init__(self)
         self.config = None
@@ -32,7 +31,6 @@ class VertexInput(ShaderComponent):
 
 
 class DirectVertexInput(VertexInput):
-
     def vertex_inputs(self, code):
         code.append("in vec4 p3d_Vertex;")
         if 'model_normal' in self.config.vertex_requires:

@@ -46,7 +46,6 @@ class PythonExpression:
 
 
 class PythonExpressionParser:
-
     def compile_expression(self, source: str, global_vars=None) -> PythonExpression:
         try:
             return PythonExpression(source, global_vars)

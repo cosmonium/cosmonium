@@ -21,7 +21,6 @@ from ..base import ShaderProgram
 
 
 class DefaultPassThroughVertexShader(ShaderProgram):
-
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -34,7 +33,6 @@ class DefaultPassThroughVertexShader(ShaderProgram):
 
 
 class TexturePassThroughVertexShader(ShaderProgram):
-
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -54,7 +52,6 @@ class TexturePassThroughVertexShader(ShaderProgram):
 
 
 class GeomPassThroughVertexShader(ShaderProgram):
-
     def __init__(self, config):
         ShaderProgram.__init__(self, 'vertex')
         self.config = config
@@ -72,7 +69,6 @@ class GeomPassThroughVertexShader(ShaderProgram):
 
 
 class ColorPassThroughFragmentShader(ShaderProgram):
-
     def __init__(self, config):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config
@@ -98,7 +94,6 @@ class ColorPassThroughFragmentShader(ShaderProgram):
 
 
 class TexturePassThroughFragmentShader(ShaderProgram):
-
     def __init__(self, config):
         ShaderProgram.__init__(self, 'fragment')
         self.config = config

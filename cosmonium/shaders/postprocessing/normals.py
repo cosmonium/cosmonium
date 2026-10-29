@@ -22,7 +22,6 @@ from .passthrough import ColorPassThroughFragmentShader, GeomPassThroughVertexSh
 
 
 class GenerateNormalsGeomShader(ShaderProgram):
-
     def create_layout(self, code):
         code.append("layout(triangles) in;")
         code.append("layout(line_strip, max_vertices=6) out;")
@@ -57,7 +56,6 @@ class GenerateNormalsGeomShader(ShaderProgram):
 
 
 class DebugNormalsShader(StructuredShader):
-
     def __init__(self):
         super().__init__()
         self.geometry_shader = GenerateNormalsGeomShader(self)

@@ -228,7 +228,6 @@ class Worlds:
 
 
 class SceneWorld:
-
     virtual_object = False
     background = False
     support_offset_body_center = False
@@ -431,7 +430,6 @@ class SimpleWorld(SceneWorld):
 
 
 class CartesianWorld(SimpleWorld):
-
     anchor_class = 0
 
     def __init__(self, name):

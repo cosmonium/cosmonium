@@ -22,7 +22,6 @@ from .base import ShaderDataSource
 
 
 class SpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
-
     vertex_provides = {'jacobian'}
 
     def get_id(self):
@@ -53,7 +52,6 @@ class SpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
 
 
 class ImprovedSpherifiedCubeGeometryShaderDataSource(ShaderDataSource):
-
     vertex_provides = {'jacobian'}
 
     def get_id(self):

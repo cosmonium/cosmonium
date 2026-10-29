@@ -31,7 +31,6 @@ from ..skin import UIElement, combine_classes
 
 
 class Dock(DockedUIElement):
-
     def __init__(self, id_, direction, location, layout, parent=None):
         DockedUIElement.__init__(self, id_, location, parent=parent)
         self.direction = direction

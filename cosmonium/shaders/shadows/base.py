@@ -19,7 +19,6 @@
 
 
 class ShaderShadowInterface:
-
     def prepare_shadow_for(self, code, light, light_direction, eye_light_direction):
         pass
 

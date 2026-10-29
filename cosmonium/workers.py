@@ -32,7 +32,6 @@ syncTextureLoader = None
 
 
 class AsyncMethod:
-
     def __init__(self, name, base, method, callback):
         self.base = base
         self.method = method
@@ -63,7 +62,6 @@ class AsyncMethod:
 
 
 class AsyncLoader:
-
     def __init__(self, base, name):
         self.base = base
         self.in_queue = Queue()
@@ -130,7 +128,6 @@ class AsyncLoader:
 
 
 class AsyncTextureLoader(AsyncLoader):
-
     def __init__(self, base):
         AsyncLoader.__init__(self, base, 'TextureLoader')
 
@@ -171,7 +168,6 @@ class AsyncTextureLoader(AsyncLoader):
 
 
 class SyncTextureLoader:
-
     def load_texture(self, filename, alpha_filename=None):
         texture = None
         try:

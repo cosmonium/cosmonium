@@ -21,7 +21,6 @@ from ..component import ShaderComponent
 
 
 class ShaderLocalShadowsInterface:
-
     def prepare_shadow_for(self, code, light):
         pass
 
@@ -30,7 +29,6 @@ class ShaderLocalShadowsInterface:
 
 
 class ShaderLocalShadows(ShaderComponent, ShaderLocalShadowsInterface):
-
     fragment_requires = {'eye_vertex'}
 
     def get_id(self):

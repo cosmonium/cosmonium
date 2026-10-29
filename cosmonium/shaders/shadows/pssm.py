@@ -22,7 +22,6 @@ from .base import ShaderShadowInterface
 
 
 class ShaderPSSMShadowMap(ShaderComponent, ShaderShadowInterface):
-
     fragment_requires = {'world_vertex'}
 
     def __init__(self, name):

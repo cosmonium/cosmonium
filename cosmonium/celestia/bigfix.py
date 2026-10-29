@@ -47,7 +47,6 @@ from math import floor
 
 
 class Bigfix:
-
     INT64_MAX = 9223372036854775807
     POW2_31 = 2147483648.0
     POW2_32 = 4294967296.0

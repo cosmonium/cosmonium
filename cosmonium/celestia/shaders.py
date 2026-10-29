@@ -25,7 +25,6 @@ from ..shaders.lighting.lambert import BRDFInterface
 
 
 class LunarLambertLightingModel(ShaderComponent, BRDFInterface):
-
     fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def get_id(self):

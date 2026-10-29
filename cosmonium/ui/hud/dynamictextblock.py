@@ -24,7 +24,6 @@ from .textblock import TextBlock
 
 
 class DynamicTextBlockEntryInterface(ABC):
-
     @abstractmethod
     def is_valid(self, global_vars) -> bool: ...
 

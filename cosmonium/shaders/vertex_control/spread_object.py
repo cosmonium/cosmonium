@@ -21,7 +21,6 @@ from .vertex_control import VertexControl
 
 
 class LargeObjectVertexControl(VertexControl):
-
     vertex_provides = {'world_vertex'}
 
     def get_id(self):

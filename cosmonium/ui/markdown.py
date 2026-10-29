@@ -28,7 +28,6 @@ from ..fonts import Font, fontsManager
 
 
 class DirectMarkdownRenderer(BaseRenderer):
-
     init = False
 
     def __init__(self, font_family):

@@ -742,7 +742,6 @@ class GalaxyDataSource(DataSource):
 
 
 class GalaxyPointControl(PointControl):
-
     vertex_requires = {'world_vertex'}
 
     def get_id(self):

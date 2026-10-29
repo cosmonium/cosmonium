@@ -21,7 +21,6 @@ from ..component import ShaderComponent
 
 
 class VertexControl(ShaderComponent):
-
     def update_vertex(self, code):
         pass
 

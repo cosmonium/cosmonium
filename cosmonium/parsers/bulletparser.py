@@ -25,7 +25,6 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class BulletCapsuleShapeYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         config = BulletCapsuleShapeConfig.model_validate(data)

@@ -41,7 +41,6 @@ from .utils import TransparencyBlend
 
 
 class TexturesBlock(object):
-
     def __init__(self):
         self.albedo = None
         self.normal = None
@@ -108,7 +107,6 @@ class TexturesBlock(object):
 
 
 class AppearanceBase(DataSource):
-
     def __init__(self):
         DataSource.__init__(self, 'appearance')
         self.tex_transform = False
@@ -470,7 +468,6 @@ class Appearance(AppearanceBase):
 
 
 class AppearanceDataSource(DataSource):
-
     def __init__(self, appearance):
         DataSource.__init__(self, 'appearance')
         self.appearance = appearance
@@ -496,7 +493,6 @@ class AppearanceDataSource(DataSource):
 
 
 class ModelAppearance(AppearanceBase):
-
     def __init__(self, srgb=None, vertex_color=True, attribute_color=False, material=False, occlusion_channel=False):
         AppearanceBase.__init__(self)
         self.tex_transform = False

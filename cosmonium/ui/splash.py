@@ -27,7 +27,6 @@ from .. import settings
 
 
 class NoSplash:
-
     def set_text(self, text):
         pass
 
@@ -36,7 +35,6 @@ class NoSplash:
 
 
 class Splash:
-
     def __init__(self):
         self.base = builtins.base
         props = WindowProperties(self.base.win.getProperties())

@@ -96,7 +96,6 @@ class TextureDictionaryShaderDataSource(ShaderDataSource):
 
 
 class ProceduralMap(ShaderAppearance):
-
     # TODO: should be done by data_source
     fragment_requires = {'world_vertex', 'world_normal'}
 
@@ -140,7 +139,6 @@ class ProceduralMap(ShaderAppearance):
 
 
 class DetailMap(ShaderAppearance):
-
     def __init__(self, textures_control, heightmap, create_normals=True):
         ShaderAppearance.__init__(self)
         self.textures_control = textures_control

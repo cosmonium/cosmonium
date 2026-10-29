@@ -24,7 +24,6 @@ from .base import Shape
 
 
 class SphereShape(Shape):
-
     def __init__(self):
         Shape.__init__(self)
         self.axes = LVector3d(1)
@@ -61,7 +60,6 @@ class IcoSphereShape(Shape):
 
 
 class DisplacementSphereShape(Shape):
-
     def __init__(self, heightmap, max_height):
         Shape.__init__(self)
         self.heightmap = heightmap
@@ -79,7 +77,6 @@ class DisplacementSphereShape(Shape):
 
 
 class ScaledSphereShape(Shape):
-
     def __init__(self, radius=1.0):
         Shape.__init__(self)
         self.radius = radius

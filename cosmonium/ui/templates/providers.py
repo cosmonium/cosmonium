@@ -154,7 +154,6 @@ class AutopilotProvider:
 
 
 class BodiesProvider:
-
     def is_shown(self, body_class):
         return bodyClasses.get_show(body_class)
 
@@ -173,7 +172,6 @@ class CameraProvider:
 
 
 class ClockProvider:
-
     def __init__(self):
         self.last_average_frame_time = -1
         self.last_average_frame = None
@@ -244,7 +242,6 @@ class GuiProvider:
 
 
 class LabelsProvider:
-
     def is_shown(self, body_class):
         return bodyClasses.get_show_label(body_class)
 
@@ -259,13 +256,11 @@ class NavProvider:
 
 
 class OrbitsProvider:
-
     def is_shown(self, body_class):
         return bodyClasses.get_show_orbit(body_class)
 
 
 class ScalesProvider:
-
     def length(self, value):
         return units.toUnit(value, units.lengths_scale)
 
@@ -283,7 +278,6 @@ class ScalesProvider:
 
 
 class SelectedProvider(ObjectProvider):
-
     def __init__(self, engine):
         self.engine = engine
 
@@ -296,14 +290,12 @@ class SelectedProvider(ObjectProvider):
 
 
 class UnitsProvider:
-
     @property
     def L0(self):
         return units.L0
 
 
 class SettingsProvider:
-
     def __getattr__(self, attr):
         return getattr(settings, attr)
 
@@ -330,7 +322,6 @@ class TimeProvider:
 
 
 class GlobalVars:
-
     def __init__(self, engine, gui):
         self.globals = {
             'autopilot': AutopilotProvider(engine),

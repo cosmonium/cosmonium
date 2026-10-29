@@ -26,7 +26,6 @@ from ... import settings
 
 
 class SceneAnchor:
-
     def __init__(
         self,
         name,
@@ -170,7 +169,6 @@ class SceneAnchor:
 
 
 class AbsoluteSceneAnchor(SceneAnchor):
-
     def __init__(self, anchor):
         SceneAnchor.__init__(self, 'static-anchor', anchor, False, None)
 
@@ -184,7 +182,6 @@ class AbsoluteSceneAnchor(SceneAnchor):
 
 
 class ObserverSceneAnchor(SceneAnchor):
-
     def __init__(self, anchor, background=False):
         SceneAnchor.__init__(self, 'observer-anchor', anchor, False, None, background=background)
 

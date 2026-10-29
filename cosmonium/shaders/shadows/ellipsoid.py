@@ -22,7 +22,6 @@ from .base import ShaderShadowInterface
 
 
 class ShaderSphereShadow(ShaderComponent, ShaderShadowInterface):
-
     fragment_requires = {'world_vertex'}
 
     def __init__(self, max_occluders, far_sun, oblate_occluder):

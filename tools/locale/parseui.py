@@ -10,7 +10,6 @@ from cosmonium.parsers.yamlloader import YamlLoader  # noqa: E402
 
 
 class UIPotExtractor:
-
     def __init__(self, output):
         self.output = output
         self.msgs = OrderedDict()

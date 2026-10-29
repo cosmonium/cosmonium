@@ -22,7 +22,6 @@ from ..component import ShaderComponent
 
 
 class Fog(ShaderComponent):
-
     fragment_requires = {'world_vertex'}
 
     def __init__(self, fall_off, density, ground):

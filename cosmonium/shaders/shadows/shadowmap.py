@@ -23,7 +23,6 @@ from .base import ShaderShadowInterface
 
 
 class ShaderShadowMap(ShaderComponent, ShaderShadowInterface):
-
     fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def __init__(self, name, use_bias):

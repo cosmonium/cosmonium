@@ -25,7 +25,6 @@ from .editor import ParamEditor
 
 
 class Preferences(ParamEditor):
-
     def __init__(self, cosmonium, parent=None):
         ParamEditor.__init__(self, parent=parent)
         self.cosmonium = cosmonium

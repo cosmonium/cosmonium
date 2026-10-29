@@ -22,7 +22,6 @@ from .base import LightingModelBase
 
 
 class SmoothLineLightingModel(LightingModelBase):
-
     def __init__(self, enable_fade: bool = False):
         """
         Initialize the smooth line lighting model.

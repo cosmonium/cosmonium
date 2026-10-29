@@ -371,7 +371,6 @@ class CustomShadowMapShadowCaster(ShadowMapShadowCaster):
 
 
 class PandaShadowMapShadowCaster(ShadowMapShadowCaster):
-
     def create_camera(self):
         print("Create Panda3D shadow camera for", self.occluder.get_name())
         self.light.setShadowCaster(True, settings.shadow_size, settings.shadow_size)

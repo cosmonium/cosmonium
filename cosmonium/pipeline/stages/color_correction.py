@@ -24,7 +24,6 @@ from ..target import ProcessTarget, ScreenTarget
 
 
 class ColorCorrectionFragmentShader(ShaderComponent):
-
     def get_id(self):
         return 'color-correction-srgb'
 
@@ -36,7 +35,6 @@ class ColorCorrectionFragmentShader(ShaderComponent):
 
 
 class ColorCorrectionStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

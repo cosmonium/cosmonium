@@ -49,7 +49,6 @@ class Font:
 
 
 class FontsManager:
-
     def __init__(self):
         self.families = {}
 

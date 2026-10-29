@@ -23,7 +23,6 @@ from .component import ShaderComponent
 
 
 class ShaderAppearance(ShaderComponent):
-
     def __init__(self):
         ShaderComponent.__init__(self)
         self.data = None
@@ -64,7 +63,6 @@ class ShaderAppearance(ShaderComponent):
 
 
 class TextureAppearance(ShaderAppearance):
-
     def get_id(self):
         config = ""
         if self.has_surface:

@@ -59,7 +59,6 @@ class RayMarchingAppearanceBase(AppearanceBase):
 
 
 class RayMarchingShader(ShaderAppearance):
-
     def __init__(self):
         ShaderAppearance.__init__(self)
         self.hdr = False

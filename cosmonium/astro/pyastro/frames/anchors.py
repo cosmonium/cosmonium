@@ -53,7 +53,6 @@ class J2000EclipticReferenceFrame(AnchorReferenceFrame):
 
 
 class J2000EquatorialReferenceFrame(AnchorReferenceFrame):
-
     def get_orientation(self):
         return units.J2000_Orientation
 

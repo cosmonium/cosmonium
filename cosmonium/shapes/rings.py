@@ -24,7 +24,6 @@ from .base import Shape
 
 
 class RingsShape(Shape):
-
     def __init__(self, inner_radius, outer_radius):
         Shape.__init__(self)
         self.inner_radius = inner_radius

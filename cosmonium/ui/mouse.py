@@ -29,7 +29,6 @@ from ..utils import color_to_int
 
 
 class Mouse(DirectObject):
-
     def __init__(self, base, oid_texture):
         self.base = base
         self.picking_texture = oid_texture

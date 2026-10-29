@@ -96,7 +96,6 @@ class BoundingBoxShape:
 
 
 class PatchLayer:
-
     def __init__(self):
         self.instance = None
 
@@ -119,7 +118,6 @@ class PatchLayer:
 
 
 class GeometryPatchLayer(PatchLayer):
-
     def __init__(self, use_skirt):
         PatchLayer.__init__(self)
         self.use_skirt = use_skirt
@@ -380,7 +378,6 @@ class SpherePatch(PatchBase):
 
 
 class SpherePatchLayer(GeometryPatchLayer):
-
     def create_instance(self, patch, tasks_tree):
         self.instance = geometry.UVPatch(
             patch.owner.axes / patch.owner.radius,
@@ -404,7 +401,6 @@ class SpherePatchLayer(GeometryPatchLayer):
 
 
 class SquarePatchBase(PatchBase):
-
     RIGHT = 0
     LEFT = 1
     BACK = 2
@@ -571,7 +567,6 @@ class NormalizedSquarePatch(SquarePatchBase):
 
 
 class NormalizedSquarePatchLayer(GeometryPatchLayer):
-
     def create_instance(self, patch, tasks_tree):
         orientation = patch.rotations[patch.face]
         rotated_axes = orientation.conjugate().xform(patch.owner.axes)
@@ -616,7 +611,6 @@ class SquaredDistanceSquarePatch(SquarePatchBase):
 
 
 class SquaredDistanceSquarePatchLayer(GeometryPatchLayer):
-
     def create_instance(self, patch, tasks_tree):
         orientation = patch.rotations[patch.face]
         rotated_axes = orientation.conjugate().xform(patch.owner.axes)
@@ -1299,7 +1293,6 @@ class PatchedSquareShapeBase(EllipsoidPatchedShape):
 
 
 class NormalizedSquarePatchFactory(PatchFactory):
-
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         min_height, max_height, mean_height = self.get_patch_limits(parent)
@@ -1334,7 +1327,6 @@ class NormalizedSquareShape(PatchedSquareShapeBase):
 
 
 class SquaredDistanceSquarePatchFactory(PatchFactory):
-
     def create_patch(self, parent, lod, face, x, y):
         density = self.lod_control.get_density_for(lod)
         min_height, max_height, mean_height = self.get_patch_limits(parent)

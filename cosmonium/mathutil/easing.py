@@ -23,31 +23,26 @@ from math import cos, pi
 
 
 class EasingInterface(ABC):
-
     @abstractmethod
     def easing(self, t): ...
 
 
 class NoEasing(EasingInterface):
-
     def easing(self, t):
         return t
 
 
 class CubicEasing(EasingInterface):
-
     def easing(self, t):
         return t * t * (-2.0 * t + 3.0)
 
 
 class SinEasing(EasingInterface):
-
     def easing(self, t):
         return -(cos(t * pi) - 1) / 2
 
 
 class ExpEasing(EasingInterface):
-
     accel = 2
     speed = 20
     delta = pow(accel, -speed / 2) / 2

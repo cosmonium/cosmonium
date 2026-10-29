@@ -25,7 +25,6 @@ from .astro.units import time_to_values, values_to_time
 
 
 class Time(object):
-
     def __init__(self):
         self.multiplier = 1
         self.time_full = 0

@@ -22,7 +22,6 @@ from .base import ShaderShadowInterface
 
 
 class ShaderRingsShadow(ShaderComponent, ShaderShadowInterface):
-
     fragment_requires = {'world_vertex'}
 
     def get_id(self):

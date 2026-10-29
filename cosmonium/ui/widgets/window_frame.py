@@ -35,7 +35,6 @@ from .draggable import DraggableWidgetMixin
 
 
 class WindowFrame(DraggableWidgetMixin):
-
     def __init__(self, title_text, scale, parent=None, child=None):
         DraggableWidgetMixin.__init__(self)
         self.title_text = title_text

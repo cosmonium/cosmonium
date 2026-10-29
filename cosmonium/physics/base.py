@@ -22,7 +22,6 @@ from abc import ABC, abstractmethod
 
 
 class PhysicsBase(ABC):
-
     @abstractmethod
     def enable(self):
         raise NotImplementedError()

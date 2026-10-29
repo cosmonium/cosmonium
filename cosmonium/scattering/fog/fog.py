@@ -29,7 +29,6 @@ from ..scattering import ScatteringBase
 
 
 class AtmosphereFogScatteringShader(AtmosphericScattering, ShaderScatteringInterface):
-
     fragment_requires = {'world_vertex'}
 
     def __init__(self, atmosphere):

@@ -86,7 +86,6 @@ class Tile(PatchBase):
 
 
 class GpuPatchTerrainLayer(PatchLayer):
-
     template = None
 
     def create_instance(self, patch, tasks_tree):
@@ -100,7 +99,6 @@ class GpuPatchTerrainLayer(PatchLayer):
 
 
 class MeshTerrainLayer(PatchLayer):
-
     template = {}
 
     def create_instance(self, patch, tasks_tree):
@@ -134,25 +132,21 @@ class MeshTerrainLayer(PatchLayer):
 
 
 class TerrainLayerFactoryInterface:
-
     def create_layer(self, patch):
         raise NotImplementedError()
 
 
 class MeshTerrainLayerFactory(TerrainLayerFactoryInterface):
-
     def create_layer(self, patch):
         return MeshTerrainLayer()
 
 
 class GpuPatchTerrainLayerFactory(TerrainLayerFactoryInterface):
-
     def create_layer(self, patch):
         return GpuPatchTerrainLayer()
 
 
 class TileFactory(PatchFactory):
-
     def __init__(self, heightmap, tile_density, size, terrain_layer_factory):
         super().__init__(use_skirt=settings.use_patch_skirts)
         self.heightmap = heightmap
@@ -197,7 +191,6 @@ class TileFactory(PatchFactory):
 
 
 class TiledShape(PatchedShapeBase):
-
     def __init__(self, factory, tile_size, lod_control):
         PatchedShapeBase.__init__(self, factory, None, lod_control)
         self.tile_size = tile_size

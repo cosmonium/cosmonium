@@ -32,7 +32,6 @@ from .bloom_threshold import LuminanceThresholdFragmentShader
 
 
 class BloomDownscaleFragmentShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -55,7 +54,6 @@ class BloomDownscaleFragmentShader(ShaderProgram):
 
 
 class BloomUpscaleFragmentShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -82,7 +80,6 @@ class BloomUpscaleFragmentShader(ShaderProgram):
 
 
 class DownscaleBloomStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

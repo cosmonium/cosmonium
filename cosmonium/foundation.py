@@ -129,7 +129,6 @@ class BaseObject(object):
 
 
 class VisibleObject(BaseObject):
-
     def __init__(self, name):
         BaseObject.__init__(self, name)
         self.instance = None

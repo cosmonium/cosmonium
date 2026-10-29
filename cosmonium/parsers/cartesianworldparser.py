@@ -27,7 +27,6 @@ from .yamlparser import YamlModuleParser
 
 
 class CartesianWorldYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data, parent=None):
         config = CartesianWorldConfig.model_validate(data)

@@ -83,7 +83,6 @@ from cosmonium.ui.splash import NoSplash  # noqa: E402
 
 
 class WaterLayer(PatchLayer):
-
     def __init__(self, config):
         PatchLayer.__init__(self)
         self.config = config
@@ -121,7 +120,6 @@ class WaterLayerFactory(TerrainLayerFactoryInterface):
 
 
 class PhysicsLayer(PatchLayer):
-
     def __init__(self, physics):
         PatchLayer.__init__(self)
         self.physics = physics

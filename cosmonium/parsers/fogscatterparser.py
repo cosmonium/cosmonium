@@ -22,7 +22,6 @@ from .scatteringparser import ScatteringYamlParser
 
 
 class FogScatterYamlParser:
-
     @classmethod
     def decode(cls, data):
         scattering = FogScattering()

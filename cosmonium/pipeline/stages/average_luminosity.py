@@ -33,7 +33,6 @@ from ..target import ProcessTarget
 
 
 class AverageLuminanceFragmentShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -51,7 +50,6 @@ class AverageLuminanceFragmentShader(ShaderProgram):
 
 
 class LuminanceFragmentShader(ShaderComponent):
-
     def get_id(self) -> str:
         return 'luminance'
 
@@ -60,7 +58,6 @@ class LuminanceFragmentShader(ShaderComponent):
 
 
 class LuminanceDownscaleFragmentShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'fragment')
 
@@ -84,7 +81,6 @@ class LuminanceDownscaleFragmentShader(ShaderProgram):
 
 
 class AverageLuminosityStage(SceneStage):
-
     def __init__(self, name):
         SceneStage.__init__(self, name)
         self.levels = 0

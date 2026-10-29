@@ -39,7 +39,6 @@ from ... import units
 
 
 class ReferenceFrame:
-
     def get_center(self):
         raise NotImplementedError()
 

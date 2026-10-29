@@ -45,7 +45,6 @@ class ObjectEditors:
 
 
 class EditorWrapper:
-
     def __init__(self, wrapped_object):
         self.wrapped_object = wrapped_object
 
@@ -60,7 +59,6 @@ class EditorWrapper:
 
 
 class EmptyEditor:
-
     def __init__(self, object_to_edit):
         pass
 

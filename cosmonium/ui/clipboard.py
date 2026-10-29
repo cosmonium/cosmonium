@@ -22,7 +22,6 @@ import sys
 
 
 class Clipboard:
-
     def update(self):
         pass
 
@@ -34,7 +33,6 @@ class Clipboard:
 
 
 class TkClipboard(Clipboard):
-
     def __init__(self):
         has_tk = False
         self.r = None
@@ -76,7 +74,6 @@ class TkClipboard(Clipboard):
 
 
 class WinClipboard(Clipboard):
-
     def __init__(self):
         try:
             import win32clipboard
@@ -106,7 +103,6 @@ class WinClipboard(Clipboard):
 
 
 class DarwinClipboard(Clipboard):
-
     def copy_to(self, text):
         pbcopy = os.popen('pbcopy', 'w')
         pbcopy.write(text)
@@ -120,7 +116,6 @@ class DarwinClipboard(Clipboard):
 
 
 class XClipboard(Clipboard):
-
     def __init__(self):
         self.cmd_read = None
         self.cmd_write = None

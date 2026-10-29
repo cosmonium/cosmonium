@@ -24,7 +24,6 @@ from .editor import ParamEditor
 
 
 class ObjectEditorWindow(ParamEditor):
-
     def __init__(self, body, parent=None):
         ParamEditor.__init__(self, parent=parent)
         self.body = body

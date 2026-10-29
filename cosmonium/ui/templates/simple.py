@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class Section(ABC):
-
     @abstractmethod
     def render(self, global_vars) -> str: ...
 
@@ -70,7 +69,6 @@ class SimpleTemplate:
 
 
 class SimpleTemplateParser:
-
     opening = '{{'
     closing = '}}'
     delimiters = re.compile(f'({re.escape(opening)}|{re.escape(closing)})')

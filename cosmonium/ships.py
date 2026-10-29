@@ -71,7 +71,6 @@ class NoShip(ShipBase):
 
 
 class VisibleShip(ShipBase):
-
     anchor_class = 2
     editable = True
     orbit_rot_camera = False

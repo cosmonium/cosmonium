@@ -38,7 +38,6 @@ from .uiwindow import UIWindow
 
 
 class ParamEditor(UIWindow):
-
     def __init__(self, parent=None):
         UIWindow.__init__(self, parent=parent)
         self.width = settings.default_window_width

@@ -25,7 +25,6 @@ from ..pipeline.pipeline import ProcessPipeline
 
 
 class GeneratorChain(ProcessPipeline):
-
     def __init__(self, win=None, engine=None):
         ProcessPipeline.__init__(self, win, engine)
         self.busy = False
@@ -81,7 +80,6 @@ class GeneratorChain(ProcessPipeline):
 
 
 class GeneratorPool(object):
-
     def __init__(self, chains):
         self.chains = chains
 

@@ -21,7 +21,6 @@ from .component import ShaderComponent
 
 
 class AtmosphericScattering(ShaderComponent):
-
     def fragment_uniforms(self, code):
         code.append("uniform float global_ambient;")
 

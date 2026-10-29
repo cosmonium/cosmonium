@@ -19,7 +19,6 @@
 
 
 class Pipeline:
-
     def __init__(self, win=None, engine=None):
         self.stages = {}
         self.ordered_stages = []
@@ -87,7 +86,6 @@ class Pipeline:
 
 
 class ProcessPipeline(Pipeline):
-
     def trigger(self, data):
         for stage in self.ordered_stages:
             stage.prepare(data.get('prepare', {}).get(stage.name, {}))

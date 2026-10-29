@@ -208,7 +208,6 @@ class DGuiDockWidget(DockWidgetBase):
 
 
 class FrameColorTexture:
-
     def __init__(self, background_color, border_color):
         self.size = 3
         self.image = PNMImage(self.size, self.size, num_channels=4)

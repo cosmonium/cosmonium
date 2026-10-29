@@ -24,7 +24,6 @@ from ..target import ProcessTarget, ScreenTarget
 
 
 class PassthroughFragmentShader(ShaderComponent):
-
     def get_id(self):
         return 'passthrough'
 
@@ -33,7 +32,6 @@ class PassthroughFragmentShader(ShaderComponent):
 
 
 class PassthroughStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

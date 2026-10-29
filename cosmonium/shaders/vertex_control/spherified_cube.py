@@ -21,7 +21,6 @@ from .vertex_control import VertexControl
 
 
 class NormalizedCubeVertexControl(VertexControl):
-
     vertex_requires = {'model_vertex'}
     vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 
@@ -47,7 +46,6 @@ class NormalizedCubeVertexControl(VertexControl):
 
 
 class SquaredDistanceCubeVertexControl(VertexControl):
-
     vertex_requires = {'model_vertex'}
     vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 
@@ -78,7 +76,6 @@ class SquaredDistanceCubeVertexControl(VertexControl):
 
 
 class DoubleSquaredDistanceCubeVertexControl(VertexControl):
-
     vertex_requires = {'model_vertex'}
     vertex_provides = {'model_vertex', 'model_normal', 'tangent'}
 

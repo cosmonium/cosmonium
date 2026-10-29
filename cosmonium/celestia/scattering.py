@@ -78,7 +78,6 @@ class CelestiaScattering(ScatteringBase):
 
 
 class CelestiaScatteringShader(AtmosphericScattering):
-
     fragment_requires = {'world_vertex'}
 
     def __init__(self, parameters, atmosphere=False, extinction_only=False):

@@ -25,7 +25,6 @@ from .passthrough import DefaultPassThroughVertexShader
 
 
 class PostProcessShader(StructuredShader):
-
     def __init__(self, vertex_shader=None, fragment_shader=None):
         StructuredShader.__init__(self)
         if vertex_shader is None:
@@ -43,7 +42,6 @@ class PostProcessShader(StructuredShader):
 
 
 class SimplePostProcessFragmentShader(ShaderProgram):
-
     def __init__(self, process: ShaderComponent, output_type: str = 'vec3'):
         ShaderProgram.__init__(self, 'fragment')
         self.process = process

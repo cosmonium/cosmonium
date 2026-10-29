@@ -23,7 +23,6 @@ from .editors import ObjectEditors
 
 
 class StellarObjectEditor:
-
     def __init__(self, stellar_object):
         self.stellar_object = stellar_object
         orbits = stellar_object.context.orbits

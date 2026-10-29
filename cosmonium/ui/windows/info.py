@@ -34,7 +34,6 @@ from .uiwindow import UIWindow
 
 
 class InfoWindow(UIWindow):
-
     def __init__(self, body, parent=None):
         UIWindow.__init__(self, parent=parent)
         self.body = body

@@ -22,7 +22,6 @@ from ..component import ShaderComponent
 
 
 class HDR(ShaderComponent):
-
     def get_id(self):
         return "hdr"
 

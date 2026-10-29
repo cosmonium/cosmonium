@@ -35,7 +35,6 @@ from .uiwindow import UIWindow
 
 
 class TimeEditor(UIWindow):
-
     def __init__(self, time, parent=None):
         UIWindow.__init__(self, parent=parent)
         self.time = time

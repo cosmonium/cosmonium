@@ -56,7 +56,6 @@ class SurfaceControllerYamlParser(YamlModuleParser):
 
 
 class FlatSurfaceControllerYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data, anchor):
         # data.position is already an LPoint3f or list[float] from Point3Field.
@@ -68,7 +67,6 @@ class FlatSurfaceControllerYamlParser(YamlModuleParser):
 
 
 class ControllerYamlParser(TypedYamlParser):
-
     @classmethod
     def decode(cls, data, anchor):
         object_type, parameters = cls.get_type_and_data(data, detect_trivial=False)

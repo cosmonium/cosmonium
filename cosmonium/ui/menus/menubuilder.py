@@ -58,7 +58,6 @@ class SubMenuEntry(NamedTuple):
 
 
 class MenuBuilder:
-
     def __init__(self, translation, messenger, shortcuts, engine, mouse, browser):
         self.translation = translation
         self.messenger = messenger

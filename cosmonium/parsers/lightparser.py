@@ -22,7 +22,6 @@ from .yamlparser import YamlModuleParser
 
 
 class InfiniteSunLightYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         return InfiniteSun(45)

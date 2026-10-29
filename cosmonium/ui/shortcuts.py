@@ -42,7 +42,6 @@ def remap_key_for_platform(key):
 
 
 class Shortcuts(DirectObject):
-
     def __init__(self, base, messenger, gui):
         DirectObject.__init__(self)
         self.messenger = messenger

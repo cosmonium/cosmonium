@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class ScatteringBase(ABC):
-
     def __init__(self):
         self.atmospheres: set[Entity] = set()
         self.entities: list[Entity] = []

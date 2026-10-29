@@ -33,7 +33,6 @@ class FStringTemplate:
 
 
 class FStringTemplateParser:
-
     def create_template(self, text: str) -> FStringTemplate:
         expression_parser = PythonExpressionParser()
         code = 'f"""' + text + '"""'

@@ -39,7 +39,6 @@ from ...pstats import pstat
 
 
 class SceneManagerBase:
-
     def __init__(self):
         self.midPlane = None
         self.scale = 1.0

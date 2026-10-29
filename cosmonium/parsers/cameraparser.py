@@ -27,7 +27,6 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class SurfaceFollowCameraControllerYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         camera_controller = SurfaceFollowCameraController()
@@ -36,7 +35,6 @@ class SurfaceFollowCameraControllerYamlParser(YamlModuleParser):
 
 
 class FixedCameraControllerYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         camera_controller = FixedCameraController()

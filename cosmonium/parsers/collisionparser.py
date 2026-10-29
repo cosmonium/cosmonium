@@ -25,7 +25,6 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class CollisionCapsuleShapeYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         config = CollisionCapsuleShapeConfig.model_validate(data)

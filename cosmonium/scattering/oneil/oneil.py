@@ -38,7 +38,6 @@ from ..scattering import ScatteringBase
 
 
 class ONeilScatteringBase(ScatteringBase):
-
     def do_update_scattering(self, entity, atmosphere, extinction):
         entity.shader.lighting_model.scattering.set_inside(self.inside)
         if atmosphere:
@@ -49,7 +48,6 @@ class ONeilScatteringBase(ScatteringBase):
 
 
 class ONeilSimpleScattering(ONeilScatteringBase):
-
     AtmosphereRatio = 1.025
     ScaleDepth = 0.25
 
@@ -351,7 +349,6 @@ class ONeilScattering(ONeilScatteringBase):
 
 
 class ONeilScatteringShaderBase(AtmosphericScattering, ShaderScatteringInterface):
-
     str_id = None
 
     def __init__(

@@ -25,7 +25,6 @@ from .target import SceneTarget
 
 
 class PipelineStage:
-
     def __init__(self, name):
         self.name = name
         self.win = None
@@ -109,7 +108,6 @@ class PipelineStage:
 
 
 class ProcessStage(PipelineStage):
-
     def prepare(self, prepare_data):
         for target in self.targets:
             target.prepare(prepare_data)
@@ -130,7 +128,6 @@ class ProcessStage(PipelineStage):
 
 
 class SceneStage(PipelineStage):
-
     def __init__(
         self,
         name,
@@ -156,7 +153,6 @@ class SceneStage(PipelineStage):
 
 
 class RenderSceneStage(SceneStage):
-
     def __init__(self, name, camera_mask):
         SceneStage.__init__(self, name)
         self.camera_mask = camera_mask

@@ -24,7 +24,6 @@ from .yamlparser import TypedYamlParser, YamlModuleParser
 
 
 class LocalDirectionalLightYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         # TODO: Disabled light is treated as non-existent, so we return None instead of a light object
@@ -45,7 +44,6 @@ class LocalDirectionalLightYamlParser(YamlModuleParser):
 
 
 class LocalPointLightYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         # TODO: Disabled light is treated as non-existent, so we return None instead of a light object
@@ -59,7 +57,6 @@ class LocalPointLightYamlParser(YamlModuleParser):
 
 
 class LocalSpotLightYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         # TODO: Disabled light is treated as non-existent, so we return None instead of a light object

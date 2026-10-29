@@ -43,7 +43,6 @@ from .windows.browser import Browser
 
 
 class Gui:
-
     def __init__(self, app_config, cosmonium, time, camera, mouse, autopilot):
         self.base = cosmonium
         self.cosmonium = cosmonium

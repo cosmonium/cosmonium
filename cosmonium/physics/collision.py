@@ -49,7 +49,6 @@ class PhysicNode:
 
 
 class CollisionPhysics(PhysicsBase):
-
     collision = True
     physics = False
     support_heightmap = False

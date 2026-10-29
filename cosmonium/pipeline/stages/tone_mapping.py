@@ -24,7 +24,6 @@ from ..target import ProcessTarget, ScreenTarget
 
 
 class SimpleToneMappingFragmentShader(ShaderComponent):
-
     def __init__(self, tonemapping_func: str, luminance_tonemap: bool):
         super().__init__()
         self.tonemapping_func = tonemapping_func
@@ -59,7 +58,6 @@ class SimpleToneMappingFragmentShader(ShaderComponent):
 
 
 class ToneMappingStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

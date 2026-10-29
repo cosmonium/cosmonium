@@ -38,7 +38,6 @@ from .stages.tone_mapping import ToneMappingStage
 
 
 class ScenePipelineBase(Pipeline):
-
     def __init__(self, engine):
         Pipeline.__init__(self, win=None, engine=engine)
 
@@ -68,7 +67,6 @@ class ScenePipelineBase(Pipeline):
 
 
 class BasicScenePipeline(ScenePipelineBase):
-
     def __init__(self, engine=None):
         ScenePipelineBase.__init__(self, engine=engine)
         self.screen = None
@@ -102,7 +100,6 @@ class BasicScenePipeline(ScenePipelineBase):
 
 
 class ScenePipeline(ScenePipelineBase):
-
     def __init__(self, engine=None):
         ScenePipelineBase.__init__(self, engine=engine)
         self.screen = None

@@ -23,7 +23,6 @@ from .scattering import NoScattering
 
 
 class PureEmissionLightingModel(CompositeShaderComponent):
-
     def __init__(self):
         CompositeShaderComponent.__init__(self)
         self.scattering = NoScattering()

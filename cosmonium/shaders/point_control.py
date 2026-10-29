@@ -21,7 +21,6 @@ from .component import ShaderComponent
 
 
 class PointControl(ShaderComponent):
-
     def fragment_shader_decl(self, code):
         for i in range(self.shader.nb_textures_coord):
             code.append("vec4 texcoord%i = vec4(gl_PointCoord, 0, 0);" % i)
@@ -32,7 +31,6 @@ class NoPointControl(ShaderComponent):
 
 
 class StaticSizePointControl(PointControl):
-
     def get_id(self):
         return "pt-sta"
 
@@ -44,7 +42,6 @@ class StaticSizePointControl(PointControl):
 
 
 class DistanceSizePointControl(PointControl):
-
     def get_id(self):
         return "pt-dist"
 

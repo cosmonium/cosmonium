@@ -23,7 +23,6 @@ from .base import BRDFInterface
 
 
 class PbrLightingModel(ShaderComponent, BRDFInterface):
-
     fragment_requires = {'eye_vertex', 'eye_normal'}
 
     def get_id(self):

@@ -24,7 +24,6 @@ from .yamlparser import YamlModuleParser
 
 
 class SkyBoxYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data, scattering):
         shader = RenderingShader(lighting_model=AtmosphereLightingModel())

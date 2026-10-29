@@ -24,13 +24,11 @@ from .scattering import NoScattering
 
 
 class LightingModelBase(ShaderComponent):
-
     def set_scattering(self, scattering):
         raise NotImplementedError()
 
 
 class BRDFInterface:
-
     def prepare_material(self, code):
         raise NotImplementedError()
 
@@ -53,7 +51,6 @@ class EmissionModelInterface:
 
 
 class NoEmission(ShaderComponent, EmissionModelInterface):
-
     def light_contribution(self, code, light_direction, light_color, cos_light_angle):
         pass
 
@@ -62,7 +59,6 @@ class NoEmission(ShaderComponent, EmissionModelInterface):
 
 
 class EmissionMap(ShaderComponent, EmissionModelInterface):
-
     def light_contribution(self, code, light_direction, light_color, cos_light_angle):
         pass
 
@@ -71,7 +67,6 @@ class EmissionMap(ShaderComponent, EmissionModelInterface):
 
 
 class BacklitEmission(ShaderComponent, EmissionModelInterface):
-
     def fragment_uniforms(self, code):
         code.append("uniform float backlit;")
 
@@ -87,7 +82,6 @@ class BacklitEmission(ShaderComponent, EmissionModelInterface):
 
 
 class NightLightEmission(ShaderComponent, EmissionModelInterface):
-
     def fragment_uniforms(self, code):
         code.append("uniform float nightscale;")
 
@@ -102,7 +96,6 @@ class NightLightEmission(ShaderComponent, EmissionModelInterface):
 
 
 class ShadingLightingModel(CompositeShaderComponent):
-
     def __init__(self, brdf: ShaderComponent):
         CompositeShaderComponent.__init__(self)
         self.brdf = brdf
@@ -273,7 +266,6 @@ uniform struct p3d_LightModelParameters {
 
 
 class AtmosphereLightingModel(CompositeShaderComponent):
-
     def __init__(self):
         CompositeShaderComponent.__init__(self)
         self.scattering = NoScattering()

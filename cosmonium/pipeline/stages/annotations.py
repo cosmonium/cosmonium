@@ -27,7 +27,6 @@ from ..target import SceneTarget
 
 
 class AnnotationsRenderStage(RenderSceneStage):
-
     def __init__(self, name, camera_mask, colors, srgb=True, inverse_z=False):
         RenderSceneStage.__init__(self, name, camera_mask)
         self.colors = colors

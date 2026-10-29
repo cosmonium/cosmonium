@@ -30,7 +30,6 @@ from .bloom_threshold import LuminanceThresholdFragmentShader
 
 
 class BlurPassFragmentShader(ShaderProgram):
-
     def __init__(self, horizontal: bool):
         ShaderProgram.__init__(self, 'fragment')
         self.horizontal = horizontal
@@ -65,7 +64,6 @@ class BlurPassFragmentShader(ShaderProgram):
 
 
 class BlurBloomStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

@@ -29,7 +29,6 @@ from .yamlparser import YamlModuleParser
 
 
 class ActorObjectYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         config = ActorObjectConfig.model_validate(data)

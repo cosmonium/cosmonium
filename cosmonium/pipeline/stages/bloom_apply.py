@@ -24,7 +24,6 @@ from ..target import ProcessTarget
 
 
 class BloomApplyFragmentShader(ShaderComponent):
-
     def get_id(self):
         return 'bloom-apply'
 
@@ -37,7 +36,6 @@ class BloomApplyFragmentShader(ShaderComponent):
 
 
 class BloomApplyStage(SceneStage):
-
     def __init__(self, name, colors):
         SceneStage.__init__(self, name)
         self.colors = colors

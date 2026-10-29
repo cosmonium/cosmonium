@@ -26,7 +26,6 @@ from .yamlparser import YamlModuleParser
 
 
 class ActorShapeYamlParser(YamlModuleParser):
-
     @classmethod
     def decode(cls, data):
         if isinstance(data, str):

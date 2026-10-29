@@ -25,7 +25,6 @@ from ...parameters import AutoUserParameter, ParametersGroup, ParametersList, Us
 
 
 class RotationEditorBase:
-
     def __init__(self, rotation):
         self.rotation = rotation
         self.equatorial = True
@@ -100,7 +99,6 @@ class RotationEditorBase:
 
 
 class UniformRotationEditor(RotationEditorBase):
-
     def get_user_parameters(self):
         parameters = RotationEditorBase.get_user_parameters(self)
         parameters.add_parameter(

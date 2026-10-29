@@ -21,7 +21,6 @@ from ..shaders.base import ShaderProgram
 
 
 class GeneratorVertexShader(ShaderProgram):
-
     def __init__(self):
         ShaderProgram.__init__(self, 'vertex')
 

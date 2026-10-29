@@ -23,7 +23,6 @@ from ...shaders.component import ShaderComponent
 
 
 class LuminanceThresholdFragmentShader(ShaderComponent):
-
     def get_id(self) -> str:
         return 'luminance-threshold'
 

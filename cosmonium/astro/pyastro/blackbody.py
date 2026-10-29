@@ -43,7 +43,6 @@ def temp_to_RGB(kelvin):
             blue = 138.5177312231 * log(blue) - 305.0447927307
 
     else:
-
         red = temp - 60
         red = 329.698727446 * pow(red, -0.1332047592)
 
