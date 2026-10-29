@@ -312,7 +312,7 @@ class MenuEntryConfig(ConfigBase):
     )
     checked: Optional[str] = Field(
         None,
-        description="Optional python expression;" "if set, an entry is checked when the expression evaluates to true",
+        description="Optional python expression;if set, an entry is checked when the expression evaluates to true",
     )
     enabled: Optional[str] = Field(None, description="Python expression for enabled condition")
     visible: Optional[str] = Field(None, description="Python expression for visibility condition")
