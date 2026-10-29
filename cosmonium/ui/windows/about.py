@@ -23,7 +23,8 @@ from ...events import EventsDispatcher
 from ..managers.window_manager import WindowManager
 from .textwindow import TextWindow
 
-about_text = """# Cosmonium
+about_text = (
+    """# Cosmonium
 
 **Version**: V%s
 Copyright 2018-2026 Laurent Deru
@@ -40,7 +41,9 @@ version.
 
 This program uses several third-party libraries which are subject to their own
 licenses, see Third-Party.md for the complete list.
-""" % version.version_str
+"""
+    % version.version_str
+)
 
 
 def _show_about_window():
