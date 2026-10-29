@@ -46,8 +46,8 @@ from cosmonium.ui.dock.button import ButtonDockWidget
 from cosmonium.ui.dock.dock import Dock
 from cosmonium.ui.dock.search import SearchDockWidget
 from cosmonium.ui.hud.dynamictextblock import DynamicTextBlock
-from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.hud.query import Query
+from cosmonium.ui.loaders.dock import DockLoader
 from cosmonium.ui.loaders.hud import HUDLoader
 from cosmonium.ui.loaders.init import init_widget_loaders
 from cosmonium.ui.loaders.shortcuts import ShortcutsLoader
