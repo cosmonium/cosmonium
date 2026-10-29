@@ -151,7 +151,7 @@ class PatchedProceduralVirtualTextureSource(TextureSource):
         if settings.debug_tex_loading:
             logger.debug(f"{globalClock.get_frame_count()} Loading texture for {patch.str_id()}")
         texture_info = None
-        if not patch.str_id() in self.map_patch:
+        if patch.str_id() not in self.map_patch:
             texture = await self.tex_generator.generate(tasks_tree, patch.owner, patch, texture_config)
             if settings.debug_tex_loading:
                 logger.debug(f"{globalClock.get_frame_count()} Texture ready for {patch.str_id()}")
