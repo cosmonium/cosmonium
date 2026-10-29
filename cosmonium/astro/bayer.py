@@ -23,30 +23,30 @@ import re
 
 # The greek letter encoding follows gthe SIMBAD convention : http://simbad.u-strasbg.fr/guide/chA.htx
 greek_utf8_map = {
-    "ALF": u'α',
-    "BET": u'β',
-    "GAM": u'γ',
-    "DEL": u'δ',
-    "EPS": u'ε',
-    "ZET": u'ζ',
-    "ETA": u'η',
-    "TET": u'θ',
-    "IOT": u'ι',
-    "KAP": u'κ',
-    "LAM": u'λ',
-    "MU.": u'μ',
-    "NU.": u'ν',
-    "KSI": u'ξ',
-    "OMI": u'ο',
-    "PI.": u'π',
-    "RHO": u'ρ',
-    "SIG": u'σ',
-    "TAU": u'τ',
-    "UPS": u'υ',
-    "PHI": u'φ',
-    "KHI": u'χ',
-    "PSI": u'ψ',
-    "OME": u'ω',
+    "ALF": 'α',
+    "BET": 'β',
+    "GAM": 'γ',
+    "DEL": 'δ',
+    "EPS": 'ε',
+    "ZET": 'ζ',
+    "ETA": 'η',
+    "TET": 'θ',
+    "IOT": 'ι',
+    "KAP": 'κ',
+    "LAM": 'λ',
+    "MU.": 'μ',
+    "NU.": 'ν',
+    "KSI": 'ξ',
+    "OMI": 'ο',
+    "PI.": 'π',
+    "RHO": 'ρ',
+    "SIG": 'σ',
+    "TAU": 'τ',
+    "UPS": 'υ',
+    "PHI": 'φ',
+    "KHI": 'χ',
+    "PSI": 'ψ',
+    "OME": 'ω',
 }
 
 greek_word_map = {
@@ -190,7 +190,7 @@ greek_abv_match = re.compile(r"^([A-Z][A-Z\.]{0,2})(\d*) ([A-Za-z]{3})")
 
 greek_word_match = re.compile(r"^([A-Za-z]+)(\d*) ")
 
-superscripts = [u'⁰', u'¹', u'²', u'³', u'⁴', u'⁵', u'⁶', u'⁷', u'⁸', u'⁹']
+superscripts = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']
 
 
 def canonize_name(name):
