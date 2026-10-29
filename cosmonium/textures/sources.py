@@ -346,7 +346,7 @@ class VirtualTextureSource(TextureSource):
             no texture could be loaded.
         """
         texture_info = None
-        if not patch.str_id() in self.map_patch:
+        if patch.str_id() not in self.map_patch:
             tex_name = self.texture_name(patch)
             if settings.debug_tex_loading:
                 logger.debug(f"Load {tex_name}")
