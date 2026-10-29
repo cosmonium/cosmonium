@@ -56,14 +56,17 @@ class StackedHeightmapShaderDataSource(ShaderDataSource):
         return ''
 
     def decode_height(self, code):
-        code += ['''
+        code += [
+            '''
 float decode_height(vec4 encoded) {
     return encoded[0];
 }
-''']
+'''
+        ]
 
     def textureGood(self, code):
-        code += ['''
+        code += [
+            '''
 vec4 textureGood( sampler2D sam, vec2 uv )
 {
     vec2 res = textureSize( sam, 0 );
@@ -81,7 +84,8 @@ vec4 textureGood( sampler2D sam, vec2 uv )
     return mix( mix( a, b, fuv.x),
                 mix( c, d, fuv.x), fuv.y );
 }
-''']
+'''
+        ]
 
     def get_terrain_height_named(self, code):
         code.append('float get_terrain_height_%s(vec2 texcoord) {' % self.name)

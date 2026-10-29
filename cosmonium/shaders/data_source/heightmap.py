@@ -54,11 +54,13 @@ class HeightmapShaderDataSource(ShaderDataSource):
             code.append("uniform vec2 heightmap_%s_scale;" % self.name)
 
     def decode_height(self, code):
-        code += ['''
+        code += [
+            '''
 float decode_height(vec4 encoded) {
     return encoded.x;
 }
-''']
+'''
+        ]
 
     def get_terrain_height(self, code):
         code += [
@@ -95,7 +97,8 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
                 )
             ]
         else:
-            code += ['''
+            code += [
+                '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParameters params) {
     vec2 texel_size = 1.0 / vec2(textureSize(heightmap, 0));
     float u0 = get_terrain_height_%s(heightmap, texcoord + vec2(-texel_size.x, 0), params);
@@ -108,7 +111,9 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, HeightmapParamete
     vec3 binormal = normalize(vec3(0, 2 * params.v_scale, deltay));
     return normalize(cross(tangent, binormal));
 }
-''' % (self.name, self.name, self.name, self.name, self.name)]
+'''
+                % (self.name, self.name, self.name, self.name, self.name)
+            ]
 
     def get_terrain_normal_jacobian(self, code):
         if self.filtering.has_derivatives:
@@ -130,7 +135,8 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, Heightmap
                 )
             ]
         else:
-            code += ['''
+            code += [
+                '''
 vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, HeightmapParameters params) {
     vec2 texel_size = 1.0 / vec2(textureSize(heightmap, 0));
     float u0 = get_terrain_height_%s(heightmap, texcoord + vec2(-texel_size.x, 0), params);
@@ -143,7 +149,9 @@ vec3 get_terrain_normal_%s(sampler2D heightmap, vec2 texcoord, mat3 J, Heightmap
     vec3 binormal = J * vec3(0, 2 * params.v_scale, deltay);
     return normalize(cross(tangent, binormal));
 }
-''' % (self.name, self.name, self.name, self.name, self.name)]
+'''
+                % (self.name, self.name, self.name, self.name, self.name)
+            ]
 
     def has_source_for(self, source):
         if source == 'height':
