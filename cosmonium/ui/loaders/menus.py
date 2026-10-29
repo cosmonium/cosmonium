@@ -77,7 +77,10 @@ class MenuLoader(BaseComponentLoader):
             enabled_expression = self.expression_parser.compile_expression(
                 entry_config.enabled, self.gui.global_vars.globals
             )
-            enabled = lambda: bool(enabled_expression())
+
+            def enabled():
+                return bool(enabled_expression())
+
         else:
             enabled = true_expression
 
@@ -86,7 +89,10 @@ class MenuLoader(BaseComponentLoader):
             visible_expression = self.expression_parser.compile_expression(
                 entry_config.visible, self.gui.global_vars.globals
             )
-            visible = lambda: bool(visible_expression())
+
+            def visible():
+                return bool(visible_expression())
+
         else:
             visible = true_expression
 
@@ -96,7 +102,10 @@ class MenuLoader(BaseComponentLoader):
                 checked_expression = self.expression_parser.compile_expression(
                     entry_config.checked, self.gui.global_vars.globals
                 )
-                checked = lambda: bool(checked_expression())
+
+                def checked():
+                    return bool(checked_expression())
+
             else:
                 checked = zero_expression
             menu = EventMenuEntry(
