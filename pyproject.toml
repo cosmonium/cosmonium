@@ -1,35 +1,24 @@
-[tool.black]
+[tool.ruff]
 line-length = 120
-skip-string-normalization = 1
-target-version = ['py310']
-extend-exclude = '''
-/(
-    third-party
-  | source
-  | tools/p3d_module_builder
-  | data
-  | build
-  | dist
-  | wip
-  | \..*
-  | .*_parsetab\.py
-)/
-'''
-
-[tool.isort]
-profile = "black"
-line_length = 120
-skip_glob = [
-    "third-party/*",
-    "source/*",
-    "tools/p3d_module_builder/*",
-    "data/*",
-    "build/*",
-    "dist/*",
-    "wip/*",
-    ".*",
-    "*_parsetab.py"
+target-version = "py310"
+builtins = ["_"]
+extend-exclude = [
+    "third-party",
+    "source",
+    "tools/p3d_module_builder",
+    "data",
+    "build",
+    "dist",
+    "wip",
+    "*_parsetab.py",
 ]
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ruff.lint]
+# Equivalent of the flake8 defaults (pycodestyle + pyflakes) plus isort
+select = ["E", "W", "F", "I"]
 
 [tool.pydocstyle]
 convention = "pep257"

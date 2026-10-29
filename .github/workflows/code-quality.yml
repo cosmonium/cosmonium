@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   lint:
-    name: Lint (Black, isort, flake8)
+    name: Lint (Ruff)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,17 +27,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Check Black formatting
+      - name: Check formatting
         run: |
-          black --check .
+          ruff format --check .
 
-      - name: Check isort import sorting
+      - name: Run linter
         run: |
-          isort --check-only .
-
-      - name: Run flake8
-        run: |
-          flake8 .
+          ruff check .
 
   docstrings:
     name: Docstrings (pydocstyle)
