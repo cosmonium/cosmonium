@@ -301,7 +301,7 @@ class TestObjectNameDecode:
     def test_decode_bayer(self, registry):
         """Bayer names are passed through the bayer decode function."""
         name = ObjectName.make_bayer("ALF CMa")
-        assert name.decode() == u'\u03b1 CMa'
+        assert name.decode() == '\u03b1 CMa'
 
 
 class TestObjectNamesGetDecodedNames:
@@ -325,4 +325,4 @@ class TestObjectNamesGetDecodedNames:
         names.add_name(ObjectNames.parse_name("Sirius"))
         names.add_name(ObjectName.make_bayer("ALF CMa"))
         decoded = names.get_decoded_names()
-        assert decoded == ["Sirius", u'\u03b1 CMa']
+        assert decoded == ["Sirius", '\u03b1 CMa']
