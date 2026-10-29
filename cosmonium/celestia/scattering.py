@@ -99,7 +99,8 @@ class CelestiaScatteringShader(AtmosphericScattering):
         return name
 
     def uniforms_scattering(self, code):
-        code += ['''
+        code += [
+            '''
 uniform vec3 atmosphereRadius;
 uniform float mieCoeff;
 uniform float mieH;
@@ -115,17 +116,20 @@ uniform vec3 v3LightDir;
 uniform vec3 v3CameraPos;
 
 uniform float model_scale;
-''']
+'''
+        ]
 
     def uniforms_colors(self, code):
-        code += ['''
+        code += [
+            '''
 uniform float mieK;
 uniform float mieCoeff;
 uniform vec3  rayleighCoeff;
 uniform vec3  invScatterCoeffSum;
 
 uniform vec3 v3LightDir;
-''']
+'''
+        ]
 
     def vertex_uniforms(self, code):
         if not self.calc_in_fragment:
@@ -154,7 +158,8 @@ uniform vec3 v3LightDir;
             code.append("in vec3 eyeDir_obj;")
 
     def celestia_calc_scattering(self, code):
-        code += ['''void celestia_calc_scattering(
+        code += [
+            '''void celestia_calc_scattering(
     in vec3 world_vertex,
     out vec3 scatteredColor,
     out vec3 scatterEx,
@@ -209,10 +214,12 @@ uniform vec3 v3LightDir;
 
     eyeDir_obj = eyeDir;
 }
-''']
+'''
+        ]
 
     def celestia_incoming_light_for(self, code):
-        code += ['''
+        code += [
+            '''
 void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in vec3 eyeDir_obj,
         in vec3 v3LightDir, in vec3 light_color,
         out vec3 incoming_light_color, out vec3 in_scatter, out vec3 transmittance) {
@@ -230,7 +237,8 @@ void celestia_incoming_light_for(in vec3 scatteredColor, in vec3 scatterEx, in v
     in_scatter = scatteredComponent;
     incoming_light_color = light_color;
     transmittance = scatterEx;
-''']
+'''
+        ]
         if self.atmosphere:
             code.append('in_scatter = in_scatter * dot(scatterEx, vec3(0.333, 0.333, 0.333));')
         code.append('}')
