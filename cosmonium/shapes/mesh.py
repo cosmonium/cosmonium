@@ -119,15 +119,15 @@ class MeshShape(Shape):
         if self.instance is None:
             return
         self.mesh = mesh
-        l, r = mesh.getTightBounds()
+        lower, upper = mesh.getTightBounds()
         if self.auto_scale_mesh:
-            major = max(r - l) / 2
+            major = max(upper - lower) / 2
             scale_factor = 1.0 / major
             self.scale_factor = self.source_scale_factor * scale_factor
         else:
             self.radius = max(*self.scale_factor)
         if self.auto_center_mesh:
-            self.offset = -(r + l) / 2
+            self.offset = -(upper + lower) / 2
         if self.flatten:
             self.mesh.clear_model_nodes()
             self.mesh.flatten_strong()
