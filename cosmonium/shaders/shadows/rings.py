@@ -40,8 +40,7 @@ class ShaderRingsShadow(ShaderComponent, ShaderShadowInterface):
         # plane is the plane of the rings system
         code.append("vec3 new_pos = world_vertex - body_center;")
         code.append(
-            "float ring_intersection_param = "
-            f"-dot(new_pos, ring_normal.xyz) / dot({light_direction}, ring_normal.xyz);"
+            f"float ring_intersection_param = -dot(new_pos, ring_normal.xyz) / dot({light_direction}, ring_normal.xyz);"
         )
         code.append("if (ring_intersection_param > 0.0) {")
         code.append(f"  vec3 ring_intersection = new_pos + {light_direction} * ring_intersection_param;")
