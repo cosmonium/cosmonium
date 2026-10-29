@@ -153,7 +153,7 @@ class DirectMarkdownRenderer(BaseRenderer):
         return "%s\n" % text
 
     def list_item(self, text: str) -> str:
-        return u"\u2022 %s\n" % text
+        return "\u2022 %s\n" % text
 
     # provided by strikethrough plugin
 
