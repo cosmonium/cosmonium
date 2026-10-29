@@ -44,7 +44,7 @@ def set_physics_engine(engine_name):
 
 def init_mesh_loader(main_dir):
     if settings.use_assimp:
-        loadPrcFileData("", "load-file-type p3assimp\n" "assimp-gen-normals #t\n" "assimp-smooth-normal-angle 90\n")
+        loadPrcFileData("", "load-file-type p3assimp\nassimp-gen-normals #t\nassimp-smooth-normal-angle 90\n")
 
     registry = LoaderFileTypeRegistry.get_global_ptr()
 
