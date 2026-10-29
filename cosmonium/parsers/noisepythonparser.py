@@ -247,7 +247,7 @@ class NoisePythonParser:
 
         if func_name not in self._noise_functions:
             raise ValueError(
-                f"Unknown noise function: {func_name}. " f"Available functions: {sorted(self._noise_functions.keys())}"
+                f"Unknown noise function: {func_name}. Available functions: {sorted(self._noise_functions.keys())}"
             )
 
         # Get the create_*() function
@@ -321,9 +321,7 @@ class NoisePythonParser:
         if name in ("x", "y", "z"):
             return NoiseCoord(name)
 
-        raise ValueError(
-            f"Unknown name: {name}. " "Only coordinate names (x, y, z) or registered functions are allowed."
-        )
+        raise ValueError(f"Unknown name: {name}. Only coordinate names (x, y, z) or registered functions are allowed.")
 
 
 # ============================================================================
