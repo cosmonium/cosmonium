@@ -19,9 +19,8 @@
 
 
 try:
-    from cosmonium_engine import ImprovedQCSPatchGenerator, QCSPatchGenerator
+    from cosmonium_engine import ImprovedQCSPatchGenerator, QCSPatchGenerator, TilePatchGenerator, UVPatchGenerator
     from cosmonium_engine import TessellationInfo as CTessellationInfo
-    from cosmonium_engine import TilePatchGenerator, UVPatchGenerator
 
     TessellationInfo = CTessellationInfo
     uv_patch_generator = UVPatchGenerator()
@@ -37,8 +36,7 @@ except ImportError as e:
 
     logging.warning("Could not load geometry C++ implementation, fallback on Python implementation")
     logging.warning(e)
-    from .pygeometry.cube_patches import SquaredDistanceSquarePatch
-    from .pygeometry.cube_patches import NormalizedSquarePatch
+    from .pygeometry.cube_patches import NormalizedSquarePatch, SquaredDistanceSquarePatch
     from .pygeometry.tessellation import TessellationInfo
     from .pygeometry.tiles import Tile
     from .pygeometry.uv_patches import UVPatch
