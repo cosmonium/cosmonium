@@ -29,6 +29,13 @@ class Preferences(ParamEditor):
         ParamEditor.__init__(self, parent=parent)
         self.cosmonium = cosmonium
 
+    def dpi_label(self, label):
+        """Append the display zoom detected by the system to a label"""
+        pipe = self.cosmonium.pipe
+        if pipe is None:
+            return label
+        return label + " (" + _("detected: {zoom:.2f}x").format(zoom=pipe.display_zoom) + ")"
+
     def update_parameter(self, param):
         ParamEditor.update_parameter(self, param)
         self.cosmonium.update_settings()
@@ -178,7 +185,9 @@ class Preferences(ParamEditor):
             ParametersGroup(
                 _('Point-like objects'),
                 [
-                    SettingParameter(_('scale with DPI'), 'point_scale_dpi_aware', SettingParameter.TYPE_BOOL),
+                    SettingParameter(
+                        self.dpi_label(_('scale with DPI')), 'point_scale_dpi_aware', SettingParameter.TYPE_BOOL
+                    ),
                     SettingParameter(_("Custom point scale"), 'custom_point_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
                 ],
             ),
@@ -186,7 +195,7 @@ class Preferences(ParamEditor):
 
     def make_ui(self):
         parameters = [
-            SettingParameter(_("UI scale with DPI"), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
+            SettingParameter(self.dpi_label(_("UI scale with DPI")), 'ui_scale_dpi_aware', UserParameter.TYPE_BOOL),
             SettingParameter(_("Custom UI scale"), 'custom_ui_scale', UserParameter.TYPE_FLOAT, [0.5, 2]),
             SettingParameter(_("Menu text size"), 'menu_text_size', UserParameter.TYPE_INT, [4, 32]),
         ]
