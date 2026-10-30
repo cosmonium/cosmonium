@@ -18,10 +18,22 @@
 #
 
 
+import sys
+
 from panda3d.core import LColor, Texture, WindowProperties
 
 from .. import settings
 from ..parsers.configparser import configParser
+
+# Minimum size of a window that must be on the desktop to be reachable by the user
+MIN_VISIBLE = 64
+
+
+def is_window_reachable(x, y, width, height, desktop_width, desktop_height):
+    """Check that a window is visible enough for the user to be able to move it"""
+    return (
+        x + width >= MIN_VISIBLE and x <= desktop_width - MIN_VISIBLE and y >= 0 and y <= desktop_height - MIN_VISIBLE
+    )
 
 
 class WindowManager:
@@ -36,6 +48,12 @@ class WindowManager:
         """
         self.app = app
         self.request_fullscreen = False
+        # Position of the window when switching to fullscreen
+        self.windowed_origin = None
+
+    def get_desktop_size(self) -> tuple:
+        """Get the size of the desktop"""
+        return self.app.pipe.getDisplayWidth(), self.app.pipe.getDisplayHeight()
 
     def get_fullscreen_sizes(self):
         """Get available fullscreen resolutions from the display."""
@@ -48,10 +66,42 @@ class WindowManager:
         resolutions.sort(key=lambda x: x[0], reverse=True)
         return resolutions
 
+    def save_windowed_origin(self) -> None:
+        """Remember the position of the window to restore it when leaving fullscreen"""
+        wp = self.app.win.getProperties()
+        if wp.hasOrigin() and not wp.getFullscreen():
+            self.windowed_origin = (wp.getXOrigin(), wp.getYOrigin())
+
+    def get_windowed_size(self) -> tuple:
+        """Get the size of the window when leaving fullscreen, limited to the desktop size"""
+        desktop_width, desktop_height = self.get_desktop_size()
+        return min(settings.win_width, desktop_width), min(settings.win_height, desktop_height)
+
+    def get_windowed_origin(self) -> tuple:
+        """
+        Get the position of the window when leaving fullscreen.
+
+        The position saved when entering fullscreen is used, unless the desktop layout changed in the meantime and
+        it is not reachable anymore. Otherwise the window is centered on the desktop.
+        """
+        width, height = self.get_windowed_size()
+        desktop_width, desktop_height = self.get_desktop_size()
+        if self.windowed_origin is not None:
+            x, y = self.windowed_origin
+            # The desktop size is only known for the primary monitor on Windows and macOS, the position of the
+            # window can be valid on another monitor. There the system keeps the windows reachable.
+            if not sys.platform.startswith('linux') or is_window_reachable(
+                x, y, width, height, desktop_width, desktop_height
+            ):
+                return x, y
+        return max(0, (desktop_width - width) // 2), max(0, (desktop_height - height) // 2)
+
     def toggle_fullscreen(self) -> None:
         """
         Toggle fullscreen mode.
         """
+        if not settings.win_fullscreen:
+            self.save_windowed_origin()
         settings.win_fullscreen = not settings.win_fullscreen
         wp = WindowProperties(self.app.win.getProperties())
         wp.setFullscreen(settings.win_fullscreen)
@@ -66,7 +116,8 @@ class WindowManager:
             # Defer config saving in case the switch fails
             self.request_fullscreen = True
         else:
-            wp.setSize(settings.win_width, settings.win_height)
+            wp.setSize(*self.get_windowed_size())
+            wp.setOrigin(*self.get_windowed_origin())
             configParser.save()
         self.app.win.requestProperties(wp)
 
