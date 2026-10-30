@@ -171,6 +171,7 @@ class CosmoniumBase(ShowBase):
                 self.pipeline = BasicScenePipeline(engine=self.graphics_engine)
             self.pipeline.init()
             OpenGLConfig.check_opengl_config(self)
+            self.print_display_info()
             # self.create_additional_display_regions()
             self.near_cam = None
         else:
@@ -254,6 +255,22 @@ class CosmoniumBase(ShowBase):
         for system in PandaSystem.get_global_ptr().get_systems():
             print("\t", system)
         print("Data type:", "double" if settings.use_double else 'float')
+
+    def print_display_info(self):
+        pipe = self.pipe
+        if pipe is None:
+            return
+        zoom = pipe.display_zoom
+        print("Display pipe:", pipe.get_type().name)
+        print("Display zoom: {:.2f}".format(zoom))
+        if settings.ui_scale_dpi_aware:
+            print("UI scale: {:.2f} (display zoom)".format(zoom))
+        else:
+            print("UI scale: {:.2f} (custom)".format(settings.custom_ui_scale))
+        if settings.point_scale_dpi_aware:
+            print("Point scale: {:.2f} (display zoom)".format(zoom))
+        else:
+            print("Point scale: {:.2f} (custom)".format(settings.custom_point_scale))
 
     def create_additional_display_regions(self):
         pass
