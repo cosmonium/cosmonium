@@ -172,6 +172,7 @@ class CosmoniumBase(ShowBase):
             self.pipeline.init()
             OpenGLConfig.check_opengl_config(self)
             self.print_display_info()
+            self.window_manager.scale_default_size()
             # self.create_additional_display_regions()
             self.near_cam = None
         else:

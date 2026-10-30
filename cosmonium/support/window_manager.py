@@ -55,6 +55,32 @@ class WindowManager:
         """Get the size of the desktop"""
         return self.app.pipe.getDisplayWidth(), self.app.pipe.getDisplayHeight()
 
+    def scale_default_size(self) -> None:
+        """
+        Scale the default window size with the display zoom.
+
+        The default size is expressed in logical pixels, so it is only scaled when it comes from the defaults.
+        A size saved in the configuration is in physical pixels and is used as is.
+        """
+        if settings.win_size_configured or settings.win_fullscreen or not settings.ui_scale_dpi_aware:
+            return
+        zoom = self.app.pipe.display_zoom
+        if zoom == 1.0:
+            return
+        width = int(settings.win_width * zoom)
+        height = int(settings.win_height * zoom)
+        # Do not create a window larger than the screen
+        screen_width = self.app.pipe.getDisplayWidth()
+        screen_height = self.app.pipe.getDisplayHeight()
+        if screen_width > 0 and screen_height > 0:
+            width = min(width, screen_width)
+            height = min(height, screen_height)
+        settings.win_width = width
+        settings.win_height = height
+        wp = WindowProperties(self.app.win.getProperties())
+        wp.setSize(*self.get_windowed_size())
+        self.app.win.requestProperties(wp)
+
     def get_fullscreen_sizes(self):
         """Get available fullscreen resolutions from the display."""
         info = self.app.pipe.getDisplayInformation()

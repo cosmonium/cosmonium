@@ -207,6 +207,7 @@ class ConfigParser:
         settings.win_fullscreen = data.get('fullscreen', settings.win_fullscreen)
         settings.win_width = data.get('width', settings.win_width)
         settings.win_height = data.get('height', settings.win_height)
+        settings.win_size_configured = 'width' in data and 'height' in data
         settings.win_fs_width = data.get('fs-width', settings.win_fs_width)
         settings.win_fs_height = data.get('fs-height', settings.win_fs_height)
 

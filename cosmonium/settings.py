@@ -286,6 +286,8 @@ color_picking = False
 win_fullscreen = False
 win_width = 1024
 win_height = 768
+# Indicate if the window size was loaded from the configuration
+win_size_configured = False
 win_fs_width = 0
 win_fs_height = 0
 
