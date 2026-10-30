@@ -152,7 +152,8 @@ class WindowManager:
                     self.app.gui.update_info("Could not switch to fullscreen mode", duration=0.5, fade=2.0)
                 settings.win_fullscreen = False
             self.request_fullscreen = False
-        else:
+        elif not wp.getFullscreen():
+            # The window may still be fullscreen when leaving fullscreen, the size is then not the windowed size
             if width != settings.win_width or height != settings.win_height:
                 settings.win_width = width
                 settings.win_height = height
