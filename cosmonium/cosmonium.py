@@ -357,7 +357,7 @@ class CosmoniumBase(ShowBase):
                     self.gui.update_info("Could not save filename", duration=1.0, fade=1.0)
         else:
             self.gui.update_info(_("Screenshot not saved"), duration=0.5, fade=1.0)
-            self.gui.show_select_screenshots()
+            self.messenger.send("gui-show-select-screenshots")
 
     def set_screenshots_path(self, path):
         settings.screenshot_path = path
