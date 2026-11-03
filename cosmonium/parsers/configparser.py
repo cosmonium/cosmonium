@@ -65,6 +65,7 @@ class ConfigParser:
 
     def decode_render(self, data):
         settings.show_orbits = data.get('orbits', settings.show_orbits)
+        settings.show_labels = data.get('labels', settings.show_labels)
         settings.show_clouds = data.get('clouds', settings.show_clouds)
         settings.show_atmospheres = data.get('atmospheres', settings.show_atmospheres)
         settings.show_asterisms = data.get('asterisms', settings.show_asterisms)
@@ -81,6 +82,7 @@ class ConfigParser:
     def encode_render(self):
         data = {}
         data['orbits'] = settings.show_orbits
+        data['labels'] = settings.show_labels
         data['clouds'] = settings.show_clouds
         data['atmospheres'] = settings.show_atmospheres
         data['asterisms'] = settings.show_asterisms

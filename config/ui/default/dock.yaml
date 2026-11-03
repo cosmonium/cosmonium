@@ -201,8 +201,10 @@ dock:
           - type: button
             class: icon
             code: F04FD  # mdi-tag-text-outline
-            menu: labels-submenu
-            tooltip: Labels
+            event: toggle-labels
+            context_menu: labels-submenu
+            checked: 'settings.show_labels'
+            tooltip: 'Show / hide labels (Alt+L). Right-click: more'
           - type: button
             class: icon
             code: F0EA1  # mdi-ellipse-outline

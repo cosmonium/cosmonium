@@ -73,7 +73,7 @@ class ObjectLabel(VisibleObject):
         if not self.label_source.body_class:
             logger.warning("No class for %s", self.label_source.get_name())
             return
-        self.set_shown(bodyClasses.get_show_label(self.label_source.body_class))
+        self.set_shown(settings.show_labels and bodyClasses.get_show_label(self.label_source.body_class))
 
     @classmethod
     def load_font(cls):

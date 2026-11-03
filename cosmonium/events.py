@@ -165,6 +165,7 @@ class EventsDispatcher(DirectObject):
         self.accept('toggle-orbit-spacecraft', self.engine.toggle_orbit, ['spacecraft'])
 
         # Labels
+        self.accept('toggle-labels', self.engine.toggle_labels)
         self.accept('toggle-label-galaxy', self.engine.toggle_label, ['galaxy'])
         self.accept('toggle-label-globular', self.engine.toggle_label, ['globular'])
         self.accept('toggle-label-star', self.engine.toggle_label, ['star'])

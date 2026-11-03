@@ -217,6 +217,8 @@
 
 - category: Labels
   shortcuts:
+    - event: toggle-labels
+      keys: alt-l
     - event: toggle-label-galaxy
       keys: shift-alt-g
     - event: toggle-label-star

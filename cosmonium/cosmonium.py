@@ -1012,6 +1012,10 @@ class Cosmonium(CosmoniumBase):
         settings.show_orbits = not settings.show_orbits
         self.update_settings()
 
+    def toggle_labels(self):
+        settings.show_labels = not settings.show_labels
+        self.update_settings()
+
     def toggle_clouds(self):
         settings.show_clouds = not settings.show_clouds
         self.update_settings()

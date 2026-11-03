@@ -70,6 +70,7 @@ class AppState(object):
 
         self.render = {}
         self.render['orbits'] = settings.show_orbits
+        self.render['all-labels'] = settings.show_labels
         self.render['clouds'] = settings.show_clouds
         self.render['atmospheres'] = settings.show_atmospheres
         self.render['asterisms'] = settings.show_asterisms
@@ -122,6 +123,7 @@ class AppState(object):
 
         if self.render is not None:
             settings.show_orbits = self.render['orbits']
+            settings.show_labels = self.render.get('all-labels', settings.show_labels)
             settings.show_clouds = self.render['clouds']
             settings.show_asterisms = self.render['asterisms']
             settings.show_boundaries = self.render['boundaries']

@@ -196,6 +196,7 @@ show_rotation_axis = False
 show_reference_axis = False
 
 show_orbits = False
+show_labels = True
 orbit_fade = 20
 label_fade = 20
 orbit_thickness = 0.6

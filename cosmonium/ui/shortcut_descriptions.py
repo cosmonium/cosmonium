@@ -90,6 +90,7 @@ SHORTCUT_DESCRIPTIONS = {
     'toggle-orbit-comet': 'Toggle orbits of comets',
     'toggle-orbit-asteroid': 'Toggle orbits of asteroids',
     'toggle-orbit-spacecraft': 'Toggle orbits of spacecrafts',
+    'toggle-labels': 'Toggle all labels',
     'toggle-label-galaxy': 'Toggle galaxy labels',
     'toggle-label-star': 'Toggle star labels',
     'toggle-label-planet': 'Toggle planet labels',

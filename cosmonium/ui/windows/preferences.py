@@ -117,7 +117,8 @@ class Preferences(ParamEditor):
         return [
             ParametersGroup(
                 _('Labels'),
-                [
+                [SettingParameter(_('All labels'), 'show_labels', SettingParameter.TYPE_BOOL)]
+                + [
                     ParametricFunctionParameter(
                         label,
                         param_name,

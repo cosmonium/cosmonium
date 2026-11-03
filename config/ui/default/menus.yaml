@@ -30,6 +30,10 @@ menus:
       event: 'toggle-swap-eyes'
 
   labels-submenu:
+    - title: 'All _labels'
+      checked: 'settings.show_labels'
+      event: 'toggle-labels'
+    -
     - title: '_Galaxies'
       checked: 'labels.is_shown("galaxy")'
       event: 'toggle-label-galaxy'
