@@ -20,7 +20,7 @@ pre-commit == 4.6.2 ; python_version < "3.11"
 
 # Test tools
 
-pytest == 9.1.1
+pytest == 9.2.0
 
 
 # Documentation tools
