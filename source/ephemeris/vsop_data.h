@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2020 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,9 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIESKE_E5_H
-#define LIESKE_E5_H
+#ifndef VSOP_DATA_H
+#define VSOP_DATA_H
 
-#include "pandabase.h"
-#include "luse.h"
+extern unsigned char vsop_data[];
 
-BEGIN_PUBLISH
-
-LPoint3d
-lieske_e5_sat_pos(double jd, int body);
-
-END_PUBLISH
-
-#endif //LIESKE_E5_H
+#endif //VSOP_DATA_H

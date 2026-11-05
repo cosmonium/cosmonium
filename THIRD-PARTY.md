@@ -82,14 +82,15 @@ License: MIT
 
 Reference: [Github](https://github.com/ArsThaumaturgis/TabbedFrame)
 
-## source
+## third-party/lunar
 
-Files: dourneau.cpp, elp82.cpp, gust86.cpp, htc20.cpp, kepler.cpp, lieske_e5.cpp, mathutils.cpp, obliquity.cpp,
-pluto.cpp, precess.cpp, rckin.cpp, vsop_data.cpp, csop87.cpp, astro/pyastro/pykepler.py
+Ephemerides calculation code from Project Pluto. The Cosmonium wrappers and specific code are in source/ephemeris.
 
-Ephemerides calculation code from Project Pluto
+source/ephemeris/vsop_data.cpp contains the binary data file of the library (vsop.bin) as a C array.
 
-Copyright: Copyright (C) 2010-2020, Project Pluto, Bill Gray.
+Python code of cosmonium/astro/pyastro/kepler.py is the Python translation of kepler.cpp from this library.
+
+Copyright: Copyright (C) 2010-2026, Project Pluto, Bill Gray.
 
 License: GPLv2 or later
 

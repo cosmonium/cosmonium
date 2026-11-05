@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2020 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,36 +17,14 @@
  * along with Cosmonium.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MATHUTILS_H
-#define MATHUTILS_H
+/*
+ * gust86.cpp from the 'lunar' library unconditionally defines
+ * VERY_VERBOSE_OUTPUT, which makes gust86_posn() print its intermediate values
+ * on every call. This file builds it with printf() disabled.
+ */
 
-double
-acose(const double arg);
+#include <stdio.h>
 
-double
-asine(const double arg);
+#define printf(...) ((void)0)
 
-void
-set_identity_matrix(double *matrix);
-
-void
-invert_orthonormal_matrix(double *matrix);
-
-void
-rotate_vector(double *v, const double angle, const int axis);
-
-void
-pre_spin_matrix(double *v1, double *v2, const double angle);
-
-void spin_matrix(double *v1, double *v2, const double angle);
-
-void
-polar3_to_cartesian(double *vect, const double lon, const double lat);
-
-double
-vector3_length(const double *vect);
-
-void
-vector_cross_product(double *xprod, const double *a, const double *b);
-
-#endif //MATHUTILS_H
+#include "gust86.cpp"

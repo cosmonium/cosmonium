@@ -1,7 +1,7 @@
 /*
  * This file is part of Cosmonium.
  *
- * Copyright (C) 2018-2021 Laurent Deru.
+ * Copyright (C) 2018-2026 Laurent Deru.
  *
  * Cosmonium is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,7 @@
 
 #include "lunar_ephemeris.h"
 #include "frames_anchor.h"
-#include "dourneau.h"
-#include "elp82.h"
-#include "gust86.h"
-#include "htc20.h"
-#include "lieske_e5.h"
-#include "pluto.h"
-#include "rckin.h"
-#include "vsop87.h"
+#include "lunar_wrappers.h"
 #include "astro.h"
 
 TypeHandle DourneauOrbit::_type_handle;

@@ -26,3 +26,6 @@
 	path = third-party/directfolderbrowser
 	url = https://github.com/cosmonium/DirectFolderBrowser.git
 	branch = cosmonium
+[submodule "third-party/lunar"]
+	path = third-party/lunar
+	url = https://github.com/Bill-Gray/lunar.git
