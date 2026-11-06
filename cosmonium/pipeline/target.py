@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -196,7 +196,7 @@ class BufferMixin(TargetMixinBase):
         if self.aux_bits is None:
             self.aux_bits = aux_bits
         elif self.aux_bits != aux_bits:
-            print("ERROR: aux bits must all the the same")
+            print("ERROR: aux bits must all be the same")
         if name is None:
             name = f"aux_{self.nb_aux}"
         self.nb_aux += 1
@@ -419,7 +419,7 @@ class ScreenTarget(RenderTarget, TargetShaderMixin, ScreenMixin):
         self.update_shader_size(self.win_size, self.size)
 
 
-class PasstroughTarget(RenderTarget, ScreenMixin):
+class PassthroughTarget(RenderTarget, ScreenMixin):
     def __init__(self, name):
         RenderTarget.__init__(self, name)
         ScreenMixin.__init__(self)

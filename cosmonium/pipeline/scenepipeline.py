@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@ class ScenePipeline(ScenePipelineBase):
                 srgb=False,
                 multisamples=self.render_buffer_multisamples,
                 inverse_z=self.inverse_z,
-                create_mimap=True,
+                create_mipmap=True,
             )
         else:
             render_stage = RenderStage(
@@ -173,7 +173,7 @@ class ScenePipeline(ScenePipelineBase):
                     self.add_stage(DownscaleBloomStage("mipmap_bloom", hdr_colors))
                 else:
                     self.add_stage(BlurBloomStage("simple_bloom", hdr_colors))
-                self.add_stage(BloomApplyStage("bloom_appply", hdr_colors))
+                self.add_stage(BloomApplyStage("bloom_apply", hdr_colors))
             self.add_stage(ToneMappingStage("tone_mapping", ldr_colors))
             annotation_render_stage = AnnotationsRenderStage(
                 "annotations",
