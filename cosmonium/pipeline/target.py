@@ -195,9 +195,20 @@ class BufferMixin(TargetMixinBase):
             print("ERROR: aux bits must all be the same")
         if name is None:
             name = f"aux_{self.nb_aux}"
-        self.nb_aux += 1
+        # Map aux index to the corresponding Panda3D render target type
         # TODO: Map to int, hfloat, float
-        texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_aux_float_0, config, texture)
+        aux_rtp_types = [
+            GraphicsOutput.RTP_aux_float_0,
+            GraphicsOutput.RTP_aux_float_1,
+            GraphicsOutput.RTP_aux_float_2,
+            GraphicsOutput.RTP_aux_float_3,
+        ]
+        if self.nb_aux >= len(aux_rtp_types):
+            print(f"ERROR: too many aux targets (max {len(aux_rtp_types)})")
+            return
+        rtp = aux_rtp_types[self.nb_aux]
+        self.nb_aux += 1
+        texture_target = TextureTarget(to_ram, rtp, config, texture)
         self.texture_targets[name] = texture_target
 
     def set_multisamples(self, multisamples):
