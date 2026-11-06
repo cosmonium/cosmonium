@@ -30,8 +30,6 @@ from panda3d.core import (
     WindowProperties,
 )
 
-from ..textures import TextureConfiguration
-
 
 class TextureTarget:
     def __init__(self, to_ram, render_target, config, texture):
@@ -159,9 +157,7 @@ class BufferMixin(TargetMixinBase):
     def get_attachment(self, name: str) -> Texture:
         return self.texture_targets[name].texture
 
-    def add_color_target(
-        self, color_bits, srgb_colors=True, name='color', to_ram=False, config=TextureConfiguration(), texture=None
-    ):
+    def add_color_target(self, color_bits, srgb_colors=True, name='color', to_ram=False, config=None, texture=None):
         self.color_bits = color_bits
         self.srgb_colors = srgb_colors
         texture_target = TextureTarget(to_ram, GraphicsOutput.RTP_color, config, texture)
@@ -174,7 +170,7 @@ class BufferMixin(TargetMixinBase):
         float_depth=False,
         name='depth',
         to_ram=False,
-        config=TextureConfiguration(),
+        config=None,
         texture=None,
     ):
         self.depth_bits = depth_bits
@@ -192,7 +188,7 @@ class BufferMixin(TargetMixinBase):
         self.float_depth = float_depth
         self.stencil_bits = stencil_bits
 
-    def add_aux_target(self, aux_bits, name=None, to_ram=False, config=TextureConfiguration(), texture=None):
+    def add_aux_target(self, aux_bits, name=None, to_ram=False, config=None, texture=None):
         if self.aux_bits is None:
             self.aux_bits = aux_bits
         elif self.aux_bits != aux_bits:
