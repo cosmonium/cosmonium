@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2023 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,7 +86,8 @@ class BlurBloomStage(SceneStage):
         shader = PostProcessShader(fragment_shader=SimplePostProcessFragmentShader(LuminanceThresholdFragmentShader()))
         shader.create(None, None)
         target.set_shader(shader)
-        target.root.set_shader_input("max_luminance", pipeline.max_luminance)
+        target.root.set_shader_input("bloom_threshold", pipeline.max_luminance)
+        target.root.set_shader_input("bloom_knee", 0.5)
         target.root.set_shader_input('scene', self.get_source('scene'))
 
         target = ProcessTarget("bloom_horizontal")
@@ -134,4 +135,4 @@ class BlurBloomStage(SceneStage):
             target.root.set_shader_input('scene', buffers[0 if even else 1])
 
     def update(self, pipeline):
-        self.targets[0].root.set_shader_input("max_luminance", pipeline.max_luminance)
+        self.targets[0].root.set_shader_input("bloom_threshold", pipeline.max_luminance)
