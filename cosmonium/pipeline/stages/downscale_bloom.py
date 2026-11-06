@@ -192,6 +192,7 @@ class DownscaleBloomStage(SceneStage):
                 for level in range(new_levels, self.levels):
                     self.remove_target_by_name(f"bloom_downscale_{level}")
                     self.remove_target_by_name(f"bloom_upscale_{level}")
+                self.bloom_textures = self.bloom_textures[:new_levels]
                 self.target_textures = self.target_textures[:new_levels]
             self.levels = new_levels
             for i in range(self.levels):
