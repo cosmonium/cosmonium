@@ -1,7 +1,7 @@
 #
 # This file is part of Cosmonium.
 #
-# Copyright (C) 2018-2024 Laurent Deru.
+# Copyright (C) 2018-2026 Laurent Deru.
 #
 # Cosmonium is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -77,9 +77,10 @@ class Pipeline:
             stage.update_slots()
 
     def update_win_size(self, width, height):
-        self.size = (width, height)
+        """Notify all stages of a window resize."""
+        self.win_size = (width, height)
         for stage in self.stages.values():
-            stage.update_win_size(self.size)
+            stage.update_win_size(self.win_size)
         if self.update_slots_requested:
             self.update_slots()
             self.update_slots_requested = False
