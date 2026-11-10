@@ -9,7 +9,7 @@ setuptools == 84.2.1
 
 # Code quality tools
 
-ruff == 0.17.3
+ruff == 0.17.4
 
 pydocstyle == 6.3.0
 
